@@ -1,8 +1,33 @@
+import 'package:arequipagocreditos/components/components.dart';
+import 'package:arequipagocreditos/models/conductor.dart';
+import 'package:arequipagocreditos/screen/login_screen.dart';
+import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-class PerfilScreen extends StatelessWidget {
+class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
+
+  @override
+  State<PerfilScreen> createState() => _PerfilScreenState();
+}
+
+class _PerfilScreenState extends State<PerfilScreen> {
+  bool _isLoading = false;
+  Conductor? _conductor;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConductor();
+  }
+
+  Future<void> _loadConductor() async {
+    Conductor? conductor = await ApiService.getLoggedUser();
+    setState(() {
+      _conductor = conductor;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +52,7 @@ class PerfilScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -46,10 +71,12 @@ class PerfilScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'ESTRELLA MARIA DEL CARMEN LOPEZ TURPO',
+                  Text(
+                    _conductor != null
+                        ? '${_conductor!.nombres} ${_conductor!.apellidoPaterno} ${_conductor!.apellidoMaterno}'
+                        : 'Cargando...',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
@@ -57,7 +84,9 @@ class PerfilScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'DNI: 43931817',
+                    _conductor != null
+                        ? 'DNI: ${_conductor!.nroDocumento}'
+                        : '',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                   ),
                 ],
@@ -73,7 +102,7 @@ class PerfilScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -82,19 +111,36 @@ class PerfilScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildInfoItem(
+                  InfoItem(
                     icon: Icons.phone,
                     label: 'Teléfono',
-                    value: '916840651',
+                    value: _conductor?.telefono ?? 'No disponible',
                   ),
                   _buildDivider(),
-                  _buildInfoItem(
+                  InfoItem(
+                    icon: Icons.email,
+                    label: 'Correo',
+                    value: _conductor?.correo ?? 'No disponible',
+                  ),
+                  _buildDivider(),
+                  InfoItem(
                     icon: Icons.location_on,
                     label: 'Dirección',
-                    value:
-                        'AREQUIPA, AREQUIPA, ALTO SELVA ALEGRE, UPIS SAN JOSE F-7 PAMPAS DE POLANCO T',
+                    value: _conductor?.direccion ?? 'No disponible',
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Botón de Cerrar Sesión
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(
+                text: "Cerrar Sesión",
+                isLoading: _isLoading,
+                onPressed: () => _logout(context),
               ),
             ),
           ],
@@ -103,42 +149,28 @@ class PerfilScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: AppTheme.primary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Divider(color: Colors.grey.shade300, thickness: 1),
+    );
+  }
+
+  void _logout(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    await ApiService.logout();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
     );
   }
 }

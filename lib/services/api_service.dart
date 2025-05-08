@@ -1,14 +1,17 @@
 import 'dart:convert';
+import 'package:arequipagocreditos/models/cuota_financiamiento.dart';
+import 'package:arequipagocreditos/models/financiamiento.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/conductor.dart';
 
 class ApiService {
-  static const String baseUrl = "https://tu-servidor.com/api"; // Reemplaza con tu URL
+  static const String baseUrl =
+      "https://magusemail.com/arequipago-api/public/api";
 
-  // Método POST para el login
   static Future<Conductor?> login(String nroDocumento, String password) async {
-    final url = Uri.parse('$baseUrl/login');
-    
+    final url = Uri.parse('$baseUrl/auth/conductor');
+
     try {
       final response = await http.post(
         url,
@@ -18,13 +21,102 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return Conductor.fromJson(data);
+        Conductor conductor = Conductor.fromJson(data);
+
+        // Guardar los datos en SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('conductor', jsonEncode(data)); // Guardar como JSON
+
+        return conductor;
       } else {
-        return null; // Manejar error de credenciales incorrectas
+        return null;
       }
     } catch (e) {
-      print("Error en la petición: $e");
       return null;
+    }
+  }
+
+  // Método para cerrar sesión
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('conductor'); // Eliminar los datos guardados
+  }
+
+  // Método para verificar si hay un usuario logueado
+  static Future<Conductor?> getLoggedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final conductorJson = prefs.getString('conductor');
+
+    if (conductorJson != null) {
+      final Map<String, dynamic> decodedData = jsonDecode(conductorJson);
+      return Conductor.fromJson(decodedData);
+    }
+
+    return null;
+  }
+
+  static Future<void> saveLoggedUser(Conductor conductor) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('conductor', jsonEncode(conductor.toJson()));
+  }
+
+  static Future<Map<String, dynamic>> updatePassword(String newPassword) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final conductorJson = prefs.getString('conductor');
+      if (conductorJson == null) {
+        return {'success': false, 'message': 'No se encontró el usuario'};
+      }
+
+      final conductorData = jsonDecode(conductorJson);
+      final String dni = conductorData['conductor']['nro_documento'];
+      final url = Uri.parse('$baseUrl/update-password');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'nro_documento': dni, 'password': newPassword}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': responseData['message']};
+      } else {
+        return {'success': false, 'message': responseData['message']};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión'};
+    }
+  }
+
+  static Future<List<Financiamiento>> fetchFinanciamientos(
+    int idConductor,
+  ) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/list-financiamiento/$idConductor'),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      return body.map((json) => Financiamiento.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar los financiamientos');
+    }
+  }
+
+  static Future<List<CuotaFinanciamiento>> fetchCuotas(
+    int idFinanciamiento,
+  ) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/financiamiento-detalle/$idFinanciamiento"),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      return body.map((json) => CuotaFinanciamiento.fromJson(json)).toList();
+    } else {
+      throw Exception("Error al cargar las cuotas (${response.statusCode})");
     }
   }
 }
