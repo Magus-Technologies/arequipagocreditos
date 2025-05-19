@@ -3,11 +3,16 @@ import 'package:arequipagocreditos/models/cuota_financiamiento.dart';
 import 'package:arequipagocreditos/models/financiamiento.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/conductor.dart';
+import '../models/conductor_model.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class ApiService {
   static const String baseUrl =
       "https://magusemail.com/arequipago-api/public/api";
+
+  // static const String baseUrl =
+  //     "http://192.168.100.2/arequipago-api/public/api";
 
   static Future<Conductor?> login(String nroDocumento, String password) async {
     final url = Uri.parse('$baseUrl/auth/conductor');
@@ -92,9 +97,10 @@ class ApiService {
 
   static Future<List<Financiamiento>> fetchFinanciamientos(
     int idConductor,
+    int tipo,
   ) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/list-financiamiento/$idConductor'),
+      Uri.parse('$baseUrl/list-financiamiento/$idConductor/$tipo'),
     );
 
     if (response.statusCode == 200) {
@@ -118,5 +124,16 @@ class ApiService {
     } else {
       throw Exception("Error al cargar las cuotas (${response.statusCode})");
     }
+  }
+
+  // Función para guardar el archivo PDF en el almacenamiento local
+  Future<String> savePdfToFile(List<int> pdfBytes) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File(
+      '${directory.path}/prestamo_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+
+    await file.writeAsBytes(pdfBytes); // Guarda el archivo PDF
+    return file.path; // Retorna la ruta del archivo guardado
   }
 }

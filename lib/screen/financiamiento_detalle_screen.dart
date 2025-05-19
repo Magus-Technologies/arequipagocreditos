@@ -6,10 +6,12 @@ import 'package:arequipagocreditos/models/cuota_financiamiento.dart';
 
 class DetalleFinanciamientoScreen extends StatefulWidget {
   final int idFinanciamiento;
+  final String moneda;
 
   const DetalleFinanciamientoScreen({
     super.key,
     required this.idFinanciamiento,
+    required this.moneda,
   });
 
   @override
@@ -102,7 +104,10 @@ class _DetalleFinanciamientoScreenState
                     child: ListView.builder(
                       itemCount: cuotas.length,
                       itemBuilder:
-                          (context, index) => CuotaCard(cuota: cuotas[index]),
+                          (context, index) => CuotaCard(
+                            cuota: cuotas[index],
+                            moneda: widget.moneda,
+                          ),
                     ),
                   ),
         ),

@@ -1,5 +1,5 @@
 import 'package:arequipagocreditos/components/components.dart';
-import 'package:arequipagocreditos/models/conductor.dart';
+import 'package:arequipagocreditos/models/conductor_model.dart';
 import 'package:arequipagocreditos/screen/login_screen.dart';
 import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -73,7 +73,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   const SizedBox(height: 12),
                   Text(
                     _conductor != null
-                        ? '${_conductor!.nombres} ${_conductor!.apellidoPaterno} ${_conductor!.apellidoMaterno}'
+                        ? _conductor!.nombres
                         : 'Cargando...',
                     textAlign: TextAlign.center,
                     style: const TextStyle(

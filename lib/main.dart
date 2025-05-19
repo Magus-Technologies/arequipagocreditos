@@ -1,4 +1,4 @@
-import 'package:arequipagocreditos/models/conductor.dart';
+import 'package:arequipagocreditos/models/conductor_model.dart';
 import 'package:arequipagocreditos/screen/dashboard_screen.dart';
 import 'package:arequipagocreditos/screen/login_screen.dart';
 import 'package:arequipagocreditos/screen/splash_screen.dart';
@@ -7,7 +7,6 @@ import 'package:arequipagocreditos/services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   Conductor? user = await ApiService.getLoggedUser();
   bool loggedIn = user != null;
 

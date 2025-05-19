@@ -1,4 +1,4 @@
-import 'package:arequipagocreditos/models/conductor.dart';
+import 'package:arequipagocreditos/models/conductor_model.dart';
 import 'package:arequipagocreditos/screen/financiamineto_screen.dart';
 import 'package:arequipagocreditos/screen/perfil_screen.dart';
 import 'package:arequipagocreditos/services/api_service.dart';
@@ -85,6 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : Expanded(
                   child: FinanciamientoList(
                     idConductor: _conductor?.idConductor ?? 0,
+                    tipo: _conductor?.tipo ?? 1,
                   ),
                 ),
           ],

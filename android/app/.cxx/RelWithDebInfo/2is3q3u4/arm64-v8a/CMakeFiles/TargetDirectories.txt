@@ -1,0 +1,2 @@
+C:/Users/Yuri/Desktop/proyectos/arequipagocreditos/android/app/.cxx/RelWithDebInfo/2is3q3u4/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/Yuri/Desktop/proyectos/arequipagocreditos/android/app/.cxx/RelWithDebInfo/2is3q3u4/arm64-v8a/CMakeFiles/rebuild_cache.dir

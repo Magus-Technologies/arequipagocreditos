@@ -6,7 +6,7 @@ class CuotaFinanciamiento {
   final String fechaVencimiento;
   final String estado;
   final String? fechaPago;
-
+  final int idPago;
   CuotaFinanciamiento({
     required this.id,
     required this.idFinanciamiento,
@@ -15,6 +15,7 @@ class CuotaFinanciamiento {
     required this.fechaVencimiento,
     required this.estado,
     this.fechaPago,
+    required this.idPago,
   });
 
   factory CuotaFinanciamiento.fromJson(Map<String, dynamic> json) {
@@ -26,6 +27,7 @@ class CuotaFinanciamiento {
       fechaVencimiento: json["fecha_vencimiento"],
       estado: json["estado"],
       fechaPago: json["fecha_pago"],
+      idPago: json["idPago"],
     );
   }
 }

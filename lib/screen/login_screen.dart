@@ -3,7 +3,7 @@ import 'package:arequipagocreditos/screen/change_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
-import 'package:arequipagocreditos/models/conductor.dart';
+import 'package:arequipagocreditos/models/conductor_model.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {

@@ -15,7 +15,7 @@ class Financiamiento {
   final String fechaCreacion;
   final String frecuencia;
   final String secondProduct;
-
+final String moneda;
   Financiamiento({
     required this.idFinanciamiento,
     required this.idConductor,
@@ -33,6 +33,7 @@ class Financiamiento {
     required this.fechaCreacion,
     required this.frecuencia,
     required this.secondProduct,
+    required this.moneda,
   });
 
   factory Financiamiento.fromJson(Map<String, dynamic> json) {
@@ -40,19 +41,20 @@ class Financiamiento {
       idFinanciamiento: json['idfinanciamiento'],
       idConductor: json['id_conductor'],
       idProducto: json['idproductosv2'],
-      idCoti: json['id_coti'],
-      codigoAsociado: json['codigo_asociado'],
-      grupoFinanciamiento: json['grupo_financiamiento'],
-      cantidadProducto: json['cantidad_producto'],
-      montoTotal: json['monto_total'],
-      cuotaInicial: json['cuota_inicial'],
-      cuotas: json['cuotas'],
-      estado: json['estado'],
-      fechaInicio: json['fecha_inicio'],
-      fechaFin: json['fecha_fin'],
-      fechaCreacion: json['fecha_creacion'],
-      frecuencia: json['frecuencia'],
-      secondProduct: json['second_product'],
+      idCoti: json['id_coti'] ?? 0,
+      codigoAsociado: json['codigo_asociado'] ?? 0,
+      grupoFinanciamiento: json['grupo_financiamiento'] ?? '-',
+      cantidadProducto: json['cantidad_producto'] ?? '-',
+      montoTotal: json['monto_total'] ?? '-',
+      cuotaInicial: json['cuota_inicial'] ?? '-',
+      cuotas: json['cuotas'] ?? 0,
+      estado: json['estado'] ?? '-',
+      fechaInicio: json['fecha_inicio'] ?? '-',
+      fechaFin: json['fecha_fin'] ?? '-',
+      fechaCreacion: json['fecha_creacion'] ?? '-',
+      frecuencia: json['frecuencia'] ?? '-',
+      secondProduct: json['second_product'] ?? '-',
+      moneda: json["moneda"],
     );
   }
 }
