@@ -60,7 +60,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       await file.writeAsBytes(bytes!, flush: true);
 
       // Muestra un mensaje de éxito
-
+      if(!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -69,6 +69,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         ),
       );
     } catch (e) {
+      if(!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al descargar el archivo Excel: $e')),
       );

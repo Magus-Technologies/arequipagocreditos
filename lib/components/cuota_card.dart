@@ -58,6 +58,7 @@ class _CuotaCardState extends State<CuotaCard> {
     // 1) Verifico permisos
     final granted = await _requestStoragePermission();
     if (!granted) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Permiso de almacenamiento denegado')),
       );
@@ -67,6 +68,7 @@ class _CuotaCardState extends State<CuotaCard> {
     // 2) Obtengo directorio
     final downloadDir = await _getDownloadDir();
     if (downloadDir == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se encontró la carpeta Descargas')),
       );
@@ -82,11 +84,12 @@ class _CuotaCardState extends State<CuotaCard> {
     try {
       // 4) Escribo bytes
       await file.writeAsBytes(_pdfBytes!, flush: true);
-
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Voucher guardado: $filename')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error al guardar PDF: $e')));
@@ -106,7 +109,7 @@ class _CuotaCardState extends State<CuotaCard> {
     try {
       // 1) Traer el PDF
       await _fetchPdf();
-
+      if(!mounted) return;
       // 2) Mostrar diálogo con opciones
       showDialog(
         context: context,
@@ -133,6 +136,7 @@ class _CuotaCardState extends State<CuotaCard> {
             ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -173,7 +177,7 @@ class _CuotaCardState extends State<CuotaCard> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.2),
+                      color: accentColor.withAlpha((0.2 * 255).toInt()),  
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

@@ -166,7 +166,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     setState(() {
       _isLoading = false;
     });
-
+    if(!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
