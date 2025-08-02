@@ -46,7 +46,7 @@ class MainModules extends StatelessWidget {
                   child: ModuleCard(
                     icon: Icons.analytics,
                     title: 'Puntaje\nCrediticio',
-                    backgroundColor: const Color(0xFF059669),
+                    backgroundColor: const Color(0xFF1F2937), // Negro elegante
                     iconColor: Colors.white,
                     onTap: () {
                       Navigator.push(
@@ -67,8 +67,8 @@ class MainModules extends StatelessWidget {
                   child: ModuleCard(
                     icon: Icons.card_giftcard,
                     title: 'Cupones\ny Beneficios',
-                    backgroundColor: const Color(0xFFF59E0B),
-                    iconColor: Colors.white,
+                    backgroundColor: AppTheme.primary, // Amarillo corporativo
+                    iconColor: Colors.black87, // Texto negro sobre amarillo
                     onTap: () {
                       Navigator.push(
                         context,

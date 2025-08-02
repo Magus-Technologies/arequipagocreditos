@@ -225,7 +225,7 @@ class _CuponesScreenState extends State<CuponesScreen> {
               backgroundColor: Colors.grey.shade100,
               selectedColor: AppTheme.primary.withAlpha((0.2 * 255).toInt()),
               labelStyle: TextStyle(
-                color: isSelected ? AppTheme.primary : Colors.grey.shade700,
+                color: isSelected ? Colors.black87 : Colors.grey.shade700,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
               side: BorderSide(
@@ -371,13 +371,13 @@ class _CuponesScreenState extends State<CuponesScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppTheme.primary, // Amarillo corporativo para destacar
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             cupon.descuentoFormateado,
-                            style: TextStyle(
-                              color: _getGradientColors(cupon.categoria)[0],
+                            style: const TextStyle(
+                              color: Colors.black87, // Texto negro sobre amarillo
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -481,8 +481,8 @@ class _CuponesScreenState extends State<CuponesScreen> {
                   child: ElevatedButton(
                     onPressed: () => _usarCupon(cupon),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: _getGradientColors(cupon.categoria)[0],
+                      backgroundColor: AppTheme.primary, // Amarillo corporativo
+                      foregroundColor: Colors.black87, // Texto negro
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -501,18 +501,8 @@ class _CuponesScreenState extends State<CuponesScreen> {
   }
 
   List<Color> _getGradientColors(String categoria) {
-    switch (categoria) {
-      case 'Restaurantes':
-        return [const Color(0xFFF59E0B), const Color(0xFFEF4444)];
-      case 'Tiendas':
-        return [const Color(0xFF8B5CF6), const Color(0xFF3B82F6)];
-      case 'Servicios':
-        return [const Color(0xFF10B981), const Color(0xFF059669)];
-      case 'Entretenimiento':
-        return [const Color(0xFFEC4899), const Color(0xFFF59E0B)];
-      default:
-        return [AppTheme.primary, AppTheme.primary.withAlpha((0.8 * 255).toInt())];
-    }
+    // Paleta uniforme y sobria para todas las categorías
+    return [const Color(0xFF1F2937), const Color(0xFF374151)]; // Negro elegante para todas
   }
 
   IconData _getCategoryIcon(String categoria) {

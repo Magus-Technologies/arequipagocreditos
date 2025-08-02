@@ -109,29 +109,29 @@ class _HeaderState extends State<Header> {
                   emoji: '💳',
                   label: 'Créditos Activos',
                   value: '${widget.conductor.tipo}',
-                  primaryColor: const Color(0xFF667eea),
-                  secondaryColor: const Color(0xFF764ba2),
+                  primaryColor: const Color(0xFF1F2937), // Negro-gris elegante
+                  secondaryColor: const Color(0xFF374151),
                 ),
                 ComponentQuickStat(
                   emoji: '⭐',
                   label: 'Puntaje Crediticio',
                   value: 'Excelente',
-                  primaryColor: const Color(0xFF43e97b),
-                  secondaryColor: const Color(0xFF38f9d7),
+                  primaryColor: AppTheme.primary, // Amarillo de tu tema
+                  secondaryColor: const Color(0xFFF59E0B), // Amarillo más oscuro
                 ),
                 ComponentQuickStat(
                   emoji: '🎁',
                   label: 'Cupones Disponibles',
                   value: '3 Nuevos',
-                  primaryColor: const Color(0xFFf093fb),
-                  secondaryColor: const Color(0xFFf5576c),
+                  primaryColor: const Color(0xFF4B5563), // Gris elegante
+                  secondaryColor: const Color(0xFF6B7280),
                 ),
                 ComponentQuickStat(
                   emoji: '📊',
                   label: 'Historial Pagos',
                   value: 'Al día',
-                  primaryColor: const Color(0xFF4facfe),
-                  secondaryColor: const Color(0xFF00f2fe),
+                  primaryColor: const Color(0xFF111827), // Negro profundo
+                  secondaryColor: const Color(0xFF1F2937),
                 ),
               ],
             ),
