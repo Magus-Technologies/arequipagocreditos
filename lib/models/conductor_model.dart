@@ -7,6 +7,8 @@ class Conductor {
   final String correo;
   final int flag;
   final int tipo;
+  final String? fotoPerfil;
+  final bool? fotoPerfilCambiada;
 
   Conductor({
     required this.idConductor,
@@ -17,6 +19,8 @@ class Conductor {
     required this.correo,
     required this.flag,
     required this.tipo,
+    this.fotoPerfil,
+    this.fotoPerfilCambiada,
   });
 
   factory Conductor.fromJson(Map<String, dynamic> json) {
@@ -29,6 +33,8 @@ class Conductor {
       correo: json['conductor']['correo'] ?? '',
       flag: json['flag'] ?? 0,
       tipo: json['conductor']['tipo'] ?? 1,
+      fotoPerfil: json['conductor']['foto_perfil'],
+      fotoPerfilCambiada: json['conductor']['foto_perfil_cambiada'] == 1,
     );
   }
 
@@ -41,6 +47,8 @@ class Conductor {
       'direccion': direccion,
       'correo': correo,
       'tipo': tipo,
+      'foto_perfil': fotoPerfil,
+      'foto_perfil_cambiada': fotoPerfilCambiada,
     };
   }
 }

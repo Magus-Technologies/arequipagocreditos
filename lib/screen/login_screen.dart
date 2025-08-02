@@ -1,5 +1,6 @@
 import 'package:arequipagocreditos/components/components.dart';
 import 'package:arequipagocreditos/screen/change_password_screen.dart';
+import 'package:arequipagocreditos/screen/password_recovery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -17,6 +18,61 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _dniController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isTestingConnection = false;
+
+  void _testConnection() async {
+    setState(() => _isTestingConnection = true);
+
+    final result = await ApiService.testConnection();
+
+    if (!mounted) return;
+
+    setState(() => _isTestingConnection = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result['message']),
+        backgroundColor: result['success'] ? Colors.green : Colors.red,
+        action: result['success'] ? null : SnackBarAction(
+          label: 'Ver detalles',
+          textColor: Colors.white,
+          onPressed: () {
+            _showConnectionDetails(result);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showConnectionDetails(Map<String, dynamic> result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Detalles de Conexión'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('URL: ${result['url']}'),
+            const SizedBox(height: 8),
+            Text('Estado: ${result['success'] ? 'Exitoso' : 'Fallido'}'),
+            const SizedBox(height: 8),
+            Text('Mensaje: ${result['message']}'),
+            if (result['status'] != null) ...[
+              const SizedBox(height: 8),
+              Text('Código HTTP: ${result['status']}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _login() async {
     setState(() => _isLoading = true);
@@ -108,6 +164,47 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _login,
                 ),
               ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PasswordRecoveryScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "¿Olvidó su contraseña?",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Botón de prueba de conectividad
+              // TextButton.icon(
+              //   onPressed: _isTestingConnection ? null : _testConnection,
+              //   icon: _isTestingConnection 
+              //     ? const SizedBox(
+              //         width: 16, 
+              //         height: 16, 
+              //         child: CircularProgressIndicator(
+              //           strokeWidth: 2, 
+              //           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              //         ),
+              //       )
+              //     : const Icon(Icons.wifi_find, color: Colors.white),
+              //   label: Text(
+              //     _isTestingConnection ? "Probando..." : "Probar Conexión",
+              //     style: const TextStyle(
+              //       color: Colors.white,
+              //       fontSize: 14,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
