@@ -1,68 +1,50 @@
 import 'dart:convert';
-import 'package:arequipagocreditos/models/cuota_financiamiento.dart';
-import 'package:arequipagocreditos/models/financiamiento.dart';
-import 'package:arequipagocreditos/models/puntuacion_model.dart';
-import 'package:arequipagocreditos/models/cupon.dart';
+import 'package:arequipagocreditos/data/models/conductor_model.dart';
+import 'package:arequipagocreditos/data/models/cuota_financiamiento_model.dart';
+import 'package:arequipagocreditos/data/models/cupon_model.dart';
+import 'package:arequipagocreditos/data/models/financiamiento_model.dart';
+import 'package:arequipagocreditos/data/models/puntuacion_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/conductor_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
 class ApiService {
   // Configuración de URLs
-  static const String _localUrl = "http://192.168.100.2/arequipago-api/public/api";
-  static const String _productionUrl = "https://magusemail.com/arequipago-api/public/api";
-  
+  static const String _localUrl =
+      "http://192.168.100.2/arequipago-api/public/api";
+  static const String _productionUrl =
+      "https://magusemail.com/arequipago-api/public/api";
+  static const String _cuponesUrl = "https://arequipago-ventas.pe/ajs";
+
   // Cambiar este valor para alternar entre desarrollo y producción
   static const bool _useProduction = true;
-  
+
   static String get baseUrl => _useProduction ? _productionUrl : _localUrl;
+  static String get cuponesBaseUrl => _cuponesUrl;
 
-  // Método para probar conectividad
-  static Future<Map<String, dynamic>> testConnection() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/test'), // Endpoint de prueba
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('Timeout de conexión');
-        },
-      );
 
-      return {
-        'success': true,
-        'message': 'Conexión exitosa',
-        'status': response.statusCode,
-        'url': baseUrl,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error de conexión: $e',
-        'url': baseUrl,
-      };
-    }
-  }
-
-  static Future<Conductor?> login(String nroDocumento, String password) async {
+  static Future<ConductorModel?> login(String nroDocumento, String password) async {
     final url = Uri.parse('$baseUrl/auth/conductor');
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'nro_documento': nroDocumento, 'password': password}),
-      ).timeout(
-        const Duration(seconds: 30), // Timeout de 30 segundos
-        onTimeout: () {
-          throw Exception('Timeout de conexión');
-        },
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'nro_documento': nroDocumento,
+              'password': password,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30), // Timeout de 30 segundos
+            onTimeout: () {
+              throw Exception('Timeout de conexión');
+            },
+          );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        Conductor conductor = Conductor.fromJson(data);
+        ConductorModel conductor = ConductorModel.fromJson(data);
 
         // Guardar los datos en SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -84,20 +66,20 @@ class ApiService {
   }
 
   // Método para verificar si hay un usuario logueado
-  static Future<Conductor?> getLoggedUser() async {
+  static Future<ConductorModel?> getLoggedUser() async {
     final prefs = await SharedPreferences.getInstance();
     final conductorJson = prefs.getString('conductor');
 
     if (conductorJson != null) {
       final Map<String, dynamic> decodedData = jsonDecode(conductorJson);
-      return Conductor.fromJson(decodedData);
+      return ConductorModel.fromJson(decodedData);
     }
 
     return null;
   }
 
   // Método para obtener datos frescos del usuario desde el servidor
-  static Future<Conductor?> refreshUserData() async {
+  static Future<ConductorModel?> refreshUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final conductorJson = prefs.getString('conductor');
@@ -114,7 +96,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        Conductor freshConductor = Conductor.fromJson(data);
+        ConductorModel freshConductor = ConductorModel.fromJson(data);
 
         // Actualizar los datos en cache
         await saveLoggedUser(freshConductor);
@@ -130,7 +112,7 @@ class ApiService {
     }
   }
 
-  static Future<void> saveLoggedUser(Conductor conductor) async {
+  static Future<void> saveLoggedUser(ConductorModel conductor) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('conductor', jsonEncode(conductor.toJson()));
   }
@@ -263,7 +245,7 @@ class ApiService {
     }
   }
 
-  static Future<List<Financiamiento>> fetchFinanciamientos(
+  static Future<List<FinanciamientoModel>> fetchFinanciamientos(
     int idConductor,
     int tipo,
   ) async {
@@ -273,13 +255,13 @@ class ApiService {
 
     if (response.statusCode == 200) {
       List<dynamic> body = json.decode(response.body);
-      return body.map((json) => Financiamiento.fromJson(json)).toList();
+      return body.map((json) => FinanciamientoModel.fromJson(json)).toList();
     } else {
       throw Exception('Error al cargar los financiamientos');
     }
   }
 
-  static Future<List<CuotaFinanciamiento>> fetchCuotas(
+  static Future<List<CuotaFinanciamientoModel>> fetchCuotas(
     int idFinanciamiento,
   ) async {
     final response = await http.get(
@@ -288,7 +270,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       List<dynamic> body = json.decode(response.body);
-      return body.map((json) => CuotaFinanciamiento.fromJson(json)).toList();
+      return body.map((json) => CuotaFinanciamientoModel.fromJson(json)).toList();
     } else {
       throw Exception("Error al cargar las cuotas (${response.statusCode})");
     }
@@ -306,7 +288,7 @@ class ApiService {
   }
 
   // Métodos para manejo de puntuaciones
-  static Future<PuntuacionCredito?> getPuntuacionCredito() async {
+  static Future<PuntuacionModel?> getPuntuacionYDatos() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final conductorJson = prefs.getString('conductor');
@@ -316,14 +298,18 @@ class ApiService {
 
       final conductorData = jsonDecode(conductorJson);
       final int idConductor = conductorData['conductor']['id_conductor'];
-
+      final String tipo =
+          conductorData['tipo'].toString() == "1" ? 'conductor' : 'cliente';
+      // Usar tu endpoint real
       final response = await http.get(
-        Uri.parse('$baseUrl/puntuacion-credito/$idConductor'),
+        Uri.parse(
+          'https://arequipago-ventas.pe/obtenerPuntajeYDatos?tipo=$tipo&id=$idConductor',
+        ),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return PuntuacionCredito.fromJson(data);
+        return PuntuacionModel.fromJson(data);
       } else {
         return null;
       }
@@ -332,7 +318,37 @@ class ApiService {
     }
   }
 
+  static Future<PuntuacionModel?> getPuntuacionCredito() async {
+    try {
+      final response = await getPuntuacionYDatos();
+      if (response != null && response.success) {
+        return PuntuacionModel.fromJson(response.data.puntaje);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<List<HistorialPuntos>> getHistorialPuntos() async {
+    try {
+      final response = await getPuntuacionYDatos();
+      if (response != null && response.success) {
+        // Ordenar por fecha más reciente primero - mostrar todo el historial
+        final historial = response.data.historial;
+        historial.sort(
+          (a, b) => b.fechaReferencia.compareTo(a.fechaReferencia),
+        );
+        return historial; // Devolver todo el historial sin limitación
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Método para obtener cupones disponibles
+  static Future<List<CuponModel>> getCupones() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final conductorJson = prefs.getString('conductor');
@@ -341,147 +357,115 @@ class ApiService {
       }
 
       final conductorData = jsonDecode(conductorJson);
-      final int idConductor = conductorData['conductor']['id_conductor'];
+      // Verificar que existe la clave 'conductor'
+      if (!conductorData.containsKey('conductor')) {
+        return [];
+      }
 
+      final conductorInfo = conductorData['conductor'];
+      // Verificar que existen las claves necesarias
+      if (!conductorInfo.containsKey('id_conductor')) {
+        return [];
+      }
+
+      final int idConductor = conductorInfo['id_conductor'];
+      final String tipo =
+          conductorInfo['tipo'].toString() == "1" ? 'conductor' : 'cliente';
+
+      // Llamar a tu API real
       final response = await http.get(
-        Uri.parse('$baseUrl/historial-puntos/$idConductor'),
+        Uri.parse('$cuponesBaseUrl/cupones/verificar/$tipo/$idConductor'),
       );
-
       if (response.statusCode == 200) {
-        List<dynamic> body = json.decode(response.body);
-        return body.map((json) => HistorialPuntos.fromJson(json)).toList();
+        final data = jsonDecode(response.body);
+
+        if (data['tiene_cupones'] == true && data['cupones'] != null) {
+          List<dynamic> cuponesData = data['cupones'];
+
+          // Agregar campos adicionales que necesita el modelo
+          List<Map<String, dynamic>> cuponesFormateados =
+              cuponesData.map((cupon) {
+                Map<String, dynamic> cuponFormateado =
+                    Map<String, dynamic>.from(cupon);
+
+                // Agregar campos por defecto si no existen
+                cuponFormateado['categoria'] =
+                    cuponFormateado['categoria'] ?? 'Promociones';
+                cuponFormateado['descripcion'] =
+                    cuponFormateado['descripcion'] ??
+                    'Descuento especial disponible para ti';
+                cuponFormateado['codigo'] =
+                    cuponFormateado['codigo'] ?? 'CUPON${cupon['id']}';
+                cuponFormateado['empresa'] =
+                    cuponFormateado['empresa'] ?? 'Arequipa GO';
+                cuponFormateado['condiciones'] =
+                    cuponFormateado['condiciones'] ??
+                    'Válido según términos y condiciones.';
+
+                return cuponFormateado;
+              }).toList();
+
+          return cuponesFormateados
+              .map((data) => CuponModel.fromJson(data))
+              .toList();
+        } else {
+          return [];
+        }
       } else {
         return [];
       }
     } catch (e) {
+      print(e);
       return [];
     }
   }
 
-  // Método para obtener cupones disponibles
-  static Future<List<Cupon>> getCupones() async {
+  // Método para usar un cupón
+  static Future<Map<String, dynamic>> usarCupon(int idCupon) async {
     try {
-      // Simular datos ficticios para demostración
-      await Future.delayed(
-        const Duration(milliseconds: 800),
-      ); // Simular tiempo de carga
+      final prefs = await SharedPreferences.getInstance();
+      final conductorJson = prefs.getString('conductor');
+      if (conductorJson == null) {
+        return {'success': false, 'message': 'No se encontró el usuario'};
+      }
 
-      final List<Map<String, dynamic>> cuponesData = [
-        {
-          'id': 1,
-          'titulo': '2x1 en Pizza Familiar',
-          'descripcion':
-              'Lleva 2 pizzas familiares por el precio de 1. Válido en cualquier sucursal.',
-          'categoria': 'Restaurantes',
-          'descuento': 50.0,
-          'tipo_descuento': 'porcentaje',
-          'codigo': 'PIZZA2X1',
-          'fecha_vencimiento':
-              DateTime.now().add(const Duration(days: 15)).toIso8601String(),
-          'es_activo': true,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'Pizza Palace',
-          'condiciones':
-              'No válido con otras promociones. Mínimo S/ 50 de compra.',
-          'limite_usos': 100,
-          'usos_restantes': 87,
-        },
-        {
-          'id': 2,
-          'titulo': '30% OFF en Ropa de Temporada',
-          'descripcion':
-              'Descuento especial en toda la colección de primavera-verano.',
-          'categoria': 'Tiendas',
-          'descuento': 30.0,
-          'tipo_descuento': 'porcentaje',
-          'codigo': 'VERANO30',
-          'fecha_vencimiento':
-              DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-          'es_activo': true,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'Fashion Store',
-          'condiciones': 'Válido en tiendas participantes.',
-          'limite_usos': null,
-          'usos_restantes': null,
-        },
-        {
-          'id': 3,
-          'titulo': 'Lavado Premium Gratis',
-          'descripcion': 'Servicio de lavado premium sin costo adicional.',
-          'categoria': 'Servicios',
-          'descuento': 25.0,
-          'tipo_descuento': 'monto',
-          'codigo': 'LAVADO25',
-          'fecha_vencimiento':
-              DateTime.now().add(const Duration(days: 10)).toIso8601String(),
-          'es_activo': true,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'AutoWash Pro',
-          'condiciones': 'Solo para vehículos sedan y hatchback.',
-          'limite_usos': 50,
-          'usos_restantes': 23,
-        },
-        {
-          'id': 4,
-          'titulo': 'Entrada 2x1 al Cine',
-          'descripcion':
-              '2 entradas por el precio de 1 en funciones de lunes a jueves.',
-          'categoria': 'Entretenimiento',
-          'descuento': 50.0,
-          'tipo_descuento': 'porcentaje',
-          'codigo': 'CINE2X1',
-          'fecha_vencimiento':
-              DateTime.now().add(const Duration(days: 20)).toIso8601String(),
-          'es_activo': true,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'Cinemark',
-          'condiciones': 'No válido en estrenos y funciones 3D.',
-          'limite_usos': 200,
-          'usos_restantes': 156,
-        },
-        {
-          'id': 5,
-          'titulo': 'Descuento en Combustible',
-          'descripcion':
-              'S/ 0.20 de descuento por galón en combustible premium.',
-          'categoria': 'Servicios',
-          'descuento': 0.20,
-          'tipo_descuento': 'monto',
-          'codigo': 'GASOLINA20',
-          'fecha_vencimiento':
-              DateTime.now().add(const Duration(days: 7)).toIso8601String(),
-          'es_activo': true,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'Repsol',
-          'condiciones': 'Mínimo 10 galones. Válido 24 horas.',
-          'limite_usos': 500,
-          'usos_restantes': 342,
-        },
-        {
-          'id': 6,
-          'titulo': 'Buffet Familiar Especial',
-          'descripcion':
-              'Buffet completo para 4 personas con bebidas incluidas.',
-          'categoria': 'Restaurantes',
-          'descuento': 40.0,
-          'tipo_descuento': 'porcentaje',
-          'codigo': 'BUFFET40',
-          'fecha_vencimiento':
-              DateTime.now()
-                  .subtract(const Duration(days: 2))
-                  .toIso8601String(), // Vencido
-          'es_activo': false,
-          'imagen': 'https://via.placeholder.com/300x200',
-          'empresa': 'Restaurant El Dorado',
-          'condiciones': 'Válido solo fines de semana.',
-          'limite_usos': 80,
-          'usos_restantes': 0,
-        },
-      ];
+      final conductorData = jsonDecode(conductorJson);
+      if (!conductorData.containsKey('conductor')) {
+        return {'success': false, 'message': 'Datos de conductor inválidos'};
+      }
 
-      return cuponesData.map((data) => Cupon.fromJson(data)).toList();
+      final conductorInfo = conductorData['conductor'];
+      if (!conductorInfo.containsKey('id_conductor')) {
+        return {'success': false, 'message': 'ID de conductor no encontrado'};
+      }
+
+      final int idConductor = conductorInfo['id_conductor'];
+
+      // Llamar a la API para usar el cupón
+      final response = await http.post(
+        Uri.parse('$cuponesBaseUrl/cupones/usar-codigo/$idConductor/$idCupon'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': data['success'] ?? true,
+          'message': data['message'] ?? 'Cupón aplicado correctamente',
+          'data': data,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error al usar el cupón',
+        };
+      }
     } catch (e) {
-      return [];
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
     }
   }
 }

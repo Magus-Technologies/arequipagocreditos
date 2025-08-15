@@ -1,0 +1,116 @@
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+
+// Data Layer
+import 'data/datasources/auth_remote_datasource.dart';
+import 'data/datasources/cupones_remote_datasource.dart';
+import 'data/datasources/financiamiento_remote_datasource.dart';
+import 'data/datasources/puntuacion_remote_datasource.dart';
+import 'data/repositories/auth_repository_impl.dart';
+import 'data/repositories/cupones_repository_impl.dart';
+import 'data/repositories/financiamiento_repository_impl.dart';
+import 'data/repositories/puntuacion_repository_impl.dart';
+
+// Domain Layer
+import 'domain/repositories/auth_repository.dart';
+import 'domain/repositories/cupones_repository.dart';
+import 'domain/repositories/financiamiento_repository.dart';
+import 'domain/repositories/puntuacion_repository.dart';
+import 'domain/usecases/auth_usecases.dart';
+import 'domain/usecases/cupones_usecases.dart';
+import 'domain/usecases/financiamiento_usecases.dart';
+import 'domain/usecases/puntuacion_usecases.dart';
+
+// Presentation Layer
+import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/cupones_provider.dart';
+import 'presentation/providers/financiamiento_provider.dart';
+
+class DependencyInjection {
+  static List<ChangeNotifierProvider> get providers => [
+    // Providers
+    ChangeNotifierProvider<AuthProvider>(
+      create: (context) => AuthProvider(
+        loginUseCase: _getLoginUseCase(),
+        logoutUseCase: _getLogoutUseCase(),
+        getLoggedUserUseCase: _getLoggedUserUseCase(),
+        changePasswordUseCase: _getChangePasswordUseCase(),
+      ),
+    ),
+    
+    ChangeNotifierProvider<CuponesProvider>(
+      create: (context) => CuponesProvider(
+        getCuponesUseCase: _getCuponesUseCase(),
+        usarCuponUseCase: _getUsarCuponUseCase(),
+        filterCuponesByCategoria: _getFilterCuponesByCategoria(),
+      ),
+    ),
+
+    ChangeNotifierProvider<FinanciamientoProvider>(
+      create: (context) => FinanciamientoProvider(
+        getFinanciamientosUseCase: getFinanciamientosUseCase(),
+        getFinanciamientoByIdUseCase: getFinanciamientoByIdUseCase(),
+        getCuotasFinanciamientoUseCase: getCuotasFinanciamientoUseCase(),
+        pagarCuotaUseCase: getPagarCuotaUseCase(),
+        generarReporteCuotaUseCase: getGenerarReporteCuotaUseCase(),
+      ),
+    ),
+  ];
+
+  // Repositories
+  static AuthRepository get _authRepository => AuthRepositoryImpl(
+    remoteDataSource: _authRemoteDataSource,
+  );
+
+  static CuponesRepository get _cuponesRepository => CuponesRepositoryImpl(
+    remoteDataSource: _cuponesRemoteDataSource,
+  );
+
+  static FinanciamientoRepository get _financiamientoRepository => FinanciamientoRepositoryImpl(
+    remoteDataSource: _financiamientoRemoteDataSource,
+  );
+
+  static PuntuacionRepository get _puntuacionRepository => PuntuacionRepositoryImpl(
+    remoteDataSource: _puntuacionRemoteDataSource,
+  );
+
+  // DataSources
+  static AuthRemoteDataSource get _authRemoteDataSource => 
+      AuthRemoteDataSourceImpl(client: _httpClient);
+
+  static CuponesRemoteDataSource get _cuponesRemoteDataSource => 
+      CuponesRemoteDataSourceImpl(client: _httpClient);
+
+  static FinanciamientoRemoteDataSource get _financiamientoRemoteDataSource => 
+      FinanciamientoRemoteDataSourceImpl(client: _httpClient);
+
+  static PuntuacionRemoteDataSource get _puntuacionRemoteDataSource => 
+      PuntuacionRemoteDataSourceImpl(client: _httpClient);
+
+  // Network
+  static http.Client get _httpClient => http.Client();
+
+  // Use Cases - Auth
+  static LoginUseCase _getLoginUseCase() => LoginUseCase(_authRepository);
+  static LogoutUseCase _getLogoutUseCase() => LogoutUseCase(_authRepository);
+  static GetLoggedUserUseCase _getLoggedUserUseCase() => GetLoggedUserUseCase(_authRepository);
+  static ChangePasswordUseCase _getChangePasswordUseCase() => ChangePasswordUseCase(_authRepository);
+
+  // Use Cases - Cupones
+  static GetCuponesUseCase _getCuponesUseCase() => GetCuponesUseCase(_cuponesRepository);
+  static UsarCuponUseCase _getUsarCuponUseCase() => UsarCuponUseCase(_cuponesRepository);
+  static FilterCuponesByCategoria _getFilterCuponesByCategoria() => FilterCuponesByCategoria();
+
+  // Use Cases - Financiamiento
+  static GetFinanciamientosUseCase getFinanciamientosUseCase() => GetFinanciamientosUseCase(repository: _financiamientoRepository);
+  static GetFinanciamientoByIdUseCase getFinanciamientoByIdUseCase() => GetFinanciamientoByIdUseCase(repository: _financiamientoRepository);
+  static GetCuotasFinanciamientoUseCase getCuotasFinanciamientoUseCase() => GetCuotasFinanciamientoUseCase(repository: _financiamientoRepository);
+  static PagarCuotaUseCase getPagarCuotaUseCase() => PagarCuotaUseCase(repository: _financiamientoRepository);
+  static GenerarReporteCuotaUseCase getGenerarReporteCuotaUseCase() => GenerarReporteCuotaUseCase(repository: _financiamientoRepository);
+
+  // Use Cases - Puntuación
+  static GetPuntuacionUseCase getPuntuacionUseCase() => GetPuntuacionUseCase(repository: _puntuacionRepository);
+  static GetHistorialPuntosUseCase getHistorialPuntosUseCase() => GetHistorialPuntosUseCase(repository: _puntuacionRepository);
+  static GetBeneficiosUseCase getBeneficiosUseCase() => GetBeneficiosUseCase(repository: _puntuacionRepository);
+  static ActualizarPuntuacionUseCase getActualizarPuntuacionUseCase() => ActualizarPuntuacionUseCase(repository: _puntuacionRepository);
+}

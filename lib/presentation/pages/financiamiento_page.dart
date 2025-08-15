@@ -1,0 +1,290 @@
+import 'package:arequipagocreditos/data/models/financiamiento_model.dart';
+import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
+import 'package:arequipagocreditos/presentation/pages/pages.dart';
+import 'package:arequipagocreditos/services/api_service.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class FinanciamientoPage extends StatefulWidget {
+  final int idConductor;
+  final int tipo;
+
+  const FinanciamientoPage({
+    super.key,
+    required this.idConductor,
+    required this.tipo,
+  });
+
+  @override
+  State<FinanciamientoPage> createState() => _FinanciamientoPageState();
+}
+
+class _FinanciamientoPageState extends State<FinanciamientoPage> {
+  late Future<List<FinanciamientoModel>> _futureFinanciamientos;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFinanciamientos();
+  }
+
+  Future<void> _loadFinanciamientos() async {
+    setState(() {
+      _futureFinanciamientos = ApiService.fetchFinanciamientos(
+        widget.idConductor,
+        widget.tipo,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Financiamientos'),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          if (authProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: FutureBuilder<List<FinanciamientoModel>>(
+              future: _futureFinanciamientos,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error al cargar financiamientos',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadFinanciamientos,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No hay financiamientos',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'No tienes financiamientos disponibles en este momento.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadFinanciamientos,
+                          child: const Text('Actualizar'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _loadFinanciamientos,
+                  child: ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final financiamiento = snapshot.data![index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Código: ${financiamiento.codigoAsociado}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    financiamiento.estado,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.group, size: 18, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    'Grupo: ${financiamiento.grupoFinanciamiento}',
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.date_range, size: 18, color: Colors.blue),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Período: ${financiamiento.fechaInicio} - ${financiamiento.fechaFin}',
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.payment, size: 18, color: Colors.orange),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Cuotas: ${financiamiento.cuotas}',
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FinanciamientoDetallePage(
+                                        idFinanciamiento: financiamiento.idFinanciamiento,
+                                        moneda: financiamiento.moneda,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Ver detalles',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

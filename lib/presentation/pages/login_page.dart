@@ -1,0 +1,239 @@
+import 'package:arequipagocreditos/presentation/pages/pages.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _dniController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _dniController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _login() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.login(
+        _dniController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    }
+  }
+
+  String? _validateDni(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Ingrese su DNI';
+    }
+    if (value.length != 8) {
+      return 'El DNI debe tener 8 dígitos';
+    }
+    if (!RegExp(r'^\d+$').hasMatch(value)) {
+      return 'El DNI solo debe contener números';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Ingrese su contraseña';
+    }
+    if (value.length < 3) {
+      return 'La contraseña debe tener al menos 3 caracteres';
+    }
+    return null;
+  }
+
+  void _showPasswordChangeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Cambio de Contraseña Requerido'),
+        content: const Text(
+          'Para continuar, necesitas cambiar tu contraseña por una nueva.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordPage(),
+                ),
+              );
+            },
+            child: const Text('Cambiar Contraseña'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.primary,
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          // Manejar navegación después del login exitoso
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+              final user = authProvider.currentUser!;
+              
+              if (user.flag == 1) {
+                // Si necesita cambiar contraseña, mostrar diálogo
+                _showPasswordChangeDialog(context);
+              } else {
+                // Navegación normal al dashboard
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardPage(),
+                  ),
+                );
+              }
+            }
+            
+            // Mostrar mensaje de error si existe
+            if (authProvider.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(authProvider.errorMessage!),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              authProvider.clearError();
+            }
+          });
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('images/logo.png', height: 150),
+                    const SizedBox(height: 40),
+                    TextFormField(
+                      controller: _dniController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 8,
+                      validator: _validateDni,
+                      decoration: const InputDecoration(
+                        hintText: 'DNI',
+                        prefixIcon: Icon(Icons.person),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide.none,
+                        ),
+                        counterText: '',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      validator: _validatePassword,
+                      decoration: const InputDecoration(
+                        hintText: 'Contraseña',
+                        prefixIcon: Icon(Icons.lock),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: authProvider.isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          foregroundColor: AppTheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: authProvider.isLoading
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'Iniciando sesión...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Text(
+                                'INICIAR SESIÓN',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: authProvider.isLoading ? null : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PasswordRecoveryPage(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "¿Olvidó su contraseña?",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
