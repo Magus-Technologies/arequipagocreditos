@@ -22,7 +22,6 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   Future<List<FinanciamientoModel>> getFinanciamientos(int idConductor, int tipo) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}/list-financiamiento/$idConductor/$tipo');
-      print(url);
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);

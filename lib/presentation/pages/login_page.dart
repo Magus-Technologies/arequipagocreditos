@@ -171,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: authProvider.isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
-                          foregroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -207,24 +207,30 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    TextButton(
-                      onPressed: authProvider.isLoading ? null : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PasswordRecoveryPage(),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        TextButton(
+                          onPressed: authProvider.isLoading ? null : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PasswordRecoveryPage(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "¿Olvidó su contraseña?",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 15,
+                              fontWeight: FontWeight.normal,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        );
-                      },
-                      child: const Text(
-                        "¿Olvidó su contraseña?",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          decoration: TextDecoration.underline,
                         ),
-                      ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                   ],

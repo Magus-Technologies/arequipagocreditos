@@ -79,41 +79,41 @@ class _HistorialCompletoPageState extends State<HistorialCompletoPage> {
                         ),
                       ),
                     ),
-                    Consumer<AuthProvider>(
-                      builder: (context, authProvider, child) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: authProvider.isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.analytics_outlined,
-                                    color: Colors.black87,
-                                    size: 20,
-                                  ),
-                            onPressed: authProvider.isLoading ? null : () {
-                              // Aquí podrías agregar funcionalidad para exportar o compartir el historial
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Funcionalidad de exportación próximamente'),
-                                ),
-                              );
-                            },
-                            tooltip: 'Exportar historial',
-                          ),
-                        );
-                      },
-                    ),
+                    // Consumer<AuthProvider>(
+                    //   builder: (context, authProvider, child) {
+                    //     return Container(
+                    //       decoration: BoxDecoration(
+                    //         color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                    //         borderRadius: BorderRadius.circular(12),
+                    //       ),
+                    //       child: IconButton(
+                    //         icon: authProvider.isLoading
+                    //             ? const SizedBox(
+                    //                 width: 20,
+                    //                 height: 20,
+                    //                 child: CircularProgressIndicator(
+                    //                   strokeWidth: 2,
+                    //                   valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                    //                 ),
+                    //               )
+                    //             : const Icon(
+                    //                 Icons.analytics_outlined,
+                    //                 color: Colors.black87,
+                    //                 size: 20,
+                    //               ),
+                    //         onPressed: authProvider.isLoading ? null : () {
+                    //           // Aquí podrías agregar funcionalidad para exportar o compartir el historial
+                    //           ScaffoldMessenger.of(context).showSnackBar(
+                    //             const SnackBar(
+                    //               content: Text('Funcionalidad de exportación próximamente'),
+                    //             ),
+                    //           );
+                    //         },
+                    //         tooltip: 'Exportar historial',
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
                   ],
                 ),
               ),

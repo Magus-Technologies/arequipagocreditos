@@ -68,11 +68,15 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                               decoration: BoxDecoration(
                                 color: Colors.white.withAlpha((0.3 * 255).toInt()),
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                                  width: 1,
+                                ),
                               ),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.arrow_back_ios_new,
-                                  color: Colors.white,
+                                  color: Colors.black,
                                   size: 20,
                                 ),
                                 onPressed: () => Navigator.pop(context),
@@ -83,9 +87,16 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                                 'Detalle de Cuotas',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Colors.black,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black26,
+                                      offset: Offset(0, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -95,6 +106,10 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                                   decoration: BoxDecoration(
                                     color: Colors.white.withAlpha((0.3 * 255).toInt()),
                                     borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                                      width: 1,
+                                    ),
                                   ),
                                   child: IconButton(
                                     icon: financiamientoProvider.isLoading
@@ -103,12 +118,12 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                                             height: 20,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                                             ),
                                           )
                                         : const Icon(
                                             Icons.refresh,
-                                            color: Colors.white,
+                                            color: Colors.black,
                                             size: 20,
                                           ),
                                     onPressed: financiamientoProvider.isLoading ? null : _fetchCuotas,
@@ -123,12 +138,19 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.15 * 255).toInt()),
+                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                              width: 1,
+                              color: Colors.white.withAlpha((0.4 * 255).toInt()),
+                              width: 1.5,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withAlpha((0.1 * 255).toInt()),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Column(
                             children: [
@@ -138,42 +160,58 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                                   const Text(
                                     'ID Financiamiento:',
                                     style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
+                                      color: Colors.black,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  Text(
-                                    '${widget.idFinanciamiento}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '#${widget.idFinanciamiento}',
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Moneda:',
                                     style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
+                                      color: Colors.black,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  Text(
-                                    widget.moneda,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      widget.moneda,
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Consumer<FinanciamientoProvider>(
                                 builder: (context, financiamientoProvider, child) {
                                   return Row(
@@ -182,16 +220,24 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                                       const Text(
                                         'Total Cuotas:',
                                         style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 14,
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      Text(
-                                        '${financiamientoProvider.cuotas.length} cuotas',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '${financiamientoProvider.cuotas.length} cuotas',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
