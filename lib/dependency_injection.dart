@@ -1,3 +1,6 @@
+import 'package:arequipagocreditos/data/datasources/resumen_crediticio_datasource.dart';
+import 'package:arequipagocreditos/domain/repositories/resumen_crediticio_repository.dart';
+import 'package:arequipagocreditos/data/repositories/resumen_crediticio_repository_impl.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -20,12 +23,14 @@ import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/financiamiento_usecases.dart';
 import 'domain/usecases/puntuacion_usecases.dart';
+import 'domain/usecases/get_resumen_crediticio_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cupones_provider.dart';
 import 'presentation/providers/financiamiento_provider.dart';
 import 'presentation/providers/puntuacion_provider.dart';
+import 'presentation/providers/resumen_crediticio_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -63,6 +68,14 @@ class DependencyInjection {
         getHistorialPuntosUseCase: getHistorialPuntosUseCase(),
         getBeneficiosUseCase: getBeneficiosUseCase(),
         actualizarPuntuacionUseCase: getActualizarPuntuacionUseCase(),
+
+      ),
+    ),
+
+    ChangeNotifierProvider<ResumenCrediticioProvider>(
+      create: (context) => ResumenCrediticioProvider(
+        getResumenCrediticioUseCase: getResumenCrediticioUseCase(),
+        
       ),
     ),
   ];
@@ -84,6 +97,10 @@ class DependencyInjection {
     remoteDataSource: _puntuacionRemoteDataSource,
   );
 
+  static ResumenCrediticioRepository get _resumenCrediticioRepository => ResumenCrediticioRepositoryImpl(
+    remoteDataSource: _resumenCrediticioRemoteDataSource,
+  );
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource => 
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -96,6 +113,9 @@ class DependencyInjection {
 
   static PuntuacionRemoteDataSource get _puntuacionRemoteDataSource => 
       PuntuacionRemoteDataSourceImpl(client: _httpClient);
+
+  static ResumenCrediticioRemoteDataSource get _resumenCrediticioRemoteDataSource =>
+      ResumenRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();
@@ -127,4 +147,7 @@ class DependencyInjection {
   static GetHistorialPuntosUseCase getHistorialPuntosUseCase() => GetHistorialPuntosUseCase(repository: _puntuacionRepository);
   static GetBeneficiosUseCase getBeneficiosUseCase() => GetBeneficiosUseCase(repository: _puntuacionRepository);
   static ActualizarPuntuacionUseCase getActualizarPuntuacionUseCase() => ActualizarPuntuacionUseCase(repository: _puntuacionRepository);
+
+  // Use Cases - Resumen Crediticio
+  static GetResumenCrediticioUseCase getResumenCrediticioUseCase() => GetResumenCrediticioUseCase(repository: _resumenCrediticioRepository);
 }

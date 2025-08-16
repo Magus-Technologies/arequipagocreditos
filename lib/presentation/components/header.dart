@@ -1,9 +1,11 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
 import 'package:arequipagocreditos/presentation/components/component_quick_stat.dart';
 import 'package:arequipagocreditos/presentation/components/header_icon.dart';
-import 'package:arequipagocreditos/presentation/pages/pages.dart';
+import 'package:arequipagocreditos/presentation/pages/perfil_page.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:arequipagocreditos/presentation/providers/resumen_crediticio_provider.dart';
+import 'package:provider/provider.dart';
 
 class Header extends StatefulWidget {
   final ConductorModel conductor;
@@ -14,7 +16,19 @@ class Header extends StatefulWidget {
   State<Header> createState() => _HeaderState();
 }
 
+
+
 class _HeaderState extends State<Header> {
+  @override
+  void initState() {
+    super.initState();
+    // Llama al provider para cargar los datos después del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ResumenCrediticioProvider>(context, listen: false);
+      provider.fetchResumen(widget.conductor.idConductor);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -98,36 +112,52 @@ class _HeaderState extends State<Header> {
             ],
           ),
           const SizedBox(height: 20),
-          // Carrusel de stats rápidas con diseño moderno
-          SizedBox(
-            height: 90,
-            child: PageView(
-              padEnds: false,
-              controller: PageController(viewportFraction: 0.8),
-              children: [
-                ComponentQuickStat(
-                  emoji: '💳',
-                  label: 'Créditos Activos',
-                  value: '${widget.conductor.tipo}',
-                  primaryColor: const Color(0xFF1F2937), // Negro-gris elegante
-                  secondaryColor: const Color(0xFF374151),
+          Consumer<ResumenCrediticioProvider>(
+            builder: (context, resumenProvider, _) {
+              if (resumenProvider.loading) {
+                return const SizedBox(
+                  height: 90,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (resumenProvider.error != null) {
+                return SizedBox(
+                  height: 90,
+                  child: Center(child: Text('Error al cargar datos')), // Puedes personalizar el error
+                );
+              }
+              final resumen = resumenProvider.resumen;
+              return SizedBox(
+                height: 90,
+                child: PageView(
+                  padEnds: false,
+                  controller: PageController(viewportFraction: 0.8),
+                  children: [
+                    ComponentQuickStat(
+                      emoji: '💳',
+                      label: 'Créditos Activos',
+                      value: resumen != null ? resumen.creditosActivos.toString() : '-',
+                      primaryColor: const Color(0xFF1F2937),
+                      secondaryColor: const Color(0xFF374151),
+                    ),
+                    ComponentQuickStat(
+                      emoji: '⭐',
+                      label: 'Puntaje Crediticio',
+                      value: resumen != null ? resumen.puntaje.toString() : '-',
+                      primaryColor: AppTheme.primary,
+                      secondaryColor: const Color(0xFFF59E0B),
+                    ),
+                    ComponentQuickStat(
+                      emoji: '🎁',
+                      label: 'Cupones Disponibles',
+                      value: resumen != null ? resumen.cuponesDisponibles.toString() : '-',
+                      primaryColor: const Color(0xFF4B5563),
+                      secondaryColor: const Color(0xFF6B7280),
+                    ),
+                  ],
                 ),
-                ComponentQuickStat(
-                  emoji: '⭐',
-                  label: 'Puntaje Crediticio',
-                  value: 'Excelente',
-                  primaryColor: AppTheme.primary, // Amarillo de tu tema
-                  secondaryColor: const Color(0xFFF59E0B), // Amarillo más oscuro
-                ),
-                ComponentQuickStat(
-                  emoji: '🎁',
-                  label: 'Cupones Disponibles',
-                  value: '3 Nuevos',
-                  primaryColor: const Color(0xFF4B5563), // Gris elegante
-                  secondaryColor: const Color(0xFF6B7280),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),

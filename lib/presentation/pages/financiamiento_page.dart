@@ -37,16 +37,6 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Financiamientos'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           if (authProvider.isLoading) {
