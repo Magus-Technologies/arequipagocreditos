@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
 import '../../core/utils/either.dart';
@@ -30,7 +31,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> logout() async {
     try {
       await remoteDataSource.logout();
-      return Either.right(());
+      return Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {
@@ -55,14 +56,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, ConductorEntity>> refreshUserData() async {
+  Future<Either<Failure, ConductorEntity?>> refreshUserData() async {
     try {
-      // TODO: Implementar refresh de datos del usuario
-      final currentUser = await remoteDataSource.getCurrentUser();
-      if (currentUser != null) {
-        return Either.right(currentUser.toEntity());
+      final conductorModel = await remoteDataSource.refreshUserData();
+      if (conductorModel != null) {
+        return Either.right(conductorModel.toEntity());
       } else {
-        return Either.left(const CacheFailure('No hay usuario logueado'));
+        return Either.right(null);
       }
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -74,9 +74,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> updatePassword(String newPassword) async {
     try {
-      // TODO: Implementar actualización de contraseña
-      await Future.delayed(const Duration(milliseconds: 500));
-      return Either.right(());
+      final result = await remoteDataSource.changePassword(newPassword);
+      if (result['success'] == true) {
+        return Either.right(null);
+      } else {
+        return Either.left(ServerFailure(result['message'] ?? 'Error al cambiar contraseña'));
+      }
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
     } on ServerException catch (e) {
@@ -87,11 +90,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> resetPassword(String dni, String newPassword) async {
+  Future<Either<Failure, Map<String, dynamic>>> validateDniForPasswordRecovery(String dni) async {
     try {
-      // TODO: Implementar reset de contraseña
-      await Future.delayed(const Duration(milliseconds: 500));
-      return Either.right(());
+      final result = await remoteDataSource.validateDniForPasswordRecovery(dni);
+      return Either.right(result);
+    } on ValidationException catch (e) {
+      return Either.left(ValidationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error al validar DNI: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> resetPassword(String dni, String newPassword) async {
+    try {
+      final result = await remoteDataSource.resetPassword(dni, newPassword);
+      return Either.right(result);
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
     } on ServerException catch (e) {
@@ -102,29 +118,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> validateDni(String dni) async {
+  Future<Either<Failure, Map<String, dynamic>>> uploadProfilePicture(File imageFile) async {
     try {
-      // TODO: Implementar validación de DNI
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      if (dni.length != 8 || !RegExp(r'^\d+$').hasMatch(dni)) {
-        return Either.right(false);
-      }
-      
-      return Either.right(true);
-    } on ServerException catch (e) {
-      return Either.left(ServerFailure(e.message));
-    } catch (e) {
-      return Either.left(UnknownFailure('Error al validar DNI: $e'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, String>> uploadProfilePicture(String imagePath) async {
-    try {
-      // TODO: Implementar subida de foto de perfil
-      await Future.delayed(const Duration(seconds: 2));
-      return Either.right('https://example.com/uploaded-image.jpg');
+      final result = await remoteDataSource.uploadProfilePicture(imageFile);
+      return Either.right(result);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {

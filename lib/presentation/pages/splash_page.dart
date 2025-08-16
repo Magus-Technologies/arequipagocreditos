@@ -78,7 +78,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                 end: Alignment.bottomCenter,
                 colors: [
                   AppTheme.primary,
-                  AppTheme.primary.withOpacity(0.8),
+                  AppTheme.primary.withAlpha((0.8 * 255).toInt()),
                 ],
               ),
             ),
@@ -100,11 +100,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                             child: Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withAlpha((0.1 * 255).toInt()),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
@@ -181,7 +181,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withAlpha((0.1 * 255).toInt()),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(

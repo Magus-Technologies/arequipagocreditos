@@ -1,7 +1,8 @@
 import 'package:arequipagocreditos/data/models/cupon_model.dart';
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
-import '../../../services/cupones_service.dart';
+import '../../core/utils/date_utils.dart' as app_date_utils;
+import '../../core/utils/cupon_utils.dart';
 
 class CuponCard extends StatelessWidget {
   final CuponModel cupon;
@@ -275,7 +276,7 @@ class CuponCard extends StatelessWidget {
               ),
             ),
             Text(
-              CuponesService.formatDate(cupon.fechaFin),
+              app_date_utils.DateUtils.formatDate(cupon.fechaFin),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -348,7 +349,7 @@ class CuponCard extends StatelessWidget {
   }
 
   IconData _getCategoryIcon() {
-    String displayCategory = CuponesService.getCategoryDisplayName(cupon.categoria);
+    String displayCategory = CuponUtils.getCategoryDisplayName(cupon.categoria);
     switch (displayCategory) {
       case 'Restaurantes':
         return Icons.restaurant;

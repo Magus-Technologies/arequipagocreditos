@@ -84,7 +84,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
         secondProduct: secondProduct,
         moneda: moneda,
       );
-
+      
+  @override
   FinanciamientoModel copyWith({
     int? idFinanciamiento,
     int? idConductor,

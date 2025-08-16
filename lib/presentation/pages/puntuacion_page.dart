@@ -1,10 +1,9 @@
-import 'package:arequipagocreditos/data/models/puntuacion_model.dart';
 import 'package:arequipagocreditos/presentation/components/historial_card.dart';
 import 'package:arequipagocreditos/presentation/components/proximo_nivel_card.dart';
 import 'package:arequipagocreditos/presentation/components/puntaje_card.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
+import 'package:arequipagocreditos/presentation/providers/puntuacion_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
@@ -17,9 +16,6 @@ class PuntuacionPage extends StatefulWidget {
 
 class _PuntuacionPageState extends State<PuntuacionPage>
     with TickerProviderStateMixin {
-  PuntuacionModel? _puntuacion;
-  List<HistorialPuntosModel> _historial = [];
-  bool _isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -33,7 +29,9 @@ class _PuntuacionPageState extends State<PuntuacionPage>
     _scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   @override
@@ -43,29 +41,12 @@ class _PuntuacionPageState extends State<PuntuacionPage>
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final puntuacion = await ApiService.getPuntuacionCredito();
-      final historial = await ApiService.getHistorialPuntos();
-
-      setState(() {
-        _puntuacion = puntuacion;
-        _historial = historial;
-        _isLoading = false;
-      });
-
+    final puntuacionProvider = Provider.of<PuntuacionProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.currentUser?.idConductor != null) {
+      await puntuacionProvider.loadAllData(authProvider.currentUser!.idConductor, authProvider.currentUser!.tipo);
       _animationController.forward();
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al cargar los datos de puntuación'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -121,15 +102,15 @@ class _PuntuacionPageState extends State<PuntuacionPage>
                             ),
                           ),
                         ),
-                        Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
+                        Consumer<PuntuacionProvider>(
+                          builder: (context, puntuacionProvider, child) {
                             return Container(
                               decoration: BoxDecoration(
                                 color: Colors.white.withAlpha((0.3 * 255).toInt()),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: IconButton(
-                                icon: authProvider.isLoading 
+                                icon: puntuacionProvider.isLoading 
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
@@ -143,7 +124,7 @@ class _PuntuacionPageState extends State<PuntuacionPage>
                                       color: Colors.black87,
                                       size: 20,
                                     ),
-                                onPressed: authProvider.isLoading ? null : _loadData,
+                                onPressed: puntuacionProvider.isLoading ? null : _loadData,
                               ),
                             );
                           },
@@ -171,7 +152,11 @@ class _PuntuacionPageState extends State<PuntuacionPage>
                     ),
                     child: Container(
                       decoration: const BoxDecoration(color: Colors.white),
-                      child: _buildContent(),
+                      child: Consumer<PuntuacionProvider>(
+                        builder: (context, puntuacionProvider, child) {
+                          return _buildContent(puntuacionProvider);
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -183,8 +168,8 @@ class _PuntuacionPageState extends State<PuntuacionPage>
     );
   }
 
-  Widget _buildContent() {
-    if (_isLoading) {
+  Widget _buildContent(PuntuacionProvider puntuacionProvider) {
+    if (puntuacionProvider.isLoading) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -204,7 +189,40 @@ class _PuntuacionPageState extends State<PuntuacionPage>
       );
     }
 
-    if (_puntuacion == null) {
+    if (puntuacionProvider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              puntuacionProvider.error!,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                puntuacionProvider.clearError();
+                _loadData();
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (puntuacionProvider.puntuacion == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -243,11 +261,11 @@ class _PuntuacionPageState extends State<PuntuacionPage>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            PuntajeCard(puntuacion: _puntuacion!, scaleAnimation: _scaleAnimation),
+            PuntajeCard(puntuacion: puntuacionProvider.puntuacion!, scaleAnimation: _scaleAnimation),
             const SizedBox(height: 20),
-            ProximoNivelCard(puntuacion: _puntuacion!),
+            ProximoNivelCard(puntuacion: puntuacionProvider.puntuacion!),
             const SizedBox(height: 20),
-            HistorialCard(historial: _historial),
+            HistorialCard(historial: puntuacionProvider.historial),
           ],
         ),
       ),

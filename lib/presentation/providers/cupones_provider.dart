@@ -118,13 +118,13 @@ class CuponesProvider extends ChangeNotifier {
 
   String _mapFailureToMessage(Failure failure) {
     switch (failure.runtimeType) {
-      case ValidationFailure:
+      case ValidationFailure _:
         return failure.message;
-      case ServerFailure:
+      case ServerFailure _:
         return 'Error del servidor. Intenta nuevamente.';
-      case NetworkFailure:
+      case NetworkFailure _:
         return 'Sin conexión a internet. Verifica tu conexión.';
-      case CacheFailure:
+      case CacheFailure _:
         return 'Error de almacenamiento. Reinicia la aplicación.';
       default:
         return 'Ha ocurrido un error inesperado.';

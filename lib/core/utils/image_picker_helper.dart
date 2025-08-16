@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:arequipagocreditos/services/api_service.dart';
+import 'package:arequipagocreditos/dependency_injection.dart';
+import 'package:arequipagocreditos/core/errors/failures.dart';
+import 'package:arequipagocreditos/core/utils/either.dart';
 
 class ImagePickerHelper {
   static final ImagePicker _picker = ImagePicker();
@@ -103,23 +105,34 @@ class ImagePickerHelper {
     required BuildContext context,
   }) async {
     try {
-      Map<String, dynamic> result = await ApiService.uploadProfilePicture(
-        imageFile,
-      );
+      final uploadUseCase = DependencyInjection.uploadProfilePictureUseCase();
+      final Either<Failure, Map<String, dynamic>> result = 
+          await uploadUseCase.call(imageFile.path);
 
       setLoading(false);
 
-      if (result['success']) {
-        onSuccess();
-        if (context.mounted) {
-          _showSuccessSnackBar(context, result['message']);
-        }
-      } else {
-        onError(result['message']);
-        if (context.mounted) {
-          _showErrorSnackBar(context, result['message']);
-        }
-      }
+      result.fold(
+        (failure) {
+          String errorMessage = 'Error al subir la imagen';
+          if (failure is ValidationFailure) {
+            errorMessage = failure.message;
+          } else if (failure is ServerFailure) {
+            errorMessage = failure.message;
+          }
+          
+          onError(errorMessage);
+          if (context.mounted) {
+            _showErrorSnackBar(context, errorMessage);
+          }
+        },
+        (data) {
+          onSuccess();
+          if (context.mounted) {
+            final message = data['message'] ?? 'Imagen subida exitosamente';
+            _showSuccessSnackBar(context, message);
+          }
+        },
+      );
     } catch (e) {
       setLoading(false);
       onError("Error al subir la imagen: ${e.toString()}");

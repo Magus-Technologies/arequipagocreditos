@@ -25,6 +25,7 @@ import 'domain/usecases/puntuacion_usecases.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cupones_provider.dart';
 import 'presentation/providers/financiamiento_provider.dart';
+import 'presentation/providers/puntuacion_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -53,6 +54,15 @@ class DependencyInjection {
         getCuotasFinanciamientoUseCase: getCuotasFinanciamientoUseCase(),
         pagarCuotaUseCase: getPagarCuotaUseCase(),
         generarReporteCuotaUseCase: getGenerarReporteCuotaUseCase(),
+      ),
+    ),
+
+    ChangeNotifierProvider<PuntuacionProvider>(
+      create: (context) => PuntuacionProvider(
+        getPuntuacionUseCase: getPuntuacionUseCase(),
+        getHistorialPuntosUseCase: getHistorialPuntosUseCase(),
+        getBeneficiosUseCase: getBeneficiosUseCase(),
+        actualizarPuntuacionUseCase: getActualizarPuntuacionUseCase(),
       ),
     ),
   ];
@@ -95,6 +105,10 @@ class DependencyInjection {
   static LogoutUseCase _getLogoutUseCase() => LogoutUseCase(_authRepository);
   static GetLoggedUserUseCase _getLoggedUserUseCase() => GetLoggedUserUseCase(_authRepository);
   static ChangePasswordUseCase _getChangePasswordUseCase() => ChangePasswordUseCase(_authRepository);
+  static RefreshUserDataUseCase refreshUserDataUseCase() => RefreshUserDataUseCase(_authRepository);
+  static ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase() => ValidateDniForPasswordRecoveryUseCase(_authRepository);
+  static ResetPasswordUseCase resetPasswordUseCase() => ResetPasswordUseCase(_authRepository);
+  static UploadProfilePictureUseCase uploadProfilePictureUseCase() => UploadProfilePictureUseCase(_authRepository);
 
   // Use Cases - Cupones
   static GetCuponesUseCase _getCuponesUseCase() => GetCuponesUseCase(_cuponesRepository);

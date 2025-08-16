@@ -10,8 +10,8 @@ class GetPuntuacionUseCase {
 
   GetPuntuacionUseCase({required this.repository});
 
-  Future<Either<Failure, PuntuacionEntity>> call(int idConductor) async {
-    return await repository.getPuntuacion(idConductor);
+  Future<Either<Failure, PuntuacionEntity>> call(int idConductor, int tipo) async {
+    return await repository.getPuntuacion(idConductor, tipo);
   }
 }
 
@@ -20,8 +20,8 @@ class GetHistorialPuntosUseCase {
 
   GetHistorialPuntosUseCase({required this.repository});
 
-  Future<Either<Failure, List<HistorialPuntosEntity>>> call(int idConductor) async {
-    return await repository.getHistorialPuntos(idConductor);
+  Future<Either<Failure, List<HistorialPuntosEntity>>> call(int idConductor, int tipo) async {
+    return await repository.getHistorialPuntos(idConductor, tipo);
   }
 }
 
@@ -40,12 +40,12 @@ class ActualizarPuntuacionUseCase {
 
   ActualizarPuntuacionUseCase({required this.repository});
 
-  Future<Either<Failure, void>> call(int idConductor, int nuevoPuntaje) async {
+  Future<Either<Failure, void>> call(int idConductor, int nuevoPuntaje, int tipo) async {
     // Validaciones de negocio
     if (nuevoPuntaje < 0 || nuevoPuntaje > 100) {
       return Either.left(const ValidationFailure('El puntaje debe estar entre 0 y 100'));
     }
     
-    return await repository.actualizarPuntuacion(idConductor, nuevoPuntaje);
+    return await repository.actualizarPuntuacion(idConductor, nuevoPuntaje, tipo);
   }
 }

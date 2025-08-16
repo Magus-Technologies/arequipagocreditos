@@ -1,9 +1,9 @@
 import 'package:arequipagocreditos/data/models/cuota_financiamiento_model.dart';
 import 'package:arequipagocreditos/presentation/components/cuota_card.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
+import 'package:arequipagocreditos/presentation/providers/financiamiento_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
-import 'package:arequipagocreditos/services/api_service.dart';
 import 'package:provider/provider.dart';
 
 class FinanciamientoDetallePage extends StatefulWidget {
@@ -22,69 +22,23 @@ class FinanciamientoDetallePage extends StatefulWidget {
 }
 
 class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
-  List<CuotaFinanciamientoModel> cuotas = [];
-  bool isLoading = true;
-  String errorMessage = '';
-
   @override
   void initState() {
     super.initState();
-    _fetchCuotas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchCuotas();
+    });
   }
 
   Future<void> _fetchCuotas() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = '';
-    });
-
-    try {
-      List<CuotaFinanciamientoModel> fetchedCuotas = await ApiService.fetchCuotas(
-        widget.idFinanciamiento,
-      );
-      if (mounted) {
-        setState(() {
-          cuotas = fetchedCuotas;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          errorMessage = "Error al cargar las cuotas: $e";
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showErrorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error"),
-        content: Text(errorMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cerrar"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _fetchCuotas();
-            },
-            child: const Text("Reintentar"),
-          ),
-        ],
-      ),
-    );
+    final financiamientoProvider = Provider.of<FinanciamientoProvider>(context, listen: false);
+    await financiamientoProvider.loadCuotasFinanciamiento(widget.idFinanciamiento);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -103,143 +57,153 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
               // Header moderno
               Container(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // AppBar personalizado
-                    Row(
+                child: Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    return Column(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.black87,
-                              size: 20,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Detalle Financiamiento',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
-                            return Container(
+                        // AppBar personalizado
+                        Row(
+                          children: [
+                            Container(
                               decoration: BoxDecoration(
                                 color: Colors.white.withAlpha((0.3 * 255).toInt()),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: IconButton(
-                                icon: authProvider.isLoading || isLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.refresh,
-                                        color: Colors.black87,
-                                        size: 20,
-                                      ),
-                                onPressed: (authProvider.isLoading || isLoading) ? null : _fetchCuotas,
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: () => Navigator.pop(context),
                               ),
-                            );
-                          },
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Detalle de Cuotas',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Consumer<FinanciamientoProvider>(
+                              builder: (context, financiamientoProvider, child) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: IconButton(
+                                    icon: financiamientoProvider.isLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.refresh,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                    onPressed: financiamientoProvider.isLoading ? null : _fetchCuotas,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Info del financiamiento
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha((0.15 * 255).toInt()),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'ID Financiamiento:',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${widget.idFinanciamiento}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Moneda:',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.moneda,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Consumer<FinanciamientoProvider>(
+                                builder: (context, financiamientoProvider, child) {
+                                  return Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Total Cuotas:',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${financiamientoProvider.cuotas.length} cuotas',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 20),
-                    // Información del financiamiento
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha((0.5 * 255).toInt()),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.account_balance_wallet,
-                              color: Colors.black87,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Financiamiento',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'ID: ${widget.idFinanciamiento}',
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'Moneda: ${widget.moneda}',
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withAlpha((0.2 * 255).toInt()),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${cuotas.length} cuotas',
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               // Contenido principal
@@ -258,7 +222,14 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
-                    child: _buildContent(),
+                    child: Container(
+                      decoration: const BoxDecoration(color: Colors.white),
+                      child: Consumer<FinanciamientoProvider>(
+                        builder: (context, financiamientoProvider, child) {
+                          return _buildContent(financiamientoProvider);
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -269,19 +240,20 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
     );
   }
 
-  Widget _buildContent() {
-    if (isLoading) {
+  Widget _buildContent(FinanciamientoProvider financiamientoProvider) {
+    if (financiamientoProvider.isLoading) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
+            CircularProgressIndicator(color: Colors.amber, strokeWidth: 3),
             SizedBox(height: 16),
             Text(
               'Cargando cuotas...',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -289,7 +261,7 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
       );
     }
 
-    if (errorMessage.isNotEmpty) {
+    if (financiamientoProvider.errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -301,39 +273,26 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Error al cargar las cuotas',
+              'Error al cargar cuotas',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                errorMessage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
+            Text(
+              financiamientoProvider.errorMessage!,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _fetchCuotas,
-                  child: const Text('Reintentar'),
-                ),
-                const SizedBox(width: 12),
-                TextButton(
-                  onPressed: _showErrorDialog,
-                  child: const Text('Ver detalles'),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: _fetchCuotas,
+              child: const Text('Reintentar'),
             ),
           ],
         ),
       );
     }
 
-    if (cuotas.isEmpty) {
+    if (financiamientoProvider.cuotas.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -345,12 +304,12 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No hay cuotas disponibles',
+              'No hay cuotas',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             const Text(
-              'Este financiamiento no tiene cuotas registradas.',
+              'No se encontraron cuotas para este financiamiento.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -365,15 +324,29 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
 
     return RefreshIndicator(
       onRefresh: _fetchCuotas,
+      color: AppTheme.primary,
+      backgroundColor: Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: cuotas.length,
+        itemCount: financiamientoProvider.cuotas.length,
         itemBuilder: (context, index) {
-          final cuota = cuotas[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
+          final cuotaEntity = financiamientoProvider.cuotas[index];
+          // Convertir entidad a modelo para el componente
+          final cuotaModel = CuotaFinanciamientoModel(
+            id: cuotaEntity.id,
+            idFinanciamiento: cuotaEntity.idFinanciamiento,
+            numeroCuota: cuotaEntity.numeroCuota,
+            monto: cuotaEntity.monto,
+            fechaVencimiento: cuotaEntity.fechaVencimiento,
+            estado: cuotaEntity.estado,
+            fechaPago: cuotaEntity.fechaPago,
+            idPago: cuotaEntity.idPago,
+          );
+          
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
             child: CuotaCard(
-              cuota: cuota,
+              cuota: cuotaModel,
               moneda: widget.moneda,
             ),
           );

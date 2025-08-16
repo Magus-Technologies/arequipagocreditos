@@ -13,9 +13,9 @@ class PuntuacionRepositoryImpl implements PuntuacionRepository {
   PuntuacionRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, PuntuacionEntity>> getPuntuacion(int idConductor) async {
+  Future<Either<Failure, PuntuacionEntity>> getPuntuacion(int idConductor, int tipo) async {
     try {
-      final puntuacionModel = await remoteDataSource.getPuntuacion(idConductor);
+      final puntuacionModel = await remoteDataSource.getPuntuacion(idConductor, tipo);
       return Either.right(puntuacionModel.toEntity());
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
@@ -29,9 +29,9 @@ class PuntuacionRepositoryImpl implements PuntuacionRepository {
   }
 
   @override
-  Future<Either<Failure, List<HistorialPuntosEntity>>> getHistorialPuntos(int idConductor) async {
+  Future<Either<Failure, List<HistorialPuntosEntity>>> getHistorialPuntos(int idConductor, int tipo) async {
     try {
-      final historialModels = await remoteDataSource.getHistorialPuntos(idConductor);
+      final historialModels = await remoteDataSource.getHistorialPuntos(idConductor, tipo);
       final entities = historialModels.map((model) => model.toEntity()).toList();
       return Either.right(entities);
     } on ServerException catch (e) {
@@ -55,10 +55,10 @@ class PuntuacionRepositoryImpl implements PuntuacionRepository {
   }
 
   @override
-  Future<Either<Failure, void>> actualizarPuntuacion(int idConductor, int nuevoPuntaje) async {
+  Future<Either<Failure, void>> actualizarPuntuacion(int idConductor, int nuevoPuntaje, int tipo) async {
     try {
-      await remoteDataSource.actualizarPuntuacion(idConductor, nuevoPuntaje);
-      return Either.right(());
+      await remoteDataSource.actualizarPuntuacion(idConductor, nuevoPuntaje, tipo);
+      return Either.right(null);
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
     } on ServerException catch (e) {

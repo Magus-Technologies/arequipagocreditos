@@ -14,7 +14,7 @@ class Either<L, R> {
     _right = right;
     
   /// Special constructor for void success results
-  static Either<L, void> rightVoid<L>() => Either<L, void>.right(());
+  static Either<L, void> rightVoid<L>() => Either<L, void>.right(null);
   
   bool get isLeft => _left != null;
   bool get isRight => _left == null; // Si no es left, entonces es right
@@ -52,7 +52,10 @@ class Either<L, R> {
   /// Transform the Either by applying the appropriate function
   T fold<T>(T Function(L) onLeft, T Function(R) onRight) {
     if (isLeft) {
-      return onLeft(_left!);
+      if (_left == null) {
+        throw StateError('Left value is null');
+      }
+      return onLeft(_left as L);
     } else {
       return onRight(_right as R);
     }
@@ -63,7 +66,10 @@ class Either<L, R> {
     if (isRight) {
       return Either.right(f(_right as R));
     } else {
-      return Either.left(_left!);
+      if (_left == null) {
+        throw StateError('Left value is null');
+      }
+      return Either.left(_left as L);
     }
   }
   
@@ -72,7 +78,10 @@ class Either<L, R> {
     if (isRight) {
       return f(_right as R);
     } else {
-      return Either.left(_left!);
+      if (_left == null) {
+        throw StateError('Left value is null');
+      }
+      return Either.left(_left as L);
     }
   }
 }

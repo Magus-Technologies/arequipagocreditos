@@ -1,7 +1,7 @@
 import 'package:arequipagocreditos/data/models/cupon_model.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../services/cupones_service.dart';
+import '../../core/utils/date_utils.dart' as app_date_utils;
 
 class ConfirmacionUsoCuponDialog extends StatelessWidget {
   final CuponModel cupon;
@@ -135,7 +135,7 @@ class ConfirmacionUsoCuponDialog extends StatelessWidget {
           const SizedBox(height: 8),
           _buildInfoRow(
             Icons.schedule,
-            'Válido hasta: ${CuponesService.formatDate(cupon.fechaFin)}',
+            'Válido hasta: ${app_date_utils.DateUtils.formatDate(cupon.fechaFin)}',
             Colors.orange.shade600,
           ),
         ],

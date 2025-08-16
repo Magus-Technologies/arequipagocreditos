@@ -49,6 +49,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
         idPago: idPago,
       );
 
+  @override
   CuotaFinanciamientoModel copyWith({
     int? id,
     int? idFinanciamiento,

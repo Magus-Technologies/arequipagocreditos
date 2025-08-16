@@ -1,7 +1,6 @@
-import 'package:arequipagocreditos/data/models/financiamiento_model.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
-import 'package:arequipagocreditos/presentation/pages/pages.dart';
-import 'package:arequipagocreditos/services/api_service.dart';
+import 'package:arequipagocreditos/presentation/providers/financiamiento_provider.dart';
+import 'package:arequipagocreditos/presentation/pages/financiamiento_detalle_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,21 +19,18 @@ class FinanciamientoPage extends StatefulWidget {
 }
 
 class _FinanciamientoPageState extends State<FinanciamientoPage> {
-  late Future<List<FinanciamientoModel>> _futureFinanciamientos;
 
   @override
   void initState() {
     super.initState();
-    _loadFinanciamientos();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadFinanciamientos();
+    });
   }
 
   Future<void> _loadFinanciamientos() async {
-    setState(() {
-      _futureFinanciamientos = ApiService.fetchFinanciamientos(
-        widget.idConductor,
-        widget.tipo,
-      );
-    });
+    final financiamientoProvider = Provider.of<FinanciamientoProvider>(context, listen: false);
+    await financiamientoProvider.loadFinanciamientos(idConductor: widget.idConductor, tipo: widget.tipo);
   }
 
   @override
@@ -59,12 +55,11 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: FutureBuilder<List<FinanciamientoModel>>(
-              future: _futureFinanciamientos,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: Consumer<FinanciamientoProvider>(
+              builder: (context, financiamientoProvider, child) {
+                if (financiamientoProvider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
+                } else if (financiamientoProvider.errorMessage != null) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -81,7 +76,7 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Error: ${snapshot.error}',
+                          'Error: ${financiamientoProvider.errorMessage}',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
@@ -93,7 +88,7 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                       ],
                     ),
                   );
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                } else if (financiamientoProvider.financiamientos.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -126,9 +121,9 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                 return RefreshIndicator(
                   onRefresh: _loadFinanciamientos,
                   child: ListView.builder(
-                    itemCount: snapshot.data!.length,
+                    itemCount: financiamientoProvider.financiamientos.length,
                     itemBuilder: (context, index) {
-                      final financiamiento = snapshot.data![index];
+                      final financiamiento = financiamientoProvider.financiamientos[index];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
@@ -155,7 +150,7 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    color: Theme.of(context).primaryColor.withAlpha((0.1 * 255).toInt()),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -174,7 +169,7 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
+                                    color: Colors.green.withAlpha((0.1 * 255).toInt()),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(

@@ -234,13 +234,13 @@ class FinanciamientoProvider extends ChangeNotifier {
 
   String _getFailureMessage(Failure failure) {
     switch (failure.runtimeType) {
-      case ServerFailure:
+      case ServerFailure _:
         return 'Error del servidor. Intente nuevamente.';
-      case NetworkFailure:
+      case NetworkFailure _:
         return 'Error de conexión. Verifique su internet.';
-      case AuthenticationFailure:
+      case AuthenticationFailure _:
         return 'Sesión expirada. Inicie sesión nuevamente.';
-      case ValidationFailure:
+      case ValidationFailure _:
         return 'Datos inválidos. Verifique la información.';
       default:
         return 'Error inesperado. Intente nuevamente.';
