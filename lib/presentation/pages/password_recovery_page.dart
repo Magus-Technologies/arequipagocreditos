@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
+import '../providers/auth_provider.dart';
+import 'reset_password_page.dart';
 
 class PasswordRecoveryPage extends StatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -28,43 +31,66 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
       _isLoading = true;
     });
 
-    // Simular validación
-    await Future.delayed(const Duration(seconds: 2));
-    
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final isValid = await authProvider.validateDniForPasswordRecovery(
+        _dniController.text.trim(),
+      );
 
-    // Mostrar resultado
-    _showResult(true, 'DNI validado. Se enviará un código a tu teléfono registrado.');
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (isValid) {
+        // Navegar a la página de reset password
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ResetPasswordPage(dni: _dniController.text.trim()),
+          ),
+        );
+      } else {
+        // Mostrar error
+        _showResult(
+          false,
+          authProvider.errorMessage ??
+              'DNI no válido para recuperación de contraseña',
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showResult(false, 'Error inesperado. Intenta nuevamente.');
+    }
   }
 
   void _showResult(bool isSuccess, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Icon(
-          isSuccess ? Icons.check_circle : Icons.error,
-          color: isSuccess ? Colors.green : Colors.red,
-          size: 64,
-        ),
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (isSuccess) {
-                Navigator.of(context).pop(); // Regresar al login
-              }
-            },
-            child: const Text('Aceptar'),
+      builder:
+          (context) => AlertDialog(
+            title: Icon(
+              isSuccess ? Icons.check_circle : Icons.error,
+              color: isSuccess ? Colors.green : Colors.red,
+              size: 64,
+            ),
+            content: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Aceptar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -281,22 +307,25 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : const Text(
+                        'Validar DNI',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Validar DNI',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
           ],
         ),

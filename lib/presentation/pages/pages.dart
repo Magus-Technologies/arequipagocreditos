@@ -1,7 +1,6 @@
 // Exportar todas las páginas
 export 'login_page.dart';
 export 'perfil_page.dart';
-export 'change_password_page.dart';
 export 'cupones_page.dart';
 export 'dashboard_page.dart';
 export 'password_recovery_page.dart';

@@ -41,6 +41,7 @@ class DependencyInjection {
         logoutUseCase: _getLogoutUseCase(),
         getLoggedUserUseCase: _getLoggedUserUseCase(),
         changePasswordUseCase: _getChangePasswordUseCase(),
+        validateDniForPasswordRecoveryUseCase: validateDniForPasswordRecoveryUseCase(),
       ),
     ),
     

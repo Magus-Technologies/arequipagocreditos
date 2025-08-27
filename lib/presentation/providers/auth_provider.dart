@@ -10,16 +10,19 @@ class AuthProvider extends ChangeNotifier {
   final LogoutUseCase _logoutUseCase;
   final GetLoggedUserUseCase _getLoggedUserUseCase;
   final ChangePasswordUseCase _changePasswordUseCase;
+  final ValidateDniForPasswordRecoveryUseCase _validateDniForPasswordRecoveryUseCase;
   
   AuthProvider({
     required LoginUseCase loginUseCase,
     required LogoutUseCase logoutUseCase,
     required GetLoggedUserUseCase getLoggedUserUseCase,
     required ChangePasswordUseCase changePasswordUseCase,
+    required ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase,
   })  : _loginUseCase = loginUseCase,
         _logoutUseCase = logoutUseCase,
         _getLoggedUserUseCase = getLoggedUserUseCase,
-        _changePasswordUseCase = changePasswordUseCase;
+        _changePasswordUseCase = changePasswordUseCase,
+        _validateDniForPasswordRecoveryUseCase = validateDniForPasswordRecoveryUseCase;
 
   AuthStatus _status = AuthStatus.initial;
   ConductorEntity? _currentUser;
@@ -104,6 +107,25 @@ class AuthProvider extends ChangeNotifier {
       (_) {
         _errorMessage = null;
         _setStatus(AuthStatus.authenticated);
+        return true;
+      },
+    );
+  }
+
+  Future<bool> validateDniForPasswordRecovery(String dni) async {
+    _setStatus(AuthStatus.loading);
+    
+    final result = await _validateDniForPasswordRecoveryUseCase(dni);
+    
+    return result.fold(
+      (failure) {
+        _errorMessage = _mapFailureToMessage(failure);
+        _setStatus(AuthStatus.unauthenticated);
+        return false;
+      },
+      (_) {
+        _errorMessage = null;
+        _setStatus(AuthStatus.unauthenticated);
         return true;
       },
     );
