@@ -282,19 +282,12 @@ class _LoginPageState extends State<LoginPage> {
                       final url = Uri.parse(
                         'https://wa.me/51982934377?text=Hola,%20tengo%20una%20consulta',
                       );
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(
-                          url,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      } else {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('No se pudo abrir WhatsApp'),
-                          ),
-                        );
-                      }
+                      if (!await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      )) {
+                        throw Exception('Could not launch $url');
+                      } 
                     },
                   ),
                 ),

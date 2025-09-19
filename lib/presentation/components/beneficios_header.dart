@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/beneficio_entity.dart';
-import '../../theme/app_theme.dart';
 
 class BeneficiosHeader extends StatelessWidget {
   final List<BeneficioComercialEntity> beneficiosFiltrados;
