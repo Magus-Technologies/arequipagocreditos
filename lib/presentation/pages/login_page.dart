@@ -1,8 +1,11 @@
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -36,9 +39,6 @@ class _LoginPageState extends State<LoginPage> {
     if (value == null || value.isEmpty) {
       return 'Ingrese su DNI';
     }
-    if (value.length != 8) {
-      return 'El DNI debe tener 8 dígitos';
-    }
     if (!RegExp(r'^\d+$').hasMatch(value)) {
       return 'El DNI solo debe contener números';
     }
@@ -59,26 +59,27 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Cambio de Contraseña Requerido'),
-        content: const Text(
-          'Para continuar, necesitas cambiar tu contraseña por una nueva.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PasswordRecoveryPage(),
-                ),
-              );
-            },
-            child: const Text('Cambiar Contraseña'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cambio de Contraseña Requerido'),
+            content: const Text(
+              'Para continuar, necesitas cambiar tu contraseña por una nueva.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PasswordRecoveryPage(),
+                    ),
+                  );
+                },
+                child: const Text('Cambiar Contraseña'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -90,14 +91,12 @@ class _LoginPageState extends State<LoginPage> {
         builder: (context, authProvider, child) {
           // Manejar navegación después del login exitoso
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (authProvider.isAuthenticated && authProvider.currentUser != null) {
+            if (authProvider.isAuthenticated &&
+                authProvider.currentUser != null) {
               final user = authProvider.currentUser!;
-              
               if (user.flag == 1) {
-                // Si necesita cambiar contraseña, mostrar diálogo
                 _showPasswordChangeDialog(context);
               } else {
-                // Navegación normal al dashboard
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -106,8 +105,6 @@ class _LoginPageState extends State<LoginPage> {
                 );
               }
             }
-            
-            // Mostrar mensaje de error si existe
             if (authProvider.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -120,123 +117,189 @@ class _LoginPageState extends State<LoginPage> {
             }
           });
 
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('images/logo.png', height: 150),
-                    const SizedBox(height: 40),
-                    TextFormField(
-                      controller: _dniController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 8,
-                      validator: _validateDni,
-                      decoration: const InputDecoration(
-                        hintText: 'DNI',
-                        prefixIcon: Icon(Icons.person),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide.none,
-                        ),
-                        counterText: '',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      validator: _validatePassword,
-                      decoration: const InputDecoration(
-                        hintText: 'Contraseña',
-                        prefixIcon: Icon(Icons.lock),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: authProvider.isLoading ? null : _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+          return Stack(
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset('images/logo.png', height: 150),
+                        const SizedBox(height: 40),
+                        TextFormField(
+                          controller: _dniController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 8,
+                          validator: _validateDni,
+                          decoration: const InputDecoration(
+                            hintText: 'DNI',
+                            prefixIcon: Icon(Icons.person),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            counterText: '',
                           ),
                         ),
-                        child: authProvider.isLoading
-                            ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'Iniciando sesión...',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : const Text(
-                                'INICIAR SESIÓN',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          validator: _validatePassword,
+                          decoration: const InputDecoration(
+                            hintText: 'Contraseña',
+                            prefixIcon: Icon(Icons.lock),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Spacer(),
-                        TextButton(
-                          onPressed: authProvider.isLoading ? null : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PasswordRecoveryPage(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "¿Olvidó su contraseña?",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.normal,
-                              decoration: TextDecoration.underline,
+                              borderSide: BorderSide.none,
                             ),
                           ),
                         ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: authProvider.isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child:
+                                authProvider.isLoading
+                                    ? const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Iniciando sesión...',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    : const Text(
+                                      'INICIAR SESIÓN',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            const Spacer(),
+                            TextButton(
+                              onPressed:
+                                  authProvider.isLoading
+                                      ? null
+                                      : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const PasswordRecoveryPage(),
+                                          ),
+                                        );
+                                      },
+                              child: const Text(
+                                "¿Olvidó su contraseña?",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.normal,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              // Botón de WhatsApp fijo abajo
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 24,
+                child: Center(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      elevation: 2,
+                    ),
+                    icon: const FaIcon(FontAwesomeIcons.whatsapp),
+                    label: const Text(
+                      'Contáctame por WhatsApp',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    onPressed: () async {
+                      final url = Uri.parse(
+                        'https://wa.me/51982934377?text=Hola,%20tengo%20una%20consulta',
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } else {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No se pudo abrir WhatsApp'),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),

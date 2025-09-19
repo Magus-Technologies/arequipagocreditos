@@ -41,3 +41,33 @@ class BeneficioEntity {
     ];
   }
 }
+
+class BeneficioComercialEntity {
+  final int id;
+  final String nombre;
+  final int planFinanciamientoId;
+  final int? categoria;
+  final String descripcion;
+  final double cuotaInicial;
+  final int cantidadCuotas;
+  final double cuotaMensual;
+  final String? imagen;
+  final bool disponible;
+  final DateTime fechaCreacion;
+  final DateTime fechaActualizacion;
+
+  BeneficioComercialEntity({
+    required this.id,
+    required this.nombre,
+    required this.planFinanciamientoId,
+    this.categoria,
+    required this.descripcion,
+    required this.cuotaInicial,
+    required this.cantidadCuotas,
+    required this.cuotaMensual,
+    this.imagen,
+    required this.disponible,
+    required this.fechaCreacion,
+    required this.fechaActualizacion,
+  });
+}

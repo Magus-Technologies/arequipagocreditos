@@ -133,7 +133,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
       final String dni = conductorData['conductor']['nro_documento'];
-      final url = Uri.parse('${ApiConstants.baseUrl}/update-password');
+      final url = Uri.parse('${ApiConstants.baseUrl}/update-password-conductor');
 
       final response = await client.post(
         url,

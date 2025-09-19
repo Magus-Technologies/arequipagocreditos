@@ -23,7 +23,7 @@ class ConductorModel extends ConductorEntity {
       direccion: json['conductor']['direccion'] ?? '',
       correo: json['conductor']['correo'] ?? '',
       flag: json['flag'] ?? 0,
-      tipo: json['conductor']['tipo'] ?? 1,
+      tipo: json['conductor']['tipo'],
       fotoPerfil: json['conductor']['foto_perfil'],
       fotoPerfilCambiada: json['conductor']['foto_perfil_cambiada'] == 1,
     );

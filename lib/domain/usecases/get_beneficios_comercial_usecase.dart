@@ -1,0 +1,14 @@
+import '../../core/utils/either.dart';
+import '../../core/errors/failures.dart';
+import '../entities/beneficio_entity.dart';
+import '../repositories/beneficios_comercial_repository.dart';
+
+class GetBeneficiosComercialUseCase {
+  final BeneficiosComercialRepository repository;
+
+  GetBeneficiosComercialUseCase(this.repository);
+
+  Future<Either<Failure, List<BeneficioComercialEntity>>> call() async {
+    return await repository.getBeneficiosComerciales();
+  }
+}

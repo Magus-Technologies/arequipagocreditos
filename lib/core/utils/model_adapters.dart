@@ -24,7 +24,7 @@ class ModelAdapters {
       direccion: entity.direccion,
       correo: entity.correo,
       flag: entity.flag,
-      tipo: 1,
+      tipo: entity.tipo,
       fotoPerfil: entity.fotoPerfil,
       fotoPerfilCambiada: entity.fotoPerfilCambiada,
     );

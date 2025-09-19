@@ -9,21 +9,25 @@ import 'data/datasources/auth_remote_datasource.dart';
 import 'data/datasources/cupones_remote_datasource.dart';
 import 'data/datasources/financiamiento_remote_datasource.dart';
 import 'data/datasources/puntuacion_remote_datasource.dart';
+import 'data/datasources/beneficios_comercial_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/financiamiento_repository_impl.dart';
 import 'data/repositories/puntuacion_repository_impl.dart';
+import 'data/repositories/beneficios_comercial_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/cupones_repository.dart';
 import 'domain/repositories/financiamiento_repository.dart';
 import 'domain/repositories/puntuacion_repository.dart';
+import 'domain/repositories/beneficios_comercial_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/financiamiento_usecases.dart';
 import 'domain/usecases/puntuacion_usecases.dart';
 import 'domain/usecases/get_resumen_crediticio_usecase.dart';
+import 'domain/usecases/get_beneficios_comercial_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
@@ -31,6 +35,7 @@ import 'presentation/providers/cupones_provider.dart';
 import 'presentation/providers/financiamiento_provider.dart';
 import 'presentation/providers/puntuacion_provider.dart';
 import 'presentation/providers/resumen_crediticio_provider.dart';
+import 'presentation/providers/beneficios_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -79,6 +84,12 @@ class DependencyInjection {
         
       ),
     ),
+
+    ChangeNotifierProvider<BeneficiosProvider>(
+      create: (context) => BeneficiosProvider(
+        getBeneficiosComercialUseCase: getBeneficiosComercialUseCase(),
+      ),
+    ),
   ];
 
   // Repositories
@@ -102,6 +113,10 @@ class DependencyInjection {
     remoteDataSource: _resumenCrediticioRemoteDataSource,
   );
 
+  static BeneficiosComercialRepository get _beneficiosComercialRepository => BeneficiosComercialRepositoryImpl(
+    remoteDataSource: _beneficiosComercialRemoteDataSource,
+  );
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource => 
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -117,6 +132,9 @@ class DependencyInjection {
 
   static ResumenCrediticioRemoteDataSource get _resumenCrediticioRemoteDataSource =>
       ResumenRemoteDataSourceImpl(client: _httpClient);
+
+  static BeneficiosComercialRemoteDataSource get _beneficiosComercialRemoteDataSource =>
+      BeneficiosComercialRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();
@@ -151,4 +169,7 @@ class DependencyInjection {
 
   // Use Cases - Resumen Crediticio
   static GetResumenCrediticioUseCase getResumenCrediticioUseCase() => GetResumenCrediticioUseCase(repository: _resumenCrediticioRepository);
+
+  // Use Cases - Beneficios Comerciales
+  static GetBeneficiosComercialUseCase getBeneficiosComercialUseCase() => GetBeneficiosComercialUseCase(_beneficiosComercialRepository);
 }

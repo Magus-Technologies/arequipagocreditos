@@ -111,104 +111,109 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
         ),
         child: SafeArea(
           bottom: false,
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // AppBar personalizado
-                    Row(
+          child: SingleChildScrollView(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
                       children: [
+                        // AppBar personalizado
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: Colors.black87,
+                                  size: 20,
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Recuperar Contraseña',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 48),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                        // Icono y descripción
                         Container(
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.black87,
-                              size: 20,
-                            ),
-                            onPressed: () => Navigator.pop(context),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.lock_clock,
+                                size: 48,
+                                color: Colors.black87,
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Recupera tu acceso',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Ingresa tu DNI para validar tu identidad',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
-                        const Expanded(
-                          child: Text(
-                            'Recuperar Contraseña',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 48),
                       ],
                     ),
-                    const SizedBox(height: 30),
-                    // Icono y descripción
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(16),
+                  ),
+                  // Contenido principal
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.lock_clock,
-                            size: 48,
-                            color: Colors.black87,
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Recupera tu acceso',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Ingresa tu DNI para validar tu identidad',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
+                        child: _buildContent(),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              // Contenido principal
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                    child: _buildContent(),
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

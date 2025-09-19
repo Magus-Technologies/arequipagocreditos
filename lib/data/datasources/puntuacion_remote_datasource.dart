@@ -18,7 +18,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
   @override
   Future<PuntuacionModel> getPuntuacion(int idConductor, int tipo) async {
     try {
-      String tipoUsuario = tipo == 1 ? 'conductor' : 'pasajero';
+      String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
       final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
@@ -52,7 +52,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
   @override
   Future<List<HistorialPuntosModel>> getHistorialPuntos(int idConductor, int tipo) async {
     try {
-      String tipoUsuario = tipo == 1 ? 'conductor' : 'pasajero';
+      String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
       final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       
@@ -90,7 +90,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
   @override
   Future<void> actualizarPuntuacion(int idConductor, int nuevoPuntaje, int tipo) async {
     try {
-      String tipoUsuario = tipo == 1 ? 'conductor' : 'pasajero';
+      String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
       final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       
