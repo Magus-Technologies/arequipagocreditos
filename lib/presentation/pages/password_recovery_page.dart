@@ -248,9 +248,6 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 if (value == null || value.trim().isEmpty) {
                   return 'El DNI es requerido';
                 }
-                if (value.length != 8) {
-                  return 'El DNI debe tener 8 dígitos';
-                }
                 if (!RegExp(r'^\d+$').hasMatch(value)) {
                   return 'El DNI solo debe contener números';
                 }

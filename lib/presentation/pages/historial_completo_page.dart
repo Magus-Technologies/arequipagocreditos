@@ -2,8 +2,6 @@ import 'package:arequipagocreditos/data/models/puntuacion_model.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/presentation/components/historial_item.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
-import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
-import 'package:provider/provider.dart';
 
 class HistorialCompletoPage extends StatefulWidget {
   final List<HistorialPuntosModel> historial;

@@ -19,7 +19,7 @@ class LoginUseCase {
       return Either.left(const ValidationFailure('La contraseña es requerida'));
     }
     
-    if (nroDocumento.length != 8) {
+    if (nroDocumento.length != 15) {
       return Either.left(const ValidationFailure('El DNI debe tener 8 dígitos'));
     }
     
@@ -85,7 +85,7 @@ class ValidateDniForPasswordRecoveryUseCase {
       return Either.left(const ValidationFailure('El DNI es requerido'));
     }
 
-    if (dni.length != 8) {
+    if (dni.length != 15) {
       return Either.left(const ValidationFailure('El DNI debe tener 8 dígitos'));
     }
 
@@ -103,8 +103,8 @@ class ResetPasswordUseCase {
       return Either.left(const ValidationFailure('El DNI es requerido'));
     }
 
-    if (dni.length != 8) {
-      return Either.left(const ValidationFailure('El DNI debe tener 8 dígitos'));
+    if (dni.length != 15) {
+      return Either.left(const ValidationFailure('El DNI debe tener 15 dígitos'));
     }
 
     if (newPassword.trim().isEmpty) {

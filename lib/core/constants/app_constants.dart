@@ -20,7 +20,7 @@ class AppConstants {
   // Validation
   static const int minPasswordLength = 6;
   static const int maxPasswordLength = 20;
-  static const int dniLength = 8;
+  static const int dniLength = 15;
   
   // File Upload
   static const int maxImageSizeInBytes = 5 * 1024 * 1024; // 5MB
