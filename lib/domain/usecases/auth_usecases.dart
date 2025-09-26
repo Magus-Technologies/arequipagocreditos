@@ -19,10 +19,6 @@ class LoginUseCase {
       return Either.left(const ValidationFailure('La contraseña es requerida'));
     }
     
-    if (nroDocumento.length != 15) {
-      return Either.left(const ValidationFailure('El DNI debe tener 8 dígitos'));
-    }
-    
     return await repository.login(nroDocumento, password);
   }
 }
@@ -85,10 +81,6 @@ class ValidateDniForPasswordRecoveryUseCase {
       return Either.left(const ValidationFailure('El DNI es requerido'));
     }
 
-    if (dni.length != 15) {
-      return Either.left(const ValidationFailure('El DNI debe tener 8 dígitos'));
-    }
-
     return await repository.validateDniForPasswordRecovery(dni);
   }
 }
@@ -101,10 +93,6 @@ class ResetPasswordUseCase {
   Future<Either<Failure, Map<String, dynamic>>> call(String dni, String newPassword) async {
     if (dni.trim().isEmpty) {
       return Either.left(const ValidationFailure('El DNI es requerido'));
-    }
-
-    if (dni.length != 15) {
-      return Either.left(const ValidationFailure('El DNI debe tener 15 dígitos'));
     }
 
     if (newPassword.trim().isEmpty) {

@@ -34,11 +34,7 @@ class Validators {
     if (value == null || value.isEmpty) {
       return 'El DNI es requerido';
     }
-    
-    if (value.length != AppConstants.dniLength) {
-      return 'El DNI debe tener ${AppConstants.dniLength} dígitos';
-    }
-    
+
     if (!RegExp(r'^\d+$').hasMatch(value)) {
       return 'El DNI solo debe contener números';
     }

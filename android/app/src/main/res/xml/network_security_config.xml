@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Development / temporary overrides for domains with certificate issues. Remove before production if not needed. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">arequipago-ventas.pe</domain>
+        <domain includeSubdomains="true">magusemail.com</domain>
+        <!-- local dev server IPs (if needed) -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
