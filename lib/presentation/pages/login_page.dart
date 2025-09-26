@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                         TextFormField(
                           controller: _dniController,
                           keyboardType: TextInputType.number,
-                          maxLength: 8,
+                          maxLength: 15,
                           validator: _validateDni,
                           decoration: const InputDecoration(
                             hintText: 'DNI',

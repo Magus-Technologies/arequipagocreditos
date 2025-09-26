@@ -11,6 +11,6 @@ class AppTheme {
     primaryColor: bg,
     scaffoldBackgroundColor: bg,
     //appBar theme
-    appBarTheme: const AppBarTheme(color: bg, elevation: 0),
+    appBarTheme: const AppBarTheme(backgroundColor: bg, elevation: 0),
   );
 }

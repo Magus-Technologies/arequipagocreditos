@@ -233,7 +233,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
             TextFormField(
               controller: _dniController,
               keyboardType: TextInputType.number,
-              maxLength: 8,
+              maxLength: 15,
               decoration: InputDecoration(
                 hintText: 'Número de DNI',
                 prefixIcon: const Icon(Icons.person_outline),
