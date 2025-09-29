@@ -114,10 +114,11 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
       }
 
       final int idConductor = conductorInfo['id_conductor'];
+      final String tipo = conductorInfo['tipo'].toString() == "1" ? 'conductor' : 'cliente';
 
       final response = await client
           .post(
-            Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/usar-codigo/$idConductor/$cuponId'),
+            Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/usar-codigo/$tipo/$idConductor/$cuponId'),
             headers: ApiConstants.defaultHeaders,
           )
           .timeout(ApiConstants.connectionTimeout);

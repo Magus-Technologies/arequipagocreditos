@@ -65,7 +65,7 @@ class MainModules extends StatelessWidget {
                   height: 160,
                   child: ModuleCard(
                     icon: Icons.card_giftcard,
-                    title: 'Cupones\ny Beneficios',
+                    title: 'Cupones',
                     backgroundColor: AppTheme.primary, // Amarillo corporativo
                     iconColor: Colors.black87, // Texto negro sobre amarillo
                     onTap: () {
