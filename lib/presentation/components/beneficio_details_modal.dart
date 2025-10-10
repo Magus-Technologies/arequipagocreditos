@@ -47,7 +47,7 @@ class BeneficioDetailsModal extends StatelessWidget {
                 
                 // Imagen
                 if (beneficio.imagen != null && beneficio.imagen!.isNotEmpty)
-                  _buildImage(),
+                  _buildImage(context),
                 const SizedBox(height: 20),
                 
                 // Descripción
@@ -91,28 +91,76 @@ class BeneficioDetailsModal extends StatelessWidget {
     );
   }
 
-  Widget _buildImage() {
-    return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey[200],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const Center(
-              child: Icon(
-                Icons.image_not_supported,
-                color: Colors.grey,
-                size: 48,
+  Widget _buildImage(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showImageFullScreen(context),
+      child: Hero(
+        tag: 'beneficio_image_${beneficio.id}',
+        child: Container(
+          width: double.infinity,
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.grey[200],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.1 * 255).toInt()),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            );
-          },
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              children: [
+                Image.network(
+                  '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.contain, // Cambiado para mostrar la imagen completa
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                        size: 48,
+                      ),
+                    );
+                  },
+                ),
+                // Indicador de que se puede hacer tap
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha((0.5 * 255).toInt()),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.fullscreen,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showImageFullScreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _ImageFullScreenView(
+          imageUrl: '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
+          heroTag: 'beneficio_image_${beneficio.id}',
+          title: beneficio.nombre,
         ),
       ),
     );
@@ -150,10 +198,10 @@ class BeneficioDetailsModal extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _buildDetailRow('Cuota Inicial:', 'S/ ${beneficio.cuotaInicial.toStringAsFixed(2)}'),
+        _buildDetailRow('Cuota Inicial:', '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}'),
         _buildDetailRow('Cantidad de Cuotas:', '${beneficio.cantidadCuotas}'),
-        _buildDetailRow('Cuota Mensual:', 'S/ ${beneficio.cuotaMensual.toStringAsFixed(2)}'),
-        _buildDetailRow('Total del Plan:', 'S/ ${((beneficio.cuotaMensual * beneficio.cantidadCuotas) + beneficio.cuotaInicial).toStringAsFixed(2)}'),
+        _buildDetailRow('Cuota Mensual:', '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}'),
+        _buildDetailRow('Total del Plan:', '${beneficio.moneda} ${((beneficio.cuotaMensual * beneficio.cantidadCuotas) + beneficio.cuotaInicial).toStringAsFixed(2)}'),
       ],
     );
   }
@@ -211,6 +259,83 @@ class BeneficioDetailsModal extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageFullScreenView extends StatelessWidget {
+  final String imageUrl;
+  final String heroTag;
+  final String title;
+
+  const _ImageFullScreenView({
+    required this.imageUrl,
+    required this.heroTag,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+      body: Center(
+        child: Hero(
+          tag: heroTag,
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 3.0,
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.contain,
+              width: double.infinity,
+              height: double.infinity,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                    color: Colors.white,
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.white,
+                        size: 64,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No se pudo cargar la imagen',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),

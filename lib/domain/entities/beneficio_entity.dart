@@ -55,6 +55,7 @@ class BeneficioComercialEntity {
   final bool disponible;
   final DateTime fechaCreacion;
   final DateTime fechaActualizacion;
+  final String moneda;
 
   BeneficioComercialEntity({
     required this.id,
@@ -69,5 +70,6 @@ class BeneficioComercialEntity {
     required this.disponible,
     required this.fechaCreacion,
     required this.fechaActualizacion,
+    required this.moneda,
   });
 }

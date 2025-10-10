@@ -14,6 +14,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
     required super.disponible,
     required super.fechaCreacion,
     required super.fechaActualizacion,
+    required super.moneda,
   });
 
   factory BeneficioComercialModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +31,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       disponible: (json['disponible'] ?? 0) == 1,
       fechaCreacion: DateTime.tryParse(json['fecha_creacion'] ?? '') ?? DateTime.now(),
       fechaActualizacion: DateTime.tryParse(json['fecha_actualizacion'] ?? '') ?? DateTime.now(),
+      moneda: json['moneda'] ?? 'S/.',
     );
   }
 
@@ -47,6 +49,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       'disponible': disponible ? 1 : 0,
       'fecha_creacion': fechaCreacion.toIso8601String(),
       'fecha_actualizacion': fechaActualizacion.toIso8601String(),
+      'moneda': moneda,
     };
   }
 

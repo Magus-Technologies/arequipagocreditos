@@ -156,7 +156,7 @@ class BeneficioCard extends StatelessWidget {
         Expanded(
           child: _buildInfoItem(
             'Cuota Inicial',
-            'S/ ${beneficio.cuotaInicial.toStringAsFixed(2)}',
+            '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
             Icons.monetization_on,
             AppTheme.bgContacto,
           ),
@@ -172,7 +172,7 @@ class BeneficioCard extends StatelessWidget {
         Expanded(
           child: _buildInfoItem(
             'Mensual',
-            'S/ ${beneficio.cuotaMensual.toStringAsFixed(2)}',
+            '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
             Icons.schedule,
             AppTheme.btnColor,
           ),
