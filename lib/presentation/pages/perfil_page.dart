@@ -1,3 +1,4 @@
+import 'package:arequipagocreditos/presentation/pages/auth_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,7 +7,6 @@ import '../../core/utils/image_picker_helper.dart';
 import '../../theme/app_theme.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
-import 'login_page.dart';
 
 class PerfilPage extends StatefulWidget {
   const PerfilPage({super.key});
@@ -403,7 +403,7 @@ class _PerfilPageState extends State<PerfilPage> {
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
+      MaterialPageRoute(builder: (context) => const AuthBottomNav()),
       (route) => false,
     );
   }

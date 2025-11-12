@@ -11,35 +11,72 @@ class ConductorModel extends ConductorEntity {
     required super.flag,
     required super.tipo,
     super.fotoPerfil,
-    super.fotoPerfilCambiada,
+    required super.fotoPerfilCambiada,
+    super.fechaNacimiento,
+    super.placa,
+    super.soat,
+    super.revisionTecnica,
+    super.seguroVehicular,
+    super.color,
+    super.anio,
+    super.marca,
+    super.modelo,
   });
 
   factory ConductorModel.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic> c =
+        (json['conductor'] is Map) ? Map<String, dynamic>.from(json['conductor']) : Map<String, dynamic>.from(json);
+
+    int? parseNullableInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      return int.tryParse(value.toString());
+    }
+
     return ConductorModel(
-      idConductor: json['conductor']['id_conductor'] ?? 0,
-      nroDocumento: json['conductor']['nro_documento'] ?? '',
-      nombres: json['conductor']['nombres'] ?? '',
-      telefono: json['conductor']['telefono'] ?? '',
-      direccion: json['conductor']['direccion'] ?? '',
-      correo: json['conductor']['correo'] ?? '',
-      flag: json['flag'] ?? 0,
-      tipo: json['conductor']['tipo'],
-      fotoPerfil: json['conductor']['foto_perfil'],
-      fotoPerfilCambiada: json['conductor']['foto_perfil_cambiada'] == 1,
+      idConductor: c['id_conductor'] is int ? c['id_conductor'] : int.tryParse((c['id_conductor'] ?? '0').toString()) ?? 0,
+      nroDocumento: (c['nro_documento'] ?? '').toString(),
+      nombres: (c['nombres'] ?? '').toString(),
+      telefono: (c['telefono'] ?? '').toString(),
+      direccion: (c['direccion'] ?? '').toString(),
+      correo: (c['correo'] ?? '').toString(),
+      flag: json['flag'] is int ? json['flag'] : int.tryParse((json['flag'] ?? '0').toString()) ?? 0,
+      tipo: c['tipo'] is int ? c['tipo'] : int.tryParse((c['tipo'] ?? '0').toString()) ?? 0,
+      fotoPerfil: c['foto_perfil']?.toString(),
+      fotoPerfilCambiada: (c['foto_perfil_cambiada'] == 1) || (c['foto_perfil_cambiada'] == true),
+      fechaNacimiento: c['fecha_nac']?.toString(), // nullable string
+      placa: c['placa']?.toString(),
+      soat: c['soat']?.toString(),
+      revisionTecnica: c['revision_tecnica']?.toString(),
+      seguroVehicular: c['seguro_vehicular']?.toString(),
+      color: c['color']?.toString(),
+      anio: parseNullableInt(c['anio']),
+      marca: c['marca']?.toString(),
+      modelo: c['modelo']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'idConductor': idConductor,
-      'nombres': nombres,
+      'id_conductor': idConductor,
       'nro_documento': nroDocumento,
+      'nombres': nombres,
       'telefono': telefono,
       'direccion': direccion,
       'correo': correo,
+      'flag': flag,
       'tipo': tipo,
       'foto_perfil': fotoPerfil,
-      'foto_perfil_cambiada': fotoPerfilCambiada,
+      'foto_perfil_cambiada': fotoPerfilCambiada ? 1 : 0,
+      'fecha_nac': fechaNacimiento,
+      'placa': placa,
+      'soat': soat,
+      'revision_tecnica': revisionTecnica,
+      'seguro_vehicular': seguroVehicular,
+      'color': color,
+      'anio': anio,
+      'marca': marca,
+      'modelo': modelo,
     };
   }
 
@@ -54,6 +91,15 @@ class ConductorModel extends ConductorEntity {
     tipo: tipo,
     fotoPerfil: fotoPerfil,
     fotoPerfilCambiada: fotoPerfilCambiada,
+    fechaNacimiento: fechaNacimiento,
+    placa: placa,
+    soat: soat,
+    revisionTecnica: revisionTecnica,
+    seguroVehicular: seguroVehicular,
+    color: color,
+    anio: anio,
+    marca: marca,
+    modelo: modelo,
   );
 
   ConductorModel copyWith({
@@ -67,6 +113,15 @@ class ConductorModel extends ConductorEntity {
     int? tipo,
     String? fotoPerfil,
     bool? fotoPerfilCambiada,
+    String? fechaNacimiento,
+    String? placa,
+    String? soat,
+    String? revisionTecnica,
+    String? seguroVehicular,
+    String? color,
+    int? anio,
+    String? marca,
+    String? modelo,
   }) {
     return ConductorModel(
       idConductor: idConductor ?? this.idConductor,
@@ -79,6 +134,15 @@ class ConductorModel extends ConductorEntity {
       tipo: tipo ?? this.tipo,
       fotoPerfil: fotoPerfil ?? this.fotoPerfil,
       fotoPerfilCambiada: fotoPerfilCambiada ?? this.fotoPerfilCambiada,
+      fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
+      placa: placa ?? this.placa,
+      soat: soat ?? this.soat,
+      revisionTecnica: revisionTecnica ?? this.revisionTecnica,
+      seguroVehicular: seguroVehicular ?? this.seguroVehicular,
+      color: color ?? this.color,
+      anio: anio ?? this.anio,
+      marca: marca ?? this.marca,
+      modelo: modelo ?? this.modelo,
     );
   }
 }

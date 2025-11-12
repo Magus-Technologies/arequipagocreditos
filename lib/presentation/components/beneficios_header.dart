@@ -3,10 +3,11 @@ import '../../domain/entities/beneficio_entity.dart';
 
 class BeneficiosHeader extends StatelessWidget {
   final List<BeneficioComercialEntity> beneficiosFiltrados;
-
+  final bool isNav;
   const BeneficiosHeader({
     super.key,
     required this.beneficiosFiltrados,
+    this.isNav = false,
   });
 
   @override
@@ -23,14 +24,16 @@ class BeneficiosHeader extends StatelessWidget {
                   color: Colors.white.withAlpha((0.3 * 255).toInt()),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.black87,
-                    size: 20,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                child: !isNav
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.black87,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    : null,
               ),
               const Expanded(
                 child: Text(

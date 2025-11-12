@@ -16,8 +16,6 @@ class Header extends StatefulWidget {
   State<Header> createState() => _HeaderState();
 }
 
-
-
 class _HeaderState extends State<Header> {
   @override
   void initState() {
@@ -31,6 +29,9 @@ class _HeaderState extends State<Header> {
 
   @override
   Widget build(BuildContext context) {
+    // Ajusta aquí el nombre del campo si tu modelo usa otro (p.ej. fotoPerfil, foto_url...)
+    final String? imageUrl = widget.conductor.fotoPerfil;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(
@@ -52,8 +53,9 @@ class _HeaderState extends State<Header> {
           // Primera fila: Avatar, saludo y acciones
           Row(
             children: [
-              // Avatar del usuario con mejor diseño
+              // Avatar del usuario: ahora HeaderIcon acepta imageUrl
               HeaderIcon(
+                imageUrl: imageUrl,
                 icon: Icons.person,
                 onTap: () {
                   Navigator.push(

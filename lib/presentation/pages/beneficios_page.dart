@@ -6,7 +6,8 @@ import '../../theme/app_theme.dart';
 import '../components/beneficios_components.dart';
 
 class BeneficiosPage extends StatefulWidget {
-  const BeneficiosPage({super.key});
+  final bool isNav;
+  const BeneficiosPage({super.key, this.isNav = false});
 
   @override
   State<BeneficiosPage> createState() => _BeneficiosPageState();
@@ -74,7 +75,7 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
               bottom: false,
               child: Column(
                 children: [
-                  BeneficiosHeader(beneficiosFiltrados: beneficiosFiltrados),
+                  BeneficiosHeader(beneficiosFiltrados: beneficiosFiltrados, isNav: widget.isNav),
                   Expanded(
                     child: Container(
                       decoration: const BoxDecoration(

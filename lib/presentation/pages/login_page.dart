@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -85,9 +84,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.primary,
-      body: Consumer<AuthProvider>(
+    return SafeArea(
+      child: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           // Manejar navegación después del login exitoso
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -287,7 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                         mode: LaunchMode.externalApplication,
                       )) {
                         throw Exception('Could not launch $url');
-                      } 
+                      }
                     },
                   ),
                 ),

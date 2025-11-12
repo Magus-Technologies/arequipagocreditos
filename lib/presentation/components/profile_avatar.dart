@@ -1,4 +1,5 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
+import 'package:arequipagocreditos/presentation/components/image_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -7,23 +8,29 @@ class ProfileAvatar extends StatelessWidget {
   final ConductorModel? conductor;
   final bool isUploadingImage;
   final VoidCallback onChangeProfilePicture;
+  final double size;
 
   const ProfileAvatar({
     super.key,
     required this.conductor,
     required this.isUploadingImage,
     required this.onChangeProfilePicture,
+    this.size = 88.0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final double avatarRadius = (size / 2) - 4; // ajuste interno
+    final String heroTag = 'profile-avatar-${conductor?.idConductor ?? 'anon'}';
+    final String? imageUrl = conductor?.fotoPerfil;
+
     return Stack(
       alignment: Alignment.center,
       children: [
         // Círculo de fondo con degradado
         Container(
-          width: 88,
-          height: 88,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -43,61 +50,64 @@ class ProfileAvatar extends StatelessWidget {
             ],
           ),
         ),
-        // Avatar con imagen
-        CircleAvatar(
-          radius: 42,
-          backgroundColor: Colors.transparent,
-          child: conductor?.fotoPerfil != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(42),
-                  child: CachedNetworkImage(
-                    imageUrl: conductor!.fotoPerfil!,
-                    width: 84,
-                    height: 84,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(42),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary,
-                        borderRadius: BorderRadius.circular(42),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 45,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                )
-              : Container(
-                  width: 84,
-                  height: 84,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: BorderRadius.circular(42),
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 45,
-                    color: Colors.white,
-                  ),
+        // Avatar con imagen o icono; envuelto en GestureDetector/Hero
+        GestureDetector(
+          onTap: () {
+            if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ImagePreview(imageUrl: imageUrl, heroTag: heroTag),
                 ),
+              );
+            } else {
+              // Si no hay imagen, abrimos el selector
+              onChangeProfilePicture();
+            }
+          },
+          child: Hero(
+            tag: heroTag,
+            child: Container(
+              width: size - 8,
+              height: size - 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.transparent,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha((0.04 * 255).toInt()),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: imageUrl != null && imageUrl.trim().isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        width: size - 8,
+                        height: size - 8,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: size - 8,
+                          height: size - 8,
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => _fallbackIcon(avatarRadius),
+                      )
+                    : _fallbackIcon(avatarRadius),
+              ),
+            ),
+          ),
         ),
-        // Botón de cámara mejorado
+
+        // Botón de cámara (si no ha cambiado la foto)
         if (conductor?.fotoPerfilCambiada != true)
           Positioned(
             bottom: 2,
@@ -121,8 +131,8 @@ class ProfileAvatar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: isUploadingImage
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
                         child: SizedBox(
                           width: 16,
                           height: 16,
@@ -145,6 +155,7 @@ class ProfileAvatar extends StatelessWidget {
               ),
             ),
           ),
+
         // Indicador de foto cambiada
         if (conductor?.fotoPerfilCambiada == true)
           Positioned(
@@ -172,6 +183,17 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _fallbackIcon(double avatarRadius) {
+    return Container(
+      width: avatarRadius * 2,
+      height: avatarRadius * 2,
+      color: Colors.transparent,
+      child: Center(
+        child: Icon(Icons.person, size: avatarRadius, color: Colors.white),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:arequipagocreditos/presentation/pages/auth_bottom_nav.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -55,7 +56,7 @@ class _AppWrapperState extends State<AppWrapper> {
             return DashboardPage();
           case AuthStatus.unauthenticated:
           case AuthStatus.error:
-            return LoginPage();
+            return AuthBottomNav();
         }
       },
     );

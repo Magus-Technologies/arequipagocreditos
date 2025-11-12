@@ -65,6 +65,12 @@ class PersonalInfoCard extends StatelessWidget {
             label: 'Dirección',
             value: conductor?.direccion ?? 'No disponible',
           ),
+          _buildDivider(),
+          InfoItem(
+            icon: Icons.badge,
+            label: 'Fecha de Nacimiento',
+            value: conductor?.fechaNacimiento ?? 'No disponible',
+          ),
         ],
       ),
     );

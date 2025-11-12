@@ -19,14 +19,15 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
-  
-  AuthRemoteDataSourceImpl({http.Client? client}) : client = client ?? http.Client();
+
+  AuthRemoteDataSourceImpl({http.Client? client})
+    : client = client ?? http.Client();
 
   @override
   Future<ConductorModel> login(String nroDocumento, String password) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}/auth/conductor');
-      
+
       final response = await client
           .post(
             url,
@@ -41,10 +42,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final conductor = ConductorModel.fromJson(data);
-
+        // Limpiar datos anteriores
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('conductor');
+        
         // Guardar en SharedPreferences para persistencia
         await _saveUserToPrefs(data);
-        
+
         return conductor;
       } else if (response.statusCode == 401) {
         throw const AuthException('Credenciales incorrectas');
@@ -76,12 +80,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final prefs = await SharedPreferences.getInstance();
       final conductorJson = prefs.getString('conductor');
-      
+
       if (conductorJson != null) {
         final data = jsonDecode(conductorJson) as Map<String, dynamic>;
         return ConductorModel.fromJson(data);
       }
-      
+
       return null;
     } catch (e) {
       throw CacheException('Error al obtener usuario: $e');
@@ -102,7 +106,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final String dni = conductorData['conductor']['nro_documento'];
 
       final url = Uri.parse('${ApiConstants.baseUrl}/conductor/$dni/refresh');
-      final response = await client.get(url).timeout(ApiConstants.connectionTimeout);
+      final response = await client
+          .get(url)
+          .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -133,13 +139,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
       final String dni = conductorData['conductor']['nro_documento'];
-      final url = Uri.parse('${ApiConstants.baseUrl}/update-password-conductor');
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}/update-password-conductor',
+      );
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'nro_documento': dni, 'password': newPassword}),
-      ).timeout(ApiConstants.connectionTimeout);
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'nro_documento': dni, 'password': newPassword}),
+          )
+          .timeout(ApiConstants.connectionTimeout);
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -157,18 +167,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> validateDniForPasswordRecovery(String dni) async {
+  Future<Map<String, dynamic>> validateDniForPasswordRecovery(
+    String dni,
+  ) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}/validate-dni');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'nro_documento': dni}),
-      ).timeout(ApiConstants.connectionTimeout);
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'nro_documento': dni}),
+          )
+          .timeout(ApiConstants.connectionTimeout);
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-      
+
       if (response.statusCode == 200) {
         return {
           'success': true,
@@ -187,15 +201,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> resetPassword(String dni, String newPassword) async {
+  Future<Map<String, dynamic>> resetPassword(
+    String dni,
+    String newPassword,
+  ) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}/reset-password');
 
-      final response = await client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'nro_documento': dni, 'password': newPassword}),
-      ).timeout(ApiConstants.connectionTimeout);
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'nro_documento': dni, 'password': newPassword}),
+          )
+          .timeout(ApiConstants.connectionTimeout);
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -222,19 +241,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
-      final String dni = conductorData['conductor']['nro_documento'];
+      final int idConductor = conductorData['conductor']['id_conductor'];
+      final int tipo = conductorData['conductor']['tipo'];
 
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('${ApiConstants.baseUrl}/upload-profile-picture'),
       );
 
-      request.fields['nro_documento'] = dni;
+      request.fields['idConductor'] = idConductor.toString();
+      request.fields['tipo'] = tipo.toString();
       request.files.add(
         await http.MultipartFile.fromPath('foto_perfil', imageFile.path),
       );
 
-      var streamedResponse = await request.send().timeout(ApiConstants.connectionTimeout);
+      var streamedResponse = await request.send().timeout(
+        ApiConstants.connectionTimeout,
+      );
       var response = await http.Response.fromStream(streamedResponse);
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
