@@ -243,38 +243,46 @@ class _PerfilPageState extends State<PerfilPage> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          // Estado de la foto de perfil
-          _buildProfileStatusCard(conductor),
-          const SizedBox(height: 20),
-          // Tarjeta de información personal
-          PersonalInfoCard(conductor: conductor),
-          const SizedBox(height: 20),
-          // Botón de Cerrar Sesión
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withAlpha((0.2 * 255).toInt()),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+    return RefreshIndicator(
+      onRefresh: () async {
+        await authProvider.refreshUserDataFromRemote();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            // Estado de la foto de perfil
+            _buildProfileStatusCard(conductor),
+            const SizedBox(height: 20),
+            // Tarjeta de información personal
+            PersonalInfoCard(conductor: conductor),
+            const SizedBox(height: 10),
+            VehiculoInfoCard(conductor: conductor),
+            const SizedBox(height: 20),
+            // Botón de Cerrar Sesión
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withAlpha((0.2 * 255).toInt()),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: CustomButton(
+                text: "Cerrar Sesión",
+                isLoading: authProvider.isLoading,
+                onPressed: () => _logout(context),
+              ),
             ),
-            child: CustomButton(
-              text: "Cerrar Sesión",
-              isLoading: authProvider.isLoading,
-              onPressed: () => _logout(context),
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

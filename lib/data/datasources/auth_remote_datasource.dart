@@ -15,6 +15,7 @@ abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> validateDniForPasswordRecovery(String dni);
   Future<Map<String, dynamic>> resetPassword(String dni, String newPassword);
   Future<Map<String, dynamic>> uploadProfilePicture(File imageFile);
+  Future<Map<String, dynamic>> updateVehicleData(Map<String, dynamic> data);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -42,11 +43,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final conductor = ConductorModel.fromJson(data);
-        // Limpiar datos anteriores
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('conductor');
-        
-        // Guardar en SharedPreferences para persistencia
+        // Limpiar datos anteriores y guardar nuevo
         await _saveUserToPrefs(data);
 
         return conductor;
@@ -58,9 +55,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw ServerException('Error de autenticación: ${response.statusCode}');
       }
     } catch (e) {
-      if (e is AppException) {
-        rethrow;
-      }
+      if (e is AppException) rethrow;
       throw ServerException('Error de conexión: $e');
     }
   }
@@ -103,27 +98,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
-      final String dni = conductorData['conductor']['nro_documento'];
+      // support both shapes: { 'conductor': {...}, ... } or flat conductor object
+      final Map<String, dynamic> conductorMap =
+          (conductorData['conductor'] is Map)
+              ? Map<String, dynamic>.from(conductorData['conductor'])
+              : Map<String, dynamic>.from(conductorData);
 
-      final url = Uri.parse('${ApiConstants.baseUrl}/conductor/$dni/refresh');
+      final int idConductor =
+          conductorMap['id_conductor'] is int
+              ? conductorMap['id_conductor']
+              : int.tryParse((conductorMap['id_conductor'] ?? '').toString()) ??
+                  0;
+      final int tipo =
+          conductorMap['tipo'] is int
+              ? conductorMap['tipo']
+              : int.tryParse((conductorMap['tipo'] ?? '').toString()) ?? 0;
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}/get-perfil-usuario/$idConductor/$tipo',
+      );
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final freshConductor = ConductorModel.fromJson(data);
-
-        // Actualizar los datos en cache
-        await _saveUserToPrefs(data);
-
-        return freshConductor;
+        final updatedCache = Map<String, dynamic>.from(conductorData);
+        if (data.containsKey('conductor')) {
+          // response already wrapped
+          updatedCache.addAll(data);
+        } else {
+          updatedCache['conductor'] = data;
+        }
+        await _saveUserToPrefs(updatedCache);
+        return ConductorModel.fromJson(updatedCache);
       } else {
-        // Si falla, devolver los datos del cache
         return getCurrentUser();
       }
     } catch (e) {
-      // Si hay error, devolver los datos del cache
       return getCurrentUser();
     }
   }
@@ -280,6 +292,91 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         rethrow;
       }
       throw ServerException('Error al subir foto de perfil: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateVehicleData(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final conductorJson = prefs.getString('conductor');
+      if (conductorJson == null) {
+        throw const AuthException('No se encontró el usuario');
+      }
+
+      final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
+      final Map<String, dynamic> conductorMap =
+          (conductorData['conductor'] is Map)
+              ? Map<String, dynamic>.from(conductorData['conductor'])
+              : Map<String, dynamic>.from(conductorData);
+
+      final int idConductor =
+          conductorMap['id_conductor'] is int
+              ? conductorMap['id_conductor']
+              : int.tryParse((conductorMap['id_conductor'] ?? '').toString()) ??
+                  0;
+      final int tipo =
+          conductorMap['tipo'] is int
+              ? conductorMap['tipo']
+              : int.tryParse((conductorMap['tipo'] ?? '').toString()) ?? 0;
+
+      final body = <String, dynamic>{
+        'id_usuario': idConductor,
+        'tipo_usuario': tipo,
+        ...data,
+      };
+
+      final url = Uri.parse('${ApiConstants.baseUrl}/update-datos-usuario');
+
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(ApiConstants.connectionTimeout);
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        if (responseData.containsKey('conductor')) {
+          await _saveUserToPrefs(responseData);
+        } else {
+          final updatedCache = Map<String, dynamic>.from(conductorData);
+          final existingConductor = Map<String, dynamic>.from(conductorMap);
+
+          // prefer server response fields, otherwise apply submitted data
+          if (responseData.isNotEmpty) {
+            for (final entry in responseData.entries) {
+              existingConductor[entry.key] = entry.value;
+            }
+          } else {
+            for (final entry in data.entries) {
+              existingConductor[entry.key] = entry.value;
+            }
+          }
+
+          updatedCache['conductor'] = existingConductor;
+          await prefs.setString('conductor', jsonEncode(updatedCache));
+        }
+
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Datos actualizados',
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Error al actualizar',
+          'data': responseData,
+        };
+      }
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Error al actualizar datos del vehículo: $e');
     }
   }
 

@@ -125,3 +125,16 @@ class UploadProfilePictureUseCase {
     return await repository.uploadProfilePicture(file);
   }
 }
+
+class UpdateVehicleDataUseCase {
+  final AuthRepository repository;
+
+  UpdateVehicleDataUseCase(this.repository);
+
+  Future<Either<Failure, Map<String, dynamic>>> call(Map<String, dynamic> data) async {
+    if (data.isEmpty) {
+      return Either.left(const ValidationFailure('No hay datos para actualizar'));
+    }
+    return await repository.updateVehicleData(data);
+  }
+}

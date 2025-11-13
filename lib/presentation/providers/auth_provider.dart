@@ -11,6 +11,8 @@ class AuthProvider extends ChangeNotifier {
   final GetLoggedUserUseCase _getLoggedUserUseCase;
   final ChangePasswordUseCase _changePasswordUseCase;
   final ValidateDniForPasswordRecoveryUseCase _validateDniForPasswordRecoveryUseCase;
+  final UpdateVehicleDataUseCase _updateVehicleDataUseCase;
+  final RefreshUserDataUseCase _refreshUserDataUseCase;
   
   AuthProvider({
     required LoginUseCase loginUseCase,
@@ -18,11 +20,15 @@ class AuthProvider extends ChangeNotifier {
     required GetLoggedUserUseCase getLoggedUserUseCase,
     required ChangePasswordUseCase changePasswordUseCase,
     required ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase,
+    required UpdateVehicleDataUseCase updateVehicleDataUseCase,
+    required RefreshUserDataUseCase refreshUserDataUseCase,
   })  : _loginUseCase = loginUseCase,
         _logoutUseCase = logoutUseCase,
         _getLoggedUserUseCase = getLoggedUserUseCase,
         _changePasswordUseCase = changePasswordUseCase,
-        _validateDniForPasswordRecoveryUseCase = validateDniForPasswordRecoveryUseCase;
+        _validateDniForPasswordRecoveryUseCase = validateDniForPasswordRecoveryUseCase,
+        _updateVehicleDataUseCase = updateVehicleDataUseCase,
+        _refreshUserDataUseCase = refreshUserDataUseCase;
 
   AuthStatus _status = AuthStatus.initial;
   ConductorEntity? _currentUser;
@@ -136,6 +142,49 @@ class AuthProvider extends ChangeNotifier {
     if (_status == AuthStatus.error) {
       _setStatus(AuthStatus.unauthenticated);
     }
+  }
+
+  /// Actualiza los datos del vehículo usando la capa de dominio (UseCase)
+  Future<bool> updateVehicleData(Map<String, dynamic> data) async {
+    _setStatus(AuthStatus.loading);
+
+    final result = await _updateVehicleDataUseCase.call(data);
+
+    return result.fold((failure) {
+      _errorMessage = _mapFailureToMessage(failure);
+      // mantener autenticado si ya estaba
+      _setStatus(AuthStatus.authenticated);
+      return false;
+    }, (response) async {
+      _errorMessage = null;
+      // Refrescar datos de usuario desde cache/remote para sincronizar
+      await checkAuthStatus();
+      return true;
+    });
+  }
+
+  /// Refresca los datos del usuario desde el servidor remoto (usecase dedicado).
+  /// Retorna true si se actualizaron los datos correctamente.
+  Future<bool> refreshUserDataFromRemote() async {
+    _setStatus(AuthStatus.loading);
+
+    final result = await _refreshUserDataUseCase.call();
+
+    return result.fold((failure) {
+      _errorMessage = _mapFailureToMessage(failure);
+      // mantener estado autenticado si ya lo estaba
+      _setStatus(AuthStatus.authenticated);
+      return false;
+    }, (conductor) {
+      if (conductor != null) {
+        _currentUser = conductor;
+        _errorMessage = null;
+        _setStatus(AuthStatus.authenticated);
+        return true;
+      }
+      _setStatus(AuthStatus.unauthenticated);
+      return false;
+    });
   }
 
   // Métodos privados

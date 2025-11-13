@@ -128,4 +128,22 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(UnknownFailure('Error al subir imagen: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> updateVehicleData(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final result = await remoteDataSource.updateVehicleData(data);
+      return Either.right(result);
+    } on ValidationException catch (e) {
+      return Either.left(ValidationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Either.left(NetworkFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error al actualizar datos del vehículo: $e'));
+    }
+  }
 }

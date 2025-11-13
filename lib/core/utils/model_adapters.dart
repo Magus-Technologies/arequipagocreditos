@@ -27,6 +27,16 @@ class ModelAdapters {
       tipo: entity.tipo,
       fotoPerfil: entity.fotoPerfil,
       fotoPerfilCambiada: entity.fotoPerfilCambiada,
+      // Mapear campos opcionales para compatibilidad con la UI (fecha, placa, datos del vehículo)
+      fechaNacimiento: entity.fechaNacimiento,
+      placa: entity.placa,
+      soat: entity.soat,
+      revisionTecnica: entity.revisionTecnica,
+      seguroVehicular: entity.seguroVehicular,
+      color: entity.color,
+      anio: entity.anio,
+      marca: entity.marca,
+      modelo: entity.modelo,
     );
   }
 

@@ -45,8 +45,10 @@ class DependencyInjection {
         loginUseCase: _getLoginUseCase(),
         logoutUseCase: _getLogoutUseCase(),
         getLoggedUserUseCase: _getLoggedUserUseCase(),
-        changePasswordUseCase: _getChangePasswordUseCase(),
-        validateDniForPasswordRecoveryUseCase: validateDniForPasswordRecoveryUseCase(),
+            changePasswordUseCase: _getChangePasswordUseCase(),
+            validateDniForPasswordRecoveryUseCase: validateDniForPasswordRecoveryUseCase(),
+            updateVehicleDataUseCase: _getUpdateVehicleDataUseCase(),
+            refreshUserDataUseCase: refreshUserDataUseCase(),
       ),
     ),
     
@@ -148,6 +150,7 @@ class DependencyInjection {
   static ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase() => ValidateDniForPasswordRecoveryUseCase(_authRepository);
   static ResetPasswordUseCase resetPasswordUseCase() => ResetPasswordUseCase(_authRepository);
   static UploadProfilePictureUseCase uploadProfilePictureUseCase() => UploadProfilePictureUseCase(_authRepository);
+  static UpdateVehicleDataUseCase _getUpdateVehicleDataUseCase() => UpdateVehicleDataUseCase(_authRepository);
 
   // Use Cases - Cupones
   static GetCuponesUseCase _getCuponesUseCase() => GetCuponesUseCase(_cuponesRepository);

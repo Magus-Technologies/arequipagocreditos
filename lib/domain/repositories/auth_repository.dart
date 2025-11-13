@@ -12,4 +12,5 @@ abstract class AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> validateDniForPasswordRecovery(String dni);
   Future<Either<Failure, Map<String, dynamic>>> resetPassword(String dni, String newPassword);
   Future<Either<Failure, Map<String, dynamic>>> uploadProfilePicture(File imageFile);
+  Future<Either<Failure, Map<String, dynamic>>> updateVehicleData(Map<String, dynamic> data);
 }
