@@ -127,8 +127,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         if (data.containsKey('conductor')) {
           // response already wrapped
           updatedCache.addAll(data);
+          // If backend provides document alerts, persist them at top-level so UI can read them
+          if (data.containsKey('expired_documents')) {
+            updatedCache['expired_documents'] = data['expired_documents'];
+          }
+          if (data.containsKey('near_expiry_documents')) {
+            updatedCache['near_expiry_documents'] = data['near_expiry_documents'];
+          }
         } else {
           updatedCache['conductor'] = data;
+          if (data.containsKey('expired_documents')) {
+            updatedCache['expired_documents'] = data['expired_documents'];
+          }
+          if (data.containsKey('near_expiry_documents')) {
+            updatedCache['near_expiry_documents'] = data['near_expiry_documents'];
+          }
         }
         await _saveUserToPrefs(updatedCache);
         return ConductorModel.fromJson(updatedCache);

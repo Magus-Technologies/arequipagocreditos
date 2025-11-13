@@ -246,6 +246,35 @@ class _PerfilPageState extends State<PerfilPage> {
     return RefreshIndicator(
       onRefresh: () async {
         await authProvider.refreshUserDataFromRemote();
+        if (!context.mounted) return;
+
+        // Try to read server-provided alerts first
+        final server = await authProvider.getServerDocumentAlerts();
+        List<String> expired = server['expired'] ?? [];
+        List<String> near = server['near'] ?? [];
+
+        // Fallback to client-side calculations if backend doesn't provide alerts
+        if ((expired.isEmpty) && (near.isEmpty)) {
+          expired = authProvider.getExpiredVehicleDocuments();
+          near = authProvider.getNearExpiryVehicleDocuments(7);
+        }
+
+        if (expired.isNotEmpty || near.isNotEmpty) {
+          final parts = <String>[];
+          if (expired.isNotEmpty) parts.add('Vencidos: ${expired.join(', ')}');
+          if (near.isNotEmpty) parts.add('A vencer en los próximos 7 días: ${near.join(', ')}');
+          showDialog<void>(
+            context: context,
+            barrierDismissible: true,
+            builder: (context) => AlertDialog(
+              title: const Text('Aviso de documentos'),
+              content: Text(parts.join('\n')),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+              ],
+            ),
+          );
+        }
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

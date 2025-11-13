@@ -35,6 +35,8 @@ class AppWrapper extends StatefulWidget {
 }
 
 class _AppWrapperState extends State<AppWrapper> {
+  bool _expiryAlertShown = false;
+  static const int _nearExpiryDays = 7;
   @override
   void initState() {
     super.initState();
@@ -53,6 +55,64 @@ class _AppWrapperState extends State<AppWrapper> {
           case AuthStatus.loading:
             return SplashPage();
           case AuthStatus.authenticated:
+            // Mostrar alerta una sola vez por sesión si hay documentos vencidos o próximos a vencer
+            if (!_expiryAlertShown) {
+              _expiryAlertShown =
+                  true; // marcar inmediatamente para evitar múltiples invocaciones
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!context.mounted) return;
+                // Prefer server-provided alerts (if backend implements them), otherwise fallback to client-side checks
+                final serverAlerts =
+                    await context
+                        .read<AuthProvider>()
+                        .getServerDocumentAlerts();
+                final expiredServer = serverAlerts['expired'] ?? <String>[];
+                final nearServer = serverAlerts['near'] ?? <String>[];
+
+                List<String> expired = expiredServer;
+                List<String> near = nearServer;
+
+                if (expired.isEmpty && near.isEmpty) {
+                  if (!context.mounted) return;
+                  expired =
+                      context.read<AuthProvider>().getExpiredVehicleDocuments();
+                  near = context
+                      .read<AuthProvider>()
+                      .getNearExpiryVehicleDocuments(_nearExpiryDays);
+                }
+
+                if (expired.isNotEmpty || near.isNotEmpty) {
+                  final parts = <String>[];
+                  if (expired.isNotEmpty) {
+                    parts.add('Vencidos: ${expired.join(', ')}');
+                  }
+                  if (near.isNotEmpty) {
+                    parts.add(
+                      'A vencer en los próximos $_nearExpiryDays días: ${near.join(', ')}',
+                    );
+                  }
+
+                  if (!context.mounted) return;
+                  showDialog<void>(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Aviso de documentos'),
+                        content: Text(parts.join('\n')),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              });
+            }
+
             return DashboardPage();
           case AuthStatus.unauthenticated:
           case AuthStatus.error:

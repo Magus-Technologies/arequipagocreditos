@@ -72,16 +72,34 @@ class _EditVehiculoModalState extends State<EditVehiculoModal> {
 
     setState(() => _loading = true);
 
-    final Map<String, dynamic> payload = {
-      if (placaCtl.text.isNotEmpty) 'placa': placaCtl.text,
-      if (soatCtl.text.isNotEmpty) 'soat': soatCtl.text,
-      if (revisionCtl.text.isNotEmpty) 'revision_tecnica': revisionCtl.text,
-      if (seguroCtl.text.isNotEmpty) 'seguro_vehicular': seguroCtl.text,
-      if (colorCtl.text.isNotEmpty) 'color': colorCtl.text,
-      if (anioCtl.text.isNotEmpty) 'anio': int.tryParse(anioCtl.text),
-      if (marcaCtl.text.isNotEmpty) 'marca': marcaCtl.text,
-      if (modeloCtl.text.isNotEmpty) 'modelo': modeloCtl.text,
-    };
+    String? isoForKey(String key, TextEditingController ctl) {
+      // prefer explicit _isoDates stored on pick
+      if (_isoDates.containsKey(key)) return _isoDates[key];
+      // otherwise try to parse display dd/MM/yyyy
+      final d = _displayToDate(ctl.text);
+      if (d != null) {
+        return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      // fallback: if controller has something that looks like ISO, return it
+      try {
+        final maybe = DateTime.tryParse(ctl.text);
+        if (maybe != null) return '${maybe.year.toString().padLeft(4, '0')}-${maybe.month.toString().padLeft(2, '0')}-${maybe.day.toString().padLeft(2, '0')}';
+      } catch (_) {}
+      return null;
+    }
+
+    final Map<String, dynamic> payload = {};
+    if (placaCtl.text.isNotEmpty) payload['placa'] = placaCtl.text;
+    final soatIso = isoForKey('soat', soatCtl);
+    if (soatIso != null) payload['soat'] = soatIso;
+    final revIso = isoForKey('revision_tecnica', revisionCtl);
+    if (revIso != null) payload['revision_tecnica'] = revIso;
+    final seguroIso = isoForKey('seguro_vehicular', seguroCtl);
+    if (seguroIso != null) payload['seguro_vehicular'] = seguroIso;
+    if (colorCtl.text.isNotEmpty) payload['color'] = colorCtl.text;
+    if (anioCtl.text.isNotEmpty) payload['anio'] = int.tryParse(anioCtl.text);
+    if (marcaCtl.text.isNotEmpty) payload['marca'] = marcaCtl.text;
+    if (modeloCtl.text.isNotEmpty) payload['modelo'] = modeloCtl.text;
     try {
       final success = await context.read<AuthProvider>().updateVehicleData(payload);
       if (success) {

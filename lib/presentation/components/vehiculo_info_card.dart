@@ -1,8 +1,10 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:arequipagocreditos/presentation/components/components.dart';
 import 'package:arequipagocreditos/presentation/components/edit_vehiculo_modal.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
+import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 
 class VehiculoInfoCard extends StatelessWidget {
   final ConductorModel? conductor;
@@ -50,7 +52,7 @@ class VehiculoInfoCard extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.edit, size: 20),
-                onPressed: () {
+                onPressed: () async {
                   final initial = {
                     'placa': conductor?.placa,
                     'soat': conductor?.soat,
@@ -62,7 +64,7 @@ class VehiculoInfoCard extends StatelessWidget {
                     'modelo': conductor?.modelo,
                   };
 
-                  showModalBottomSheet(
+                  final saved = await showModalBottomSheet<bool?>(
                     context: context,
                     isScrollControlled: true,
                     shape: const RoundedRectangleBorder(
@@ -73,6 +75,43 @@ class VehiculoInfoCard extends StatelessWidget {
                       child: EditVehiculoModal(initialData: initial),
                     ),
                   );
+
+                  // Si el modal devolvió true (guardado), mostrar alertas si aplica
+                  if (saved == true) {
+                    // El widget pudo haberse desmontado mientras el modal estaba abierto.
+                    // Verificar mounted antes de buscar ancestros o mostrar diálogos.
+                    if (!context.mounted) return;
+
+                    // Prefer server-provided alerts; si no existen, fallback al cálculo cliente
+                    final authProvider = context.read<AuthProvider>();
+                    final server = await authProvider.getServerDocumentAlerts();
+                    List<String> expired = server['expired'] ?? [];
+                    List<String> near = server['near'] ?? [];
+
+                    if (expired.isEmpty && near.isEmpty) {
+                      expired = authProvider.getExpiredVehicleDocuments();
+                      near = authProvider.getNearExpiryVehicleDocuments(7);
+                    }
+
+                    if (expired.isNotEmpty || near.isNotEmpty) {
+                      final parts = <String>[];
+                      if (expired.isNotEmpty) parts.add('Vencidos: ${expired.join(', ')}');
+                      if (near.isNotEmpty) parts.add('A vencer en los próximos 7 días: ${near.join(', ')}');
+                      // Volver a comprobar mounted justo antes de mostrar el diálogo
+                      if (!context.mounted) return;
+                      showDialog<void>(
+                        context: context,
+                        barrierDismissible: true,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Aviso de documentos'),
+                          content: Text(parts.join('\n')),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+                          ],
+                        ),
+                      );
+                    }
+                  }
                 },
               ),
             ],
