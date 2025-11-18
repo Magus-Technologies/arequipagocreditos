@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
 	<!-- xml -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Necesitamos acceder a la fototeca para que puedas seleccionar y compartir imágenes en la app.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Necesitamos acceso a la cámara para tomar fotos desde la app.</string>
+	<string>La cámara se usa únicamente para que el usuario pueda cambiar su foto de perfil una sola vez; la foto se subirá a su cuenta en el servidor y reemplazará la imagen actual (por ejemplo, tomar una foto para su perfil).</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se usa para seleccionar una foto de su fototeca como foto de perfil (por ejemplo, elegir una imagen existente).</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Necesitamos permiso para guardar fotos en la fototeca.</string>
+	<string>Se usa para guardar una copia de la foto tomada en su fototeca si el usuario elige conservarla.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
