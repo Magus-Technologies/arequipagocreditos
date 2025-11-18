@@ -157,7 +157,7 @@ class BeneficioCard extends StatelessWidget {
           child: _buildInfoItem(
             'Cuota Inicial',
             '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
-            Icons.monetization_on,
+            Icons.credit_card,
             AppTheme.bgContacto,
           ),
         ),
