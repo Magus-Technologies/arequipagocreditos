@@ -287,11 +287,11 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.92),
+                                  color: Colors.white.withAlpha((0.92 * 255).toInt()),
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color: Colors.black.withAlpha((0.08 * 255).toInt()),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),

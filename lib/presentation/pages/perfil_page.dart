@@ -263,6 +263,7 @@ class _PerfilPageState extends State<PerfilPage> {
           final parts = <String>[];
           if (expired.isNotEmpty) parts.add('Vencidos: ${expired.join(', ')}');
           if (near.isNotEmpty) parts.add('A vencer en los próximos 7 días: ${near.join(', ')}');
+          if(!mounted) return;
           showDialog<void>(
             context: context,
             barrierDismissible: true,
