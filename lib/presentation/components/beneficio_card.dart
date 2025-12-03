@@ -151,32 +151,47 @@ class BeneficioCard extends StatelessWidget {
   }
 
   Widget _buildFinancialInfo() {
-    return Row(
+    final hasInscripcion = beneficio.pagoInscripcion != null;
+    
+    return Column(
       children: [
-        Expanded(
-          child: _buildInfoItem(
-            'Cuota Inicial',
-            '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
-            Icons.credit_card,
-            AppTheme.bgContacto,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoItem(
+                'Cuota Inicial',
+                '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
+                Icons.credit_card,
+                AppTheme.bgContacto,
+              ),
+            ),
+            Expanded(
+              child: _buildInfoItem(
+                'Cuotas',
+                '${beneficio.cantidadCuotas}x',
+                Icons.calendar_month,
+                AppTheme.title,
+              ),
+            ),
+            Expanded(
+              child: _buildInfoItem(
+                'Mensual',
+                '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
+                Icons.schedule,
+                AppTheme.btnColor,
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          child: _buildInfoItem(
-            'Cuotas',
-            '${beneficio.cantidadCuotas}x',
-            Icons.calendar_month,
-            AppTheme.title,
+        if (hasInscripcion) ...[
+          const SizedBox(height: 12),
+          _buildInfoItem(
+            'Pago de Inscripción',
+            '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}',
+            Icons.app_registration,
+            AppTheme.primary,
           ),
-        ),
-        Expanded(
-          child: _buildInfoItem(
-            'Mensual',
-            '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
-            Icons.schedule,
-            AppTheme.btnColor,
-          ),
-        ),
+        ],
       ],
     );
   }

@@ -10,6 +10,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
     required super.cuotaInicial,
     required super.cantidadCuotas,
     required super.cuotaMensual,
+    super.pagoInscripcion,
     super.imagen,
     required super.disponible,
     required super.fechaCreacion,
@@ -27,6 +28,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       cuotaInicial: double.tryParse(json['cuota_inicial']?.toString() ?? '0') ?? 0.0,
       cantidadCuotas: json['cantidad_cuotas'] ?? 0,
       cuotaMensual: double.tryParse(json['cuota_mensual']?.toString() ?? '0') ?? 0.0,
+      pagoInscripcion: json['pago_inscripcion'] != null ? double.tryParse(json['pago_inscripcion']?.toString() ?? '0') : null,
       imagen: json['imagen'],
       disponible: (json['disponible'] ?? 0) == 1,
       fechaCreacion: DateTime.tryParse(json['fecha_creacion'] ?? '') ?? DateTime.now(),
@@ -45,6 +47,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       'cuota_inicial': cuotaInicial.toString(),
       'cantidad_cuotas': cantidadCuotas,
       'cuota_mensual': cuotaMensual.toString(),
+      'pago_inscripcion': pagoInscripcion?.toString(),
       'imagen': imagen,
       'disponible': disponible ? 1 : 0,
       'fecha_creacion': fechaCreacion.toIso8601String(),
@@ -62,4 +65,5 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
   // Formato de moneda para mostrar
   String get cuotaInicialFormatted => 'S/ ${cuotaInicial.toStringAsFixed(2)}';
   String get cuotaMensualFormatted => 'S/ ${cuotaMensual.toStringAsFixed(2)}';
+  String? get pagoInscripcionFormatted => pagoInscripcion != null ? 'S/ ${pagoInscripcion!.toStringAsFixed(2)}' : null;
 }

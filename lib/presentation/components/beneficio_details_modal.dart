@@ -201,9 +201,16 @@ class BeneficioDetailsModal extends StatelessWidget {
         _buildDetailRow('Cuota Inicial:', '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}'),
         _buildDetailRow('Cantidad de Cuotas:', '${beneficio.cantidadCuotas}'),
         _buildDetailRow('Cuota Mensual:', '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}'),
-        _buildDetailRow('Total del Plan:', '${beneficio.moneda} ${((beneficio.cuotaMensual * beneficio.cantidadCuotas) + beneficio.cuotaInicial).toStringAsFixed(2)}'),
+        if (beneficio.pagoInscripcion != null)
+          _buildDetailRow('Pago de Inscripción:', '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}'),
+        _buildDetailRow('Total del Plan:', '${beneficio.moneda} ${_calculateTotal().toStringAsFixed(2)}'),
       ],
     );
+  }
+
+  double _calculateTotal() {
+    final total = (beneficio.cuotaMensual * beneficio.cantidadCuotas) + beneficio.cuotaInicial;
+    return beneficio.pagoInscripcion != null ? total + beneficio.pagoInscripcion! : total;
   }
 
   Widget _buildDetailRow(String label, String value) {

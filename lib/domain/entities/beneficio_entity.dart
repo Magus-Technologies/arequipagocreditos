@@ -51,6 +51,7 @@ class BeneficioComercialEntity {
   final double cuotaInicial;
   final int cantidadCuotas;
   final double cuotaMensual;
+  final double? pagoInscripcion;
   final String? imagen;
   final bool disponible;
   final DateTime fechaCreacion;
@@ -66,6 +67,7 @@ class BeneficioComercialEntity {
     required this.cuotaInicial,
     required this.cantidadCuotas,
     required this.cuotaMensual,
+    this.pagoInscripcion,
     this.imagen,
     required this.disponible,
     required this.fechaCreacion,
