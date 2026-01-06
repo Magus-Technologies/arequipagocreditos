@@ -35,7 +35,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       fechaCreacion: DateTime.tryParse(json['fecha_creacion'] ?? '') ?? DateTime.now(),
       fechaActualizacion: DateTime.tryParse(json['fecha_actualizacion'] ?? '') ?? DateTime.now(),
       moneda: json['moneda'] ?? 'S/.',
-      frecuenciaPago: json['frecuencia_pago'] ?? 'mensual',
+      frecuenciaPago: (json['frecuencia_pago'] ?? '').toString(),
     );
   }
 

@@ -175,7 +175,7 @@ class BeneficioCard extends StatelessWidget {
             ),
             Expanded(
               child: _buildInfoItem(
-                'Mensual',
+                _formatFrequency(beneficio.frecuenciaPago),
                 '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
                 Icons.schedule,
                 AppTheme.btnColor,
@@ -278,3 +278,9 @@ class BeneficioCard extends StatelessWidget {
     );
   }
 }
+
+  String _formatFrequency(String? freq) {
+    if (freq == null || freq.isEmpty) return '-';
+    final f = freq.trim();
+    return f[0].toUpperCase() + f.substring(1);
+  }
