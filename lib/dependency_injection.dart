@@ -7,11 +7,13 @@ import 'package:provider/provider.dart';
 // Data Layer
 import 'data/datasources/auth_remote_datasource.dart';
 import 'data/datasources/cupones_remote_datasource.dart';
+import 'data/datasources/cupones_public_remote_datasource.dart';
 import 'data/datasources/financiamiento_remote_datasource.dart';
 import 'data/datasources/puntuacion_remote_datasource.dart';
 import 'data/datasources/beneficios_comercial_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
+import 'data/repositories/cupones_public_repository_impl.dart';
 import 'data/repositories/financiamiento_repository_impl.dart';
 import 'data/repositories/puntuacion_repository_impl.dart';
 import 'data/repositories/beneficios_comercial_repository_impl.dart';
@@ -19,11 +21,13 @@ import 'data/repositories/beneficios_comercial_repository_impl.dart';
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/cupones_repository.dart';
+import 'domain/repositories/cupones_public_repository.dart';
 import 'domain/repositories/financiamiento_repository.dart';
 import 'domain/repositories/puntuacion_repository.dart';
 import 'domain/repositories/beneficios_comercial_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
+import 'domain/usecases/get_public_cupones_usecase.dart';
 import 'domain/usecases/financiamiento_usecases.dart';
 import 'domain/usecases/puntuacion_usecases.dart';
 import 'domain/usecases/get_resumen_crediticio_usecase.dart';
@@ -32,6 +36,7 @@ import 'domain/usecases/get_beneficios_comercial_usecase.dart';
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cupones_provider.dart';
+import 'presentation/providers/cupones_public_provider.dart';
 import 'presentation/providers/financiamiento_provider.dart';
 import 'presentation/providers/puntuacion_provider.dart';
 import 'presentation/providers/resumen_crediticio_provider.dart';
@@ -92,6 +97,11 @@ class DependencyInjection {
         getBeneficiosComercialUseCase: getBeneficiosComercialUseCase(),
       ),
     ),
+    ChangeNotifierProvider<CuponesPublicProvider>(
+      create: (context) => CuponesPublicProvider(
+        getPublicCuponesUseCase: _getPublicCuponesUseCase(),
+      ),
+    ),
   ];
 
   // Repositories
@@ -101,6 +111,10 @@ class DependencyInjection {
 
   static CuponesRepository get _cuponesRepository => CuponesRepositoryImpl(
     remoteDataSource: _cuponesRemoteDataSource,
+  );
+
+  static CuponesPublicRepository get _cuponesPublicRepository => CuponesPublicRepositoryImpl(
+    remoteDataSource: _cuponesPublicRemoteDataSource,
   );
 
   static FinanciamientoRepository get _financiamientoRepository => FinanciamientoRepositoryImpl(
@@ -125,6 +139,9 @@ class DependencyInjection {
 
   static CuponesRemoteDataSource get _cuponesRemoteDataSource => 
       CuponesRemoteDataSourceImpl(client: _httpClient);
+
+    static CuponesPublicRemoteDataSource get _cuponesPublicRemoteDataSource =>
+      CuponesPublicRemoteDataSourceImpl(client: _httpClient);
 
   static FinanciamientoRemoteDataSource get _financiamientoRemoteDataSource => 
       FinanciamientoRemoteDataSourceImpl(client: _httpClient);
@@ -156,6 +173,7 @@ class DependencyInjection {
   static GetCuponesUseCase _getCuponesUseCase() => GetCuponesUseCase(_cuponesRepository);
   static UsarCuponUseCase _getUsarCuponUseCase() => UsarCuponUseCase(_cuponesRepository);
   static FilterCuponesByCategoria _getFilterCuponesByCategoria() => FilterCuponesByCategoria();
+  static GetPublicCuponesUseCase _getPublicCuponesUseCase() => GetPublicCuponesUseCase(_cuponesPublicRepository);
 
   // Use Cases - Financiamiento
   static GetFinanciamientosUseCase getFinanciamientosUseCase() => GetFinanciamientosUseCase(repository: _financiamientoRepository);

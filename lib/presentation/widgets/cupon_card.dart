@@ -4,7 +4,7 @@ import '../../../theme/app_theme.dart';
 import '../../core/utils/date_utils.dart' as app_date_utils;
 import '../../core/utils/cupon_utils.dart';
 
-class CuponCard extends StatelessWidget {
+class CuponCard extends StatefulWidget {
   final CuponModel cupon;
   final VoidCallback onUsar;
 
@@ -13,6 +13,16 @@ class CuponCard extends StatelessWidget {
     required this.cupon,
     required this.onUsar,
   });
+
+  @override
+  State<CuponCard> createState() => _CuponCardState();
+}
+
+class _CuponCardState extends State<CuponCard> {
+  bool _expanded = false;
+
+  CuponModel get cupon => widget.cupon;
+  VoidCallback get onUsar => widget.onUsar;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +54,6 @@ class CuponCard extends StatelessWidget {
               // Imagen del banner si está disponible
               if (cupon.imagenBanner != null && cupon.imagenBanner!.isNotEmpty)
                 _buildBannerImage(),
-              
               // Contenido principal
               _buildContent(),
             ],
@@ -229,12 +238,30 @@ class CuponCard extends StatelessWidget {
   }
 
   Widget _buildDescription() {
-    return Text(
-      cupon.descripcion ?? 'Descripción no disponible',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-      ),
+    final desc = cupon.descripcion ?? 'Descripción no disponible';
+    final isLong = desc.length > 140;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          desc,
+          maxLines: _expanded ? null : 3,
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
+        ),
+        if (isLong)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Text(_expanded ? 'Ver menos' : 'Ver más', style: const TextStyle(color: Colors.white70)),
+            ),
+          ),
+      ],
     );
   }
 
