@@ -16,7 +16,7 @@ class CuponesPublicRemoteDataSourceImpl implements CuponesPublicRemoteDataSource
   Future<List<CuponPublicModel>> getPublicCupones() async {
     try {
         final response = await client
-          .get(Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/listar'))
+          .get(Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/publicos'))
           .timeout(ApiConstants.connectionTimeout);
       if (response.statusCode == 200) {
         // Debug: print raw response for troubleshooting when needed
