@@ -5,7 +5,7 @@ class GetResumenCrediticioUseCase {
   final ResumenCrediticioRepository repository;
   GetResumenCrediticioUseCase({required this.repository});
 
-  Future<ResumenCrediticio> call(int conductorId) async {
-    return await repository.getResumenCrediticio(conductorId);
+  Future<ResumenCrediticio> call(int conductorId, int tipo) async {
+    return await repository.getResumenCrediticio(conductorId, tipo);
   }
 }

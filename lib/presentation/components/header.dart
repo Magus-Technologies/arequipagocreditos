@@ -1,11 +1,17 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
 import 'package:arequipagocreditos/presentation/components/component_quick_stat.dart';
 import 'package:arequipagocreditos/presentation/components/header_icon.dart';
+import 'package:arequipagocreditos/presentation/pages/cupones_page.dart';
 import 'package:arequipagocreditos/presentation/pages/perfil_page.dart';
+import 'package:arequipagocreditos/presentation/pages/puntuacion_page.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/presentation/providers/resumen_crediticio_provider.dart';
+import 'package:arequipagocreditos/presentation/providers/notification_provider.dart';
+import 'package:arequipagocreditos/data/models/notification_model.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:intl/intl.dart';
 
 class Header extends StatefulWidget {
   final ConductorModel conductor;
@@ -22,8 +28,20 @@ class _HeaderState extends State<Header> {
     super.initState();
     // Llama al provider para cargar los datos después del primer frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ResumenCrediticioProvider>(context, listen: false);
-      provider.fetchResumen(widget.conductor.idConductor);
+      final provider = Provider.of<ResumenCrediticioProvider>(
+        context,
+        listen: false,
+      );
+      provider.fetchResumen(
+        widget.conductor.idConductor,
+        widget.conductor.tipo,
+      );
+
+      final notifProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      notifProvider.init(widget.conductor.idConductor.toString(), widget.conductor.tipo);
     });
   }
 
@@ -60,9 +78,7 @@ class _HeaderState extends State<Header> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const PerfilPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const PerfilPage()),
                   );
                 },
               ),
@@ -98,14 +114,47 @@ class _HeaderState extends State<Header> {
                     },
                   ),
                   const SizedBox(width: 12),
-                  HeaderIcon(
-                    icon: Icons.notifications_outlined,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Próximamente: Notificaciones'),
-                          backgroundColor: Colors.orange,
-                        ),
+                  // Notifications Icon with Badge
+                  Consumer<NotificationProvider>(
+                    builder: (context, notifProvider, _) {
+                      return Stack(
+                        children: [
+                          HeaderIcon(
+                            icon: Icons.notifications_outlined,
+                            onTap: () {
+                              _showNotifications(
+                                context,
+                                notifProvider.notifications,
+                                notifProvider,
+                              );
+                            },
+                          ),
+                          if (notifProvider.unreadCount > 0)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '${notifProvider.unreadCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       );
                     },
                   ),
@@ -125,7 +174,9 @@ class _HeaderState extends State<Header> {
               if (resumenProvider.error != null) {
                 return SizedBox(
                   height: 90,
-                  child: Center(child: Text('Error al cargar datos')), // Puedes personalizar el error
+                  child: Center(
+                    child: const Text('Error al cargar datos'),
+                  ), // Puedes personalizar el error
                 );
               }
               final resumen = resumenProvider.resumen;
@@ -138,7 +189,10 @@ class _HeaderState extends State<Header> {
                     ComponentQuickStat(
                       emoji: '💳',
                       label: 'Créditos Activos',
-                      value: resumen != null ? resumen.creditosActivos.toString() : '-',
+                      value:
+                          resumen != null
+                              ? resumen.creditosActivos.toString()
+                              : '-',
                       primaryColor: const Color(0xFF1F2937),
                       secondaryColor: const Color(0xFF374151),
                     ),
@@ -148,13 +202,32 @@ class _HeaderState extends State<Header> {
                       value: resumen != null ? resumen.puntaje.toString() : '-',
                       primaryColor: AppTheme.primary,
                       secondaryColor: const Color(0xFFF59E0B),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PuntuacionPage(),
+                          ),
+                        );
+                      },
                     ),
                     ComponentQuickStat(
                       emoji: '🎁',
                       label: 'Cupones Disponibles',
-                      value: resumen != null ? resumen.cuponesDisponibles.toString() : '-',
+                      value:
+                          resumen != null
+                              ? resumen.cuponesDisponibles.toString()
+                              : '-',
                       primaryColor: const Color(0xFF4B5563),
                       secondaryColor: const Color(0xFF6B7280),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CuponesPage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -164,5 +237,292 @@ class _HeaderState extends State<Header> {
         ],
       ),
     );
+  }
+
+  void _showNotifications(
+    BuildContext context,
+    List<NotificationModel> notifications,
+    NotificationProvider notifProvider,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Barra superior decorativa
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Notificaciones',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (notifications.any((n) => !n.isRead))
+                      TextButton(
+                        onPressed: () {
+                          // Opcional: Marcar todas como leídas
+                        },
+                        child: const Text('Limpiar'),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child:
+                    notifications.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.notifications_off_outlined,
+                                size: 80,
+                                color: Colors.grey[300],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No hay notificaciones',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notification = notifications[index];
+                            final isRead = notification.isRead;
+
+                            // Definimos el Dismissible como el elemento principal
+                            return Dismissible(
+                              key: Key(
+                                notification.id,
+                              ), // Usar ID único de la notificación
+                              direction:
+                                  isRead
+                                      ? DismissDirection.none
+                                      : DismissDirection.endToStart,
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.endToStart) {
+                                  // Marcamos como leído pero retornamos false para que el widget NO desaparezca
+                                  await notifProvider.markAsRead(
+                                    notification.id
+                                  );
+                                  return false;
+                                }
+                                return false;
+                              },
+                              background: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              child: FadeInRight(
+                                delay: Duration(milliseconds: 50 * index),
+                                duration: const Duration(milliseconds: 300),
+                                child: _NotificationItem(
+                                  notification: notification,
+                                  onTap: () async {
+                                    if (!isRead) {
+                                      await notifProvider.markAsRead(
+                                        notification.id
+                                      );
+                                    }
+                                    // ignore: use_build_context_synchronously
+                                    if (context.mounted) Navigator.pop(context);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NotificationItem extends StatelessWidget {
+  final NotificationModel notification;
+  final VoidCallback onTap;
+
+  const _NotificationItem({required this.notification, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isBirthday = notification.data.type == 'birthday';
+    final isRead = notification.isRead;
+
+    // Colores y diseño basado en el tipo
+    final Color primaryColor = isBirthday ? Colors.pink : AppTheme.primary;
+    final IconData icon = isBirthday ? Icons.cake : Icons.notifications;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color:
+            isRead
+                ? Colors.grey[50]
+                : primaryColor.withAlpha((0.05 * 255).toInt()),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isRead
+                  ? Colors.grey[200]!
+                  : primaryColor.withAlpha((0.2 * 255).toInt()),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icono decorativo
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color:
+                        isRead
+                            ? Colors.grey[200]
+                            : primaryColor.withAlpha((0.1 * 255).toInt()),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color:
+                        isRead
+                            ? Colors.grey[400]
+                            : primaryColor.withAlpha((0.8 * 255).toInt()),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Contenido
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.data.title,
+                              style: TextStyle(
+                                fontWeight:
+                                    isRead ? FontWeight.w600 : FontWeight.bold,
+                                fontSize: 15,
+                                color:
+                                    isRead ? Colors.grey[600] : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _getTimeAgo(notification.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        notification.data.message,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isRead ? Colors.grey[400] : Colors.black54,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isRead)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(left: 8, top: 4),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withAlpha((0.4 * 255).toInt()),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getTimeAgo(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 60) {
+      return 'Hace ${difference.inMinutes}min';
+    } else if (difference.inHours < 24) {
+      return 'Hace ${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return 'Hace ${difference.inDays}d';
+    } else {
+      return DateFormat('dd/MM').format(date);
+    }
   }
 }

@@ -41,118 +41,131 @@ import 'presentation/providers/financiamiento_provider.dart';
 import 'presentation/providers/puntuacion_provider.dart';
 import 'presentation/providers/resumen_crediticio_provider.dart';
 import 'presentation/providers/beneficios_provider.dart';
+import 'presentation/providers/notification_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
     // Providers
     ChangeNotifierProvider<AuthProvider>(
-      create: (context) => AuthProvider(
-        loginUseCase: _getLoginUseCase(),
-        logoutUseCase: _getLogoutUseCase(),
-        getLoggedUserUseCase: _getLoggedUserUseCase(),
+      create:
+          (context) => AuthProvider(
+            loginUseCase: _getLoginUseCase(),
+            logoutUseCase: _getLogoutUseCase(),
+            getLoggedUserUseCase: _getLoggedUserUseCase(),
             changePasswordUseCase: _getChangePasswordUseCase(),
-            validateDniForPasswordRecoveryUseCase: validateDniForPasswordRecoveryUseCase(),
+            validateDniForPasswordRecoveryUseCase:
+                validateDniForPasswordRecoveryUseCase(),
             updateVehicleDataUseCase: _getUpdateVehicleDataUseCase(),
             refreshUserDataUseCase: refreshUserDataUseCase(),
-      ),
+          ),
     ),
-    
+
     ChangeNotifierProvider<CuponesProvider>(
-      create: (context) => CuponesProvider(
-        getCuponesUseCase: _getCuponesUseCase(),
-        usarCuponUseCase: _getUsarCuponUseCase(),
-        filterCuponesByCategoria: _getFilterCuponesByCategoria(),
-      ),
+      create:
+          (context) => CuponesProvider(
+            getCuponesUseCase: _getCuponesUseCase(),
+            usarCuponUseCase: _getUsarCuponUseCase(),
+            filterCuponesByCategoria: _getFilterCuponesByCategoria(),
+          ),
     ),
 
     ChangeNotifierProvider<FinanciamientoProvider>(
-      create: (context) => FinanciamientoProvider(
-        getFinanciamientosUseCase: getFinanciamientosUseCase(),
-        getFinanciamientoByIdUseCase: getFinanciamientoByIdUseCase(),
-        getCuotasFinanciamientoUseCase: getCuotasFinanciamientoUseCase(),
-        pagarCuotaUseCase: getPagarCuotaUseCase(),
-        generarReporteCuotaUseCase: getGenerarReporteCuotaUseCase(),
-      ),
+      create:
+          (context) => FinanciamientoProvider(
+            getFinanciamientosUseCase: getFinanciamientosUseCase(),
+            getFinanciamientoByIdUseCase: getFinanciamientoByIdUseCase(),
+            getCuotasFinanciamientoUseCase: getCuotasFinanciamientoUseCase(),
+            pagarCuotaUseCase: getPagarCuotaUseCase(),
+            generarReporteCuotaUseCase: getGenerarReporteCuotaUseCase(),
+          ),
     ),
 
     ChangeNotifierProvider<PuntuacionProvider>(
-      create: (context) => PuntuacionProvider(
-        getPuntuacionUseCase: getPuntuacionUseCase(),
-        getHistorialPuntosUseCase: getHistorialPuntosUseCase(),
-        getBeneficiosUseCase: getBeneficiosUseCase(),
-        actualizarPuntuacionUseCase: getActualizarPuntuacionUseCase(),
-
-      ),
+      create:
+          (context) => PuntuacionProvider(
+            getPuntuacionUseCase: getPuntuacionUseCase(),
+            getHistorialPuntosUseCase: getHistorialPuntosUseCase(),
+            getBeneficiosUseCase: getBeneficiosUseCase(),
+            actualizarPuntuacionUseCase: getActualizarPuntuacionUseCase(),
+          ),
     ),
 
     ChangeNotifierProvider<ResumenCrediticioProvider>(
-      create: (context) => ResumenCrediticioProvider(
-        getResumenCrediticioUseCase: getResumenCrediticioUseCase(),
-        
-      ),
+      create:
+          (context) => ResumenCrediticioProvider(
+            getResumenCrediticioUseCase: getResumenCrediticioUseCase(),
+          ),
     ),
 
     ChangeNotifierProvider<BeneficiosProvider>(
-      create: (context) => BeneficiosProvider(
-        getBeneficiosComercialUseCase: getBeneficiosComercialUseCase(),
-      ),
+      create:
+          (context) => BeneficiosProvider(
+            getBeneficiosComercialUseCase: getBeneficiosComercialUseCase(),
+          ),
     ),
     ChangeNotifierProvider<CuponesPublicProvider>(
-      create: (context) => CuponesPublicProvider(
-        getPublicCuponesUseCase: _getPublicCuponesUseCase(),
-      ),
+      create:
+          (context) => CuponesPublicProvider(
+            getPublicCuponesUseCase: _getPublicCuponesUseCase(),
+          ),
+    ),
+    ChangeNotifierProvider<NotificationProvider>(
+      create: (context) => NotificationProvider(),
     ),
   ];
 
   // Repositories
-  static AuthRepository get _authRepository => AuthRepositoryImpl(
-    remoteDataSource: _authRemoteDataSource,
-  );
+  static AuthRepository get _authRepository =>
+      AuthRepositoryImpl(remoteDataSource: _authRemoteDataSource);
 
-  static CuponesRepository get _cuponesRepository => CuponesRepositoryImpl(
-    remoteDataSource: _cuponesRemoteDataSource,
-  );
+  static CuponesRepository get _cuponesRepository =>
+      CuponesRepositoryImpl(remoteDataSource: _cuponesRemoteDataSource);
 
-  static CuponesPublicRepository get _cuponesPublicRepository => CuponesPublicRepositoryImpl(
-    remoteDataSource: _cuponesPublicRemoteDataSource,
-  );
+  static CuponesPublicRepository get _cuponesPublicRepository =>
+      CuponesPublicRepositoryImpl(
+        remoteDataSource: _cuponesPublicRemoteDataSource,
+      );
 
-  static FinanciamientoRepository get _financiamientoRepository => FinanciamientoRepositoryImpl(
-    remoteDataSource: _financiamientoRemoteDataSource,
-  );
+  static FinanciamientoRepository get _financiamientoRepository =>
+      FinanciamientoRepositoryImpl(
+        remoteDataSource: _financiamientoRemoteDataSource,
+      );
 
-  static PuntuacionRepository get _puntuacionRepository => PuntuacionRepositoryImpl(
-    remoteDataSource: _puntuacionRemoteDataSource,
-  );
+  static PuntuacionRepository get _puntuacionRepository =>
+      PuntuacionRepositoryImpl(remoteDataSource: _puntuacionRemoteDataSource);
 
-  static ResumenCrediticioRepository get _resumenCrediticioRepository => ResumenCrediticioRepositoryImpl(
-    remoteDataSource: _resumenCrediticioRemoteDataSource,
-  );
+  static ResumenCrediticioRepository get _resumenCrediticioRepository =>
+      ResumenCrediticioRepositoryImpl(
+        remoteDataSource: _resumenCrediticioRemoteDataSource,
+      );
 
-  static BeneficiosComercialRepository get _beneficiosComercialRepository => BeneficiosComercialRepositoryImpl(
-    remoteDataSource: _beneficiosComercialRemoteDataSource,
-  );
+  static BeneficiosComercialRepository get _beneficiosComercialRepository =>
+      BeneficiosComercialRepositoryImpl(
+        remoteDataSource: _beneficiosComercialRemoteDataSource,
+      );
 
   // DataSources
-  static AuthRemoteDataSource get _authRemoteDataSource => 
+  static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
 
-  static CuponesRemoteDataSource get _cuponesRemoteDataSource => 
+  static CuponesRemoteDataSource get _cuponesRemoteDataSource =>
       CuponesRemoteDataSourceImpl(client: _httpClient);
 
-    static CuponesPublicRemoteDataSource get _cuponesPublicRemoteDataSource =>
+  static CuponesPublicRemoteDataSource get _cuponesPublicRemoteDataSource =>
       CuponesPublicRemoteDataSourceImpl(client: _httpClient);
 
-  static FinanciamientoRemoteDataSource get _financiamientoRemoteDataSource => 
+  static FinanciamientoRemoteDataSource get _financiamientoRemoteDataSource =>
       FinanciamientoRemoteDataSourceImpl(client: _httpClient);
 
-  static PuntuacionRemoteDataSource get _puntuacionRemoteDataSource => 
+  static PuntuacionRemoteDataSource get _puntuacionRemoteDataSource =>
       PuntuacionRemoteDataSourceImpl(client: _httpClient);
 
-  static ResumenCrediticioRemoteDataSource get _resumenCrediticioRemoteDataSource =>
+  static ResumenCrediticioRemoteDataSource
+  get _resumenCrediticioRemoteDataSource =>
       ResumenRemoteDataSourceImpl(client: _httpClient);
 
-  static BeneficiosComercialRemoteDataSource get _beneficiosComercialRemoteDataSource =>
+  static BeneficiosComercialRemoteDataSource
+  get _beneficiosComercialRemoteDataSource =>
       BeneficiosComercialRemoteDataSourceImpl(client: _httpClient);
 
   // Network
@@ -161,36 +174,59 @@ class DependencyInjection {
   // Use Cases - Auth
   static LoginUseCase _getLoginUseCase() => LoginUseCase(_authRepository);
   static LogoutUseCase _getLogoutUseCase() => LogoutUseCase(_authRepository);
-  static GetLoggedUserUseCase _getLoggedUserUseCase() => GetLoggedUserUseCase(_authRepository);
-  static ChangePasswordUseCase _getChangePasswordUseCase() => ChangePasswordUseCase(_authRepository);
-  static RefreshUserDataUseCase refreshUserDataUseCase() => RefreshUserDataUseCase(_authRepository);
-  static ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase() => ValidateDniForPasswordRecoveryUseCase(_authRepository);
-  static ResetPasswordUseCase resetPasswordUseCase() => ResetPasswordUseCase(_authRepository);
-  static UploadProfilePictureUseCase uploadProfilePictureUseCase() => UploadProfilePictureUseCase(_authRepository);
-  static UpdateVehicleDataUseCase _getUpdateVehicleDataUseCase() => UpdateVehicleDataUseCase(_authRepository);
+  static GetLoggedUserUseCase _getLoggedUserUseCase() =>
+      GetLoggedUserUseCase(_authRepository);
+  static ChangePasswordUseCase _getChangePasswordUseCase() =>
+      ChangePasswordUseCase(_authRepository);
+  static RefreshUserDataUseCase refreshUserDataUseCase() =>
+      RefreshUserDataUseCase(_authRepository);
+  static ValidateDniForPasswordRecoveryUseCase
+  validateDniForPasswordRecoveryUseCase() =>
+      ValidateDniForPasswordRecoveryUseCase(_authRepository);
+  static ResetPasswordUseCase resetPasswordUseCase() =>
+      ResetPasswordUseCase(_authRepository);
+  static UploadProfilePictureUseCase uploadProfilePictureUseCase() =>
+      UploadProfilePictureUseCase(_authRepository);
+  static UpdateVehicleDataUseCase _getUpdateVehicleDataUseCase() =>
+      UpdateVehicleDataUseCase(_authRepository);
 
   // Use Cases - Cupones
-  static GetCuponesUseCase _getCuponesUseCase() => GetCuponesUseCase(_cuponesRepository);
-  static UsarCuponUseCase _getUsarCuponUseCase() => UsarCuponUseCase(_cuponesRepository);
-  static FilterCuponesByCategoria _getFilterCuponesByCategoria() => FilterCuponesByCategoria();
-  static GetPublicCuponesUseCase _getPublicCuponesUseCase() => GetPublicCuponesUseCase(_cuponesPublicRepository);
+  static GetCuponesUseCase _getCuponesUseCase() =>
+      GetCuponesUseCase(_cuponesRepository);
+  static UsarCuponUseCase _getUsarCuponUseCase() =>
+      UsarCuponUseCase(_cuponesRepository);
+  static FilterCuponesByCategoria _getFilterCuponesByCategoria() =>
+      FilterCuponesByCategoria();
+  static GetPublicCuponesUseCase _getPublicCuponesUseCase() =>
+      GetPublicCuponesUseCase(_cuponesPublicRepository);
 
   // Use Cases - Financiamiento
-  static GetFinanciamientosUseCase getFinanciamientosUseCase() => GetFinanciamientosUseCase(repository: _financiamientoRepository);
-  static GetFinanciamientoByIdUseCase getFinanciamientoByIdUseCase() => GetFinanciamientoByIdUseCase(repository: _financiamientoRepository);
-  static GetCuotasFinanciamientoUseCase getCuotasFinanciamientoUseCase() => GetCuotasFinanciamientoUseCase(repository: _financiamientoRepository);
-  static PagarCuotaUseCase getPagarCuotaUseCase() => PagarCuotaUseCase(repository: _financiamientoRepository);
-  static GenerarReporteCuotaUseCase getGenerarReporteCuotaUseCase() => GenerarReporteCuotaUseCase(repository: _financiamientoRepository);
+  static GetFinanciamientosUseCase getFinanciamientosUseCase() =>
+      GetFinanciamientosUseCase(repository: _financiamientoRepository);
+  static GetFinanciamientoByIdUseCase getFinanciamientoByIdUseCase() =>
+      GetFinanciamientoByIdUseCase(repository: _financiamientoRepository);
+  static GetCuotasFinanciamientoUseCase getCuotasFinanciamientoUseCase() =>
+      GetCuotasFinanciamientoUseCase(repository: _financiamientoRepository);
+  static PagarCuotaUseCase getPagarCuotaUseCase() =>
+      PagarCuotaUseCase(repository: _financiamientoRepository);
+  static GenerarReporteCuotaUseCase getGenerarReporteCuotaUseCase() =>
+      GenerarReporteCuotaUseCase(repository: _financiamientoRepository);
 
   // Use Cases - Puntuación
-  static GetPuntuacionUseCase getPuntuacionUseCase() => GetPuntuacionUseCase(repository: _puntuacionRepository);
-  static GetHistorialPuntosUseCase getHistorialPuntosUseCase() => GetHistorialPuntosUseCase(repository: _puntuacionRepository);
-  static GetBeneficiosUseCase getBeneficiosUseCase() => GetBeneficiosUseCase(repository: _puntuacionRepository);
-  static ActualizarPuntuacionUseCase getActualizarPuntuacionUseCase() => ActualizarPuntuacionUseCase(repository: _puntuacionRepository);
+  static GetPuntuacionUseCase getPuntuacionUseCase() =>
+      GetPuntuacionUseCase(repository: _puntuacionRepository);
+  static GetHistorialPuntosUseCase getHistorialPuntosUseCase() =>
+      GetHistorialPuntosUseCase(repository: _puntuacionRepository);
+  static GetBeneficiosUseCase getBeneficiosUseCase() =>
+      GetBeneficiosUseCase(repository: _puntuacionRepository);
+  static ActualizarPuntuacionUseCase getActualizarPuntuacionUseCase() =>
+      ActualizarPuntuacionUseCase(repository: _puntuacionRepository);
 
   // Use Cases - Resumen Crediticio
-  static GetResumenCrediticioUseCase getResumenCrediticioUseCase() => GetResumenCrediticioUseCase(repository: _resumenCrediticioRepository);
+  static GetResumenCrediticioUseCase getResumenCrediticioUseCase() =>
+      GetResumenCrediticioUseCase(repository: _resumenCrediticioRepository);
 
   // Use Cases - Beneficios Comerciales
-  static GetBeneficiosComercialUseCase getBeneficiosComercialUseCase() => GetBeneficiosComercialUseCase(_beneficiosComercialRepository);
+  static GetBeneficiosComercialUseCase getBeneficiosComercialUseCase() =>
+      GetBeneficiosComercialUseCase(_beneficiosComercialRepository);
 }

@@ -5,7 +5,7 @@ import '../../core/errors/exceptions.dart';
 import '../../core/constants/api_constants.dart';
 
 abstract class ResumenCrediticioRemoteDataSource {
-  Future<ResumenCrediticio> getResumenCrediticio(int idConductor);
+  Future<ResumenCrediticio> getResumenCrediticio(int idConductor, int tipo);
 }
 
 class ResumenRemoteDataSourceImpl implements ResumenCrediticioRemoteDataSource {
@@ -15,10 +15,14 @@ class ResumenRemoteDataSourceImpl implements ResumenCrediticioRemoteDataSource {
     : client = client ?? http.Client();
 
   @override
-  Future<ResumenCrediticio> getResumenCrediticio(int idConductor) async {
+  Future<ResumenCrediticio> getResumenCrediticio(
+    int idConductor,
+    int tipo,
+  ) async {
     try {
+      String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
       final url = Uri.parse(
-        '${ApiConstants.cuponesBaseUrl}/resumen-crediticio/conductor/$idConductor',
+        '${ApiConstants.cuponesBaseUrl}/resumen-crediticio/conductor/$idConductor/$tipoUsuario',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {

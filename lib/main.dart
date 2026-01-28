@@ -1,3 +1,8 @@
+import 'dart:developer';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:arequipagocreditos/core/services/notification_service.dart';
 import 'package:arequipagocreditos/presentation/pages/auth_bottom_nav.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
@@ -5,8 +10,29 @@ import 'package:provider/provider.dart';
 import 'dependency_injection.dart';
 import 'presentation/providers/auth_provider.dart';
 
+// Manejador de mensajes en segundo plano (debe estar fuera de cualquier clase)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Firebase
+  try {
+    await Firebase.initializeApp();
+
+    // Configurar notificaciones FCM (No bloqueamos el inicio de la app)
+    final notificationService = NotificationService();
+    notificationService.initializeFCM();
+
+    // Registrar el manejador de notificaciones en segundo plano
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    log("❌ Error al inicializar Firebase: $e");
+  }
+
   runApp(MyApp());
 }
 

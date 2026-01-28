@@ -14,12 +14,12 @@ class ResumenCrediticioProvider extends ChangeNotifier {
   String? error;
 
 
-  Future<void> fetchResumen(int conductorId) async {
+  Future<void> fetchResumen(int conductorId, int tipo) async {
     loading = true;
     error = null;
     notifyListeners();
     try {
-      resumen = await _getResumenCrediticioUseCase(conductorId);
+      resumen = await _getResumenCrediticioUseCase(conductorId, tipo);
     } catch (e) {
       error = e.toString();
     }

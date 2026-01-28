@@ -1,4 +1,4 @@
-package com.example.arequipagocreditos
+package com.arequipago.arequipagocreditos
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -38,20 +38,20 @@ class MainModules extends StatelessWidget {
           // Grid de módulos 2x1 más grandes y atractivos
           Row(
             children: [
-              // Puntaje Crediticio
+              // Beneficios
               Expanded(
                 child: SizedBox(
                   height: 160,
                   child: ModuleCard(
                     icon: Icons.analytics,
-                    title: 'Puntaje\nCrediticio',
+                    title: 'Beneficios',
                     backgroundColor: const Color(0xFF1F2937), // Negro elegante
                     iconColor: Colors.white,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const PuntuacionPage(),
+                          builder: (context) => const BeneficiosPage(),
                         ),
                       );
                     },
@@ -73,31 +73,6 @@ class MainModules extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CuponesPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              // Puntaje Crediticio
-              Expanded(
-                child: SizedBox(
-                  height: 160,
-                  child: ModuleCard(
-                    icon: Icons.analytics,
-                    title: 'Beneficios',
-                    backgroundColor: const Color(0xFF1F2937), // Negro elegante
-                    iconColor: Colors.white,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BeneficiosPage(),
                         ),
                       );
                     },

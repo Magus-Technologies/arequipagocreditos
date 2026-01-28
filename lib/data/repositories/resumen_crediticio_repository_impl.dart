@@ -10,9 +10,9 @@ class ResumenCrediticioRepositoryImpl implements ResumenCrediticioRepository {
    ResumenCrediticioRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<ResumenCrediticio> getResumenCrediticio(int conductorId) async {
+  Future<ResumenCrediticio> getResumenCrediticio(int conductorId, int tipo) async {
     try {
-      final resumen = await remoteDataSource.getResumenCrediticio(conductorId);
+      final resumen = await remoteDataSource.getResumenCrediticio(conductorId, tipo);
       return resumen;
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message);
