@@ -9,7 +9,7 @@ class ApiConstants {
   static const String imagenesBaseUrl = "https://arequipago-ventas.pe/public";
 
   // Environment
-  static const bool useProduction = false;
+  static const bool useProduction = true;
   static String get baseUrl => useProduction ? baseUrlProduction : baseUrlLocal;
 
   // Endpoints

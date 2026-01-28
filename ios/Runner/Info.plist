@@ -2,13 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- xml -->
-	<key>NSCameraUsageDescription</key>
-	<string>La cámara se usa únicamente para que el usuario pueda cambiar su foto de perfil una sola vez; la foto se subirá a su cuenta en el servidor y reemplazará la imagen actual (por ejemplo, tomar una foto para su perfil).</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Se usa para seleccionar una foto de su fototeca como foto de perfil (por ejemplo, elegir una imagen existente).</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Se usa para guardar una copia de la foto tomada en su fototeca si el usuario elige conservarla.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -33,8 +26,18 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>La cámara se usa únicamente para que el usuario pueda cambiar su foto de perfil una sola vez; la foto se subirá a su cuenta en el servidor y reemplazará la imagen actual (por ejemplo, tomar una foto para su perfil).</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Se usa para guardar una copia de la foto tomada en su fototeca si el usuario elige conservarla.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se usa para seleccionar una foto de su fototeca como foto de perfil (por ejemplo, elegir una imagen existente).</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

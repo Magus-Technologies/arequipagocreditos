@@ -7,6 +7,7 @@ import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/notification_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class NotificationService {
   final String _baseUrl = ApiConstants.baseUrl;
@@ -39,6 +40,14 @@ class NotificationService {
         log('✅ Permiso de notificaciones concedido');
       }
 
+      // Configurar cómo se muestran las notificaciones cuando la app está abierta (iOS)
+      // En iOS 14+ podemos usar esto para que el sistema muestre el banner automáticamente
+      await _fcm.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       // 1. Suscribirse a un tema global para anuncios generales
       await _fcm.subscribeToTopic('all_users');
 
@@ -61,8 +70,11 @@ class NotificationService {
           '📩 Notificación recibida en primer plano: ${message.notification?.title}',
         );
 
-        // Mostrar banner manual en primer plano
-        _showLocalNotification(message);
+        // En iOS, el sistema ya muestra el banner gracias a setForegroundNotificationPresentationOptions(alert: true)
+        // En Android, necesitamos mostrarlo manualmente con flutter_local_notifications
+        if (Platform.isAndroid) {
+          _showLocalNotification(message);
+        }
       });
 
       // Manejar clics en notificaciones cuando la app está en segundo plano pero no cerrada
@@ -81,8 +93,19 @@ class NotificationService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_notification');
 
+    const DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
     const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsDarwin,
+          macOS: initializationSettingsDarwin,
+        );
 
     await _localNotifications.initialize(initializationSettings);
 
@@ -114,6 +137,11 @@ class NotificationService {
             priority: Priority.high,
             icon: iconName,
             color: const Color(0xFFFEEC38), // Amarillo brillante (Arequipa)
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
           ),
         ),
       );
