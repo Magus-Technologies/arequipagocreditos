@@ -7,12 +7,12 @@ import '../../theme/app_theme.dart';
 class BeneficioDetailsModal extends StatelessWidget {
   final BeneficioComercialEntity beneficio;
 
-  const BeneficioDetailsModal({
-    super.key,
-    required this.beneficio,
-  });
+  const BeneficioDetailsModal({super.key, required this.beneficio});
 
-  static Future<void> show(BuildContext context, BeneficioComercialEntity beneficio) {
+  static Future<void> show(
+    BuildContext context,
+    BeneficioComercialEntity beneficio,
+  ) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -41,24 +41,24 @@ class BeneficioDetailsModal extends StatelessWidget {
                 // Handle del modal
                 _buildHandle(),
                 const SizedBox(height: 20),
-                
+
                 // Título
                 _buildTitle(),
                 const SizedBox(height: 16),
-                
+
                 // Imagen
                 if (beneficio.imagen != null && beneficio.imagen!.isNotEmpty)
                   _buildImage(context),
                 const SizedBox(height: 20),
-                
+
                 // Descripción
                 _buildDescription(),
                 const SizedBox(height: 20),
-                
+
                 // Detalles financieros
                 _buildFinancialDetails(),
                 const SizedBox(height: 20),
-                
+
                 // Botón de acción
                 _buildActionButton(context),
               ],
@@ -85,10 +85,7 @@ class BeneficioDetailsModal extends StatelessWidget {
   Widget _buildTitle() {
     return Text(
       beneficio.nombre,
-      style: const TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     );
   }
 
@@ -119,7 +116,9 @@ class BeneficioDetailsModal extends StatelessWidget {
                   '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
                   width: double.infinity,
                   height: double.infinity,
-                  fit: BoxFit.contain, // Cambiado para mostrar la imagen completa
+                  fit:
+                      BoxFit
+                          .contain, // Cambiado para mostrar la imagen completa
                   errorBuilder: (context, error, stackTrace) {
                     return const Center(
                       child: Icon(
@@ -158,11 +157,12 @@ class BeneficioDetailsModal extends StatelessWidget {
   void _showImageFullScreen(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => _ImageFullScreenView(
-          imageUrl: '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
-          heroTag: 'beneficio_image_${beneficio.id}',
-          title: beneficio.nombre,
-        ),
+        builder:
+            (context) => _ImageFullScreenView(
+              imageUrl: '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
+              heroTag: 'beneficio_image_${beneficio.id}',
+              title: beneficio.nombre,
+            ),
       ),
     );
   }
@@ -173,16 +173,10 @@ class BeneficioDetailsModal extends StatelessWidget {
       children: [
         const Text(
           'Descripción',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        Text(
-          beneficio.descripcion,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text(beneficio.descripcion, style: const TextStyle(fontSize: 16)),
       ],
     );
   }
@@ -193,25 +187,38 @@ class BeneficioDetailsModal extends StatelessWidget {
       children: [
         const Text(
           'Detalles del Financiamiento',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        _buildDetailRow('Cuota Inicial:', '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}'),
+        _buildDetailRow(
+          'Cuota Inicial:',
+          '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
+        ),
         _buildDetailRow('Cantidad de Cuotas:', '${beneficio.cantidadCuotas}'),
-        _buildDetailRow('Cuota ${beneficio.frecuenciaPago}:', '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}'),
+        _buildDetailRow(
+          'Cuota ${beneficio.frecuenciaPago}:',
+          '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
+        ),
         if (beneficio.pagoInscripcion != null)
-          _buildDetailRow('Pago de Inscripción:', '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}'),
-        _buildDetailRow('Total del Plan:', '${beneficio.moneda} ${_calculateTotal().toStringAsFixed(2)}'),
+          _buildDetailRow(
+            'Pago de Inscripción:',
+            '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}',
+          ),
+        _buildDetailRow(
+          'Total del Plan:',
+          '${beneficio.moneda} ${_calculateTotal().toStringAsFixed(2)}',
+        ),
       ],
     );
   }
 
   double _calculateTotal() {
-    final total = (beneficio.cuotaMensual * beneficio.cantidadCuotas) + beneficio.cuotaInicial;
-    return beneficio.pagoInscripcion != null ? total + beneficio.pagoInscripcion! : total;
+    final total =
+        (beneficio.cuotaMensual * beneficio.cantidadCuotas) +
+        beneficio.cuotaInicial;
+    return beneficio.pagoInscripcion != null
+        ? total + beneficio.pagoInscripcion!
+        : total;
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -222,10 +229,7 @@ class BeneficioDetailsModal extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           Text(
             value,
@@ -244,30 +248,38 @@ class BeneficioDetailsModal extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: beneficio.disponible ? () async {
-          final total = _calculateTotal().toStringAsFixed(2);
-          final mensaje = 'Hola, estoy interesado en el beneficio *${beneficio.nombre}*.\n'
-              'Cuota inicial: ${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}\n'
-              'Cuotas: ${beneficio.cantidadCuotas} x ${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}\n'
-              'Total: ${beneficio.moneda} $total\n'
-              'Me gustaría obtener más información.';
-          final url = Uri.parse(
-            'https://wa.me/51982934377?text=${Uri.encodeComponent(mensaje)}',
-          );
-          Navigator.pop(context);
-          if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('No se pudo abrir WhatsApp'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        } : null,
+        onPressed:
+            beneficio.disponible
+                ? () async {
+                  final total = _calculateTotal().toStringAsFixed(2);
+                  final mensaje =
+                      'Hola, estoy interesado en el beneficio *${beneficio.nombre}*.\n'
+                      'Cuota inicial: ${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}\n'
+                      'Cuotas: ${beneficio.cantidadCuotas} x ${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}\n'
+                      'Total: ${beneficio.moneda} $total\n'
+                      'Me gustaría obtener más información.';
+                  final url = Uri.parse(
+                    'https://wa.me/51982934377?text=${Uri.encodeComponent(mensaje)}',
+                  );
+                  Navigator.pop(context);
+                  if (!await launchUrl(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  )) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No se pudo abrir WhatsApp'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
+                : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: beneficio.disponible ? const Color(0xFF25D366) : Colors.grey,
+          backgroundColor:
+              beneficio.disponible ? AppTheme.btnColor : Colors.grey,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -277,10 +289,7 @@ class BeneficioDetailsModal extends StatelessWidget {
         icon: beneficio.disponible ? const Icon(Icons.message, size: 20) : null,
         label: Text(
           beneficio.disponible ? 'Solicitar Beneficio' : 'No Disponible',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -329,10 +338,11 @@ class _ImageFullScreenView extends StatelessWidget {
                 if (loadingProgress == null) return child;
                 return Center(
                   child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
+                    value:
+                        loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
                     color: Colors.white,
                   ),
                 );
@@ -342,11 +352,7 @@ class _ImageFullScreenView extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.white,
-                        size: 64,
-                      ),
+                      Icon(Icons.error_outline, color: Colors.white, size: 64),
                       SizedBox(height: 16),
                       Text(
                         'No se pudo cargar la imagen',
