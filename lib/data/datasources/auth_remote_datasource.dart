@@ -104,15 +104,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
               ? Map<String, dynamic>.from(conductorData['conductor'])
               : Map<String, dynamic>.from(conductorData);
 
-      final int idConductor =
-          conductorMap['id_conductor'] is int
-              ? conductorMap['id_conductor']
-              : int.tryParse((conductorMap['id_conductor'] ?? '').toString()) ??
-                  0;
-      final int tipo =
-          conductorMap['tipo'] is int
-              ? conductorMap['tipo']
-              : int.tryParse((conductorMap['tipo'] ?? '').toString()) ?? 0;
+      final dynamic rawId = conductorMap['id_conductor'] ?? conductorMap['id'];
+      final int idConductor = (rawId is int) ? rawId : int.tryParse((rawId ?? '0').toString()) ?? 0;
+      final dynamic rawTipo = conductorMap['tipo'];
+      final int tipo = (rawTipo is int) ? rawTipo : int.tryParse((rawTipo ?? '0').toString()) ?? 0;
 
       final url = Uri.parse(
         '${ApiConstants.baseUrl}/get-perfil-usuario/$idConductor/$tipo',

@@ -22,29 +22,39 @@ class CuponModel extends CuponEntity {
   });
 
   factory CuponModel.fromJson(Map<String, dynamic> json) {
+    bool parseBool(dynamic value) {
+      if (value == null) return false;
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        return value.toLowerCase() == 'true' || value == '1' || value.toLowerCase() == 'activo';
+      }
+      return false;
+    }
+
     return CuponModel(
       id: json['id'] ?? 0,
       titulo: json['titulo'] ?? 'Sin título',
       descripcion: json['descripcion'],
       categoria: json['categoria'] ?? 'General',
       valor: double.tryParse(json['valor'].toString()) ?? 0.0,
-      tipoDescuento: json['tipo_descuento'] ?? 'monto_fijo',
+      tipoDescuento: json['tipo_descuento'] ?? 'porcentaje',
       codigo: json['codigo'],
       fechaFin:
           json['fecha_fin'] != null
-              ? DateTime.tryParse(json['fecha_fin']) ?? DateTime.now()
+              ? DateTime.tryParse(json['fecha_fin'].toString()) ?? DateTime.now()
               : DateTime.now(),
-      esActivo: json['estado'] == 'activo',
+      esActivo: parseBool(json['activo'] ?? json['es_activo'] ?? (json['estado'] == 'activo')),
       imagenBanner: json['imagen_banner'],
       empresa: json['empresa'] ?? 'Arequipa GO',
       condiciones: json['condiciones'],
       limiteUsosConductor: json['limite_usos_conductor'],
-      usosRealizados: json['usos_realizados'] ?? 0,
-      puedeUsar: json['puede_usar'] ?? false,
-      estado: json['estado'] ?? 'inactivo',
+      usosRealizados: json['usos_realizados'] ?? (json['ya_usado'] == true ? 1 : 0),
+      puedeUsar: json['puede_usar'] ?? (json['ya_usado'] == false),
+      estado: json['estado'] ?? (json['activo'] == true ? 'activo' : 'inactivo'),
       fechaAsignacion:
-          json['fecha_asignacion'] != null
-              ? DateTime.tryParse(json['fecha_asignacion']) ?? DateTime.now()
+          json['created_at'] != null || json['fecha_asignacion'] != null
+              ? DateTime.tryParse((json['created_at'] ?? json['fecha_asignacion']).toString()) ?? DateTime.now()
               : null,
     );
   }

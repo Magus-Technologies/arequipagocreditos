@@ -32,7 +32,7 @@ class CuponPublicDetailPage extends StatelessWidget {
                     children: [
                       Positioned.fill(
                         child: Image.network(
-                          'https://arequipago-ventas.pe/public/${cupon.imagenBanner!}',
+                          'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
                           fit: BoxFit.cover,
                         ),
                       ),

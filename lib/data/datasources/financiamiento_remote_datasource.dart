@@ -45,14 +45,19 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   @override
   Future<FinanciamientoModel> getFinanciamientoById(int id) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/financiamiento/$id');
-      
+      final endpoint = ApiConstants.cuotasEndpoint.replaceFirst('{id}', id.toString());
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
+        
+        // Handle wrapped response
+        if (data.containsKey('data')) {
+          return FinanciamientoModel.fromJson(data['data'] as Map<String, dynamic>);
+        }
         return FinanciamientoModel.fromJson(data);
       } else if (response.statusCode == 404) {
         throw const ValidationException('Financiamiento no encontrado');
@@ -72,14 +77,24 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   @override
   Future<List<CuotaFinanciamientoModel>> getCuotasFinanciamiento(int idFinanciamiento) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/financiamiento-detalle/$idFinanciamiento');
-      
+      final endpoint = ApiConstants.cuotasEndpoint.replaceFirst('{id}', idFinanciamiento.toString());
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body) as List<dynamic>;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        
+        List<dynamic> jsonList = [];
+        if (data.containsKey('data') && data['data'].containsKey('cuotas')) {
+          jsonList = data['data']['cuotas'] as List<dynamic>;
+        } else if (data.containsKey('cuotas')) {
+          jsonList = data['cuotas'] as List<dynamic>;
+        } else if (data is List) {
+           jsonList = data as List<dynamic>;
+        }
+        
         return jsonList.map((json) => CuotaFinanciamientoModel.fromJson(json as Map<String, dynamic>)).toList();
       } else if (response.statusCode >= 500) {
         throw const ServerException('Error del servidor');

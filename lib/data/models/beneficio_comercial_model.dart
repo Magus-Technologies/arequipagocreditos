@@ -1,4 +1,5 @@
 import '../../domain/entities/beneficio_entity.dart';
+import '../../core/constants/api_constants.dart';
 
 class BeneficioComercialModel extends BeneficioComercialEntity {
   BeneficioComercialModel({
@@ -20,20 +21,39 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
   });
 
   factory BeneficioComercialModel.fromJson(Map<String, dynamic> json) {
+    bool parseBool(dynamic value) {
+      if (value == null) return false;
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        final lower = value.toLowerCase();
+        return lower == 'true' || lower == '1' || lower == 'yes';
+      }
+      return false;
+    }
+
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return BeneficioComercialModel(
       id: json['id'] ?? 0,
       nombre: json['nombre'] ?? '',
-      planFinanciamientoId: json['plan_financiamiento_id'] ?? 0,
+      planFinanciamientoId: json['grupo_financiamiento_id'] ?? json['plan_financiamiento_id'] ?? 0,
       categoria: json['categoria'],
       descripcion: json['descripcion'] ?? '',
-      cuotaInicial: double.tryParse(json['cuota_inicial']?.toString() ?? '0') ?? 0.0,
+      cuotaInicial: parseDouble(json['cuota_inicial']),
       cantidadCuotas: json['cantidad_cuotas'] ?? 0,
-      cuotaMensual: double.tryParse(json['cuota_mensual']?.toString() ?? '0') ?? 0.0,
-      pagoInscripcion: json['pago_inscripcion'] != null ? double.tryParse(json['pago_inscripcion']?.toString() ?? '0') : null,
+      cuotaMensual: parseDouble(json['cuota_mensual']),
+      pagoInscripcion: json['pago_inscripcion'] != null ? parseDouble(json['pago_inscripcion']) : null,
       imagen: json['imagen'],
-      disponible: (json['disponible'] ?? 0) == 1,
-      fechaCreacion: DateTime.tryParse(json['fecha_creacion'] ?? '') ?? DateTime.now(),
-      fechaActualizacion: DateTime.tryParse(json['fecha_actualizacion'] ?? '') ?? DateTime.now(),
+      disponible: parseBool(json['disponible']),
+      fechaCreacion: DateTime.tryParse(json['created_at'] ?? json['fecha_creacion'] ?? '') ?? DateTime.now(),
+      fechaActualizacion: DateTime.tryParse(json['updated_at'] ?? json['fecha_actualizacion'] ?? '') ?? DateTime.now(),
       moneda: json['moneda'] ?? 'S/.',
       frecuenciaPago: (json['frecuencia_pago'] ?? '').toString(),
     );
@@ -43,7 +63,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
     return {
       'id': id,
       'nombre': nombre,
-      'plan_financiamiento_id': planFinanciamientoId,
+      'grupo_financiamiento_id': planFinanciamientoId,
       'categoria': categoria,
       'descripcion': descripcion,
       'cuota_inicial': cuotaInicial.toString(),
@@ -51,9 +71,9 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       'cuota_mensual': cuotaMensual.toString(),
       'pago_inscripcion': pagoInscripcion?.toString(),
       'imagen': imagen,
-      'disponible': disponible ? 1 : 0,
-      'fecha_creacion': fechaCreacion.toIso8601String(),
-      'fecha_actualizacion': fechaActualizacion.toIso8601String(),
+      'disponible': disponible,
+      'created_at': fechaCreacion.toIso8601String(),
+      'updated_at': fechaActualizacion.toIso8601String(),
       'moneda': moneda,
       'frecuencia_pago': frecuenciaPago,
     };
@@ -62,7 +82,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
   // URL completa de la imagen
   String? get imageUrl {
     if (imagen == null || imagen!.isEmpty) return null;
-    return 'https://arequipago-ventas.pe/$imagen';
+    return '${ApiConstants.imagenesBaseUrl}/$imagen';
   }
 
   // Formato de moneda para mostrar

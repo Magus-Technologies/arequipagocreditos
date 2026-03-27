@@ -35,7 +35,7 @@ class PublicCuponCard extends StatelessWidget {
                     height: 120,
                     width: double.infinity,
                     child: Image.network(
-                      'https://arequipago-ventas.pe/public/${cupon.imagenBanner!}',
+                      'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
                       fit: BoxFit.cover,
                       errorBuilder: (c, e, s) => Container(
                         color: Colors.grey.shade200,

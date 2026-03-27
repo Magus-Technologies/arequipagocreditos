@@ -71,7 +71,7 @@ class _CuponPublicCardState extends State<CuponPublicCard> {
       child: Stack(
         children: [
           Image.network(
-            'https://arequipago-ventas.pe/public/${cupon.imagenBanner!}',
+            'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
             height: 120,
             width: double.infinity,
             fit: BoxFit.cover,

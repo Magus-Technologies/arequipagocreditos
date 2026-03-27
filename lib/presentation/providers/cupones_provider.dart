@@ -65,6 +65,7 @@ class CuponesProvider extends ChangeNotifier {
 
   Future<bool> usarCupon(int cuponId) async {
     _isUsingCupon = true;
+    _errorMessage = null;
     notifyListeners();
     
     final result = await _usarCuponUseCase(cuponId);

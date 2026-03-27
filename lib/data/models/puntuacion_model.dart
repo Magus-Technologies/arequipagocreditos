@@ -15,18 +15,45 @@ class PuntuacionModel extends PuntuacionEntity {
   });
 
   factory PuntuacionModel.fromJson(Map<String, dynamic> json) {
+    // Extract nested puntaje if it exists
+    Map<String, dynamic> puntajeData = {};
+    if (json.containsKey('puntaje') && json['puntaje'] is Map) {
+      puntajeData = json['puntaje'] as Map<String, dynamic>;
+    }
+
+    // Extract nested estadisticas if they exist
+    Map<String, dynamic> estadisticas = {};
+    if (json.containsKey('estadisticas') && json['estadisticas'] is Map) {
+      estadisticas = json['estadisticas'] as Map<String, dynamic>;
+    }
+
+    // Extract nested fechas if they exist
+    Map<String, dynamic> fechas = {};
+    if (json.containsKey('fechas') && json['fechas'] is Map) {
+      fechas = json['fechas'] as Map<String, dynamic>;
+    }
+
+    // Helper to safely get int from dynamic (int or double)
+    int toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return double.tryParse(value)?.toInt() ?? 0;
+      return 0;
+    }
+
     return PuntuacionModel(
-      id: json['id'] ?? 0,
-      tipoCliente: json['tipo_cliente'] ?? '',
-      idConductor: json['id_conductor'],
-      puntajeActual: json['puntaje_actual'] ?? 0,
-      totalFinanciamientos: json['total_financiamientos'] ?? 0,
-      totalRetrasos: json['total_retrasos'] ?? 0,
-      fechaActualizacion: json['fecha_actualizacion'] != null
-          ? DateTime.parse(json['fecha_actualizacion'])
+      id: toInt(json['id']),
+      tipoCliente: (json['tipo_cliente'] ?? json['tipo'] ?? '').toString(),
+      idConductor: toInt(json['id_conductor'] ?? (json['persona'] != null ? json['persona']['id'] : null)),
+      puntajeActual: toInt(puntajeData['actual'] ?? json['puntaje_actual']),
+      totalFinanciamientos: toInt(estadisticas['total_financiamientos'] ?? json['total_financiamientos']),
+      totalRetrasos: toInt(estadisticas['total_retrasos'] ?? json['total_retrasos']),
+      fechaActualizacion: (fechas['actualizacion'] ?? json['fecha_actualizacion'] ?? json['fecha_actualizacion_puntaje']) != null
+          ? DateTime.parse((fechas['actualizacion'] ?? json['fecha_actualizacion'] ?? json['fecha_actualizacion_puntaje']).toString())
           : DateTime.now(),
-      fechaCreacion: json['fecha_creacion'] != null
-          ? DateTime.parse(json['fecha_creacion'])
+      fechaCreacion: (fechas['creacion'] ?? json['fecha_creacion'] ?? json['created_at']) != null
+          ? DateTime.parse((fechas['creacion'] ?? json['fecha_creacion'] ?? json['created_at']).toString())
           : DateTime.now(),
     );
   }
@@ -97,22 +124,35 @@ class HistorialPuntosModel extends HistorialPuntosEntity {
   });
 
   factory HistorialPuntosModel.fromJson(Map<String, dynamic> json) {
+    final String fechaStr = (json['fecha_referencia'] ?? json['fecha_evento'] ?? json['created_at'] ?? '').toString();
+    
+    // Helper to safely get int from dynamic (int or double)
+    int? toIntNull(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return double.tryParse(value)?.toInt();
+      return null;
+    }
+
+    int toInt(dynamic value) => toIntNull(value) ?? 0;
+
     return HistorialPuntosModel(
-      id: json['id'],
-      puntajeAnterior: json['puntaje_anterior'],
-      puntajeNuevo: json['puntaje_nuevo'],
-      puntosPerdidos: json['puntos_perdidos'] ?? 0,
+      id: toIntNull(json['id']),
+      puntajeAnterior: toIntNull(json['puntaje_anterior']),
+      puntajeNuevo: toIntNull(json['puntaje_nuevo']),
+      puntosPerdidos: toInt(json['puntos_perdidos']),
       motivo: json['motivo'] ?? '',
-      fechaReferencia: json['fecha_referencia'] != null
-          ? DateTime.parse(json['fecha_referencia'])
+      fechaReferencia: fechaStr.isNotEmpty
+          ? DateTime.parse(fechaStr)
           : DateTime.now(),
-      numeroCuota: json['numero_cuota'],
-      montoCuota: json['monto_cuota'],
+      numeroCuota: toIntNull(json['numero_cuota']),
+      montoCuota: json['monto_cuota']?.toString(),
       fechaVencimiento: json['fecha_vencimiento'] != null
-          ? DateTime.parse(json['fecha_vencimiento'])
+          ? DateTime.parse(json['fecha_vencimiento'].toString())
           : null,
-      fechaPago: json['fecha_pago'] != null ? DateTime.parse(json['fecha_pago']) : null,
-      idFinanciamiento: json['idfinanciamiento'],
+      fechaPago: json['fecha_pago'] != null ? DateTime.parse(json['fecha_pago'].toString()) : null,
+      idFinanciamiento: toIntNull(json['idfinanciamiento'] ?? json['financiamiento_id']),
       nombreProducto: json['nombre_producto'],
       estadoCuota: json['estado_cuota'] ?? '',
       origen: json['origen'] ?? '',

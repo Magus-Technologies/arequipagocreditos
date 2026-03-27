@@ -33,8 +33,11 @@ class ConductorModel extends ConductorEntity {
       return int.tryParse(value.toString());
     }
 
+    final dynamic rawId = c['id_conductor'] ?? c['id'];
+    final int conductorId = (rawId is int) ? rawId : int.tryParse((rawId ?? '0').toString()) ?? 0;
+
     return ConductorModel(
-      idConductor: c['id_conductor'] is int ? c['id_conductor'] : int.tryParse((c['id_conductor'] ?? '0').toString()) ?? 0,
+      idConductor: conductorId,
       nroDocumento: (c['nro_documento'] ?? '').toString(),
       nombres: (c['nombres'] ?? '').toString(),
       telefono: (c['telefono'] ?? '').toString(),

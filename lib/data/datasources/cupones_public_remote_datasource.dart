@@ -16,15 +16,11 @@ class CuponesPublicRemoteDataSourceImpl implements CuponesPublicRemoteDataSource
   Future<List<CuponPublicModel>> getPublicCupones() async {
     try {
         final response = await client
-          .get(Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/publicos'))
+          .get(Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.cuponesEndpoint}'))
           .timeout(ApiConstants.connectionTimeout);
       if (response.statusCode == 200) {
-        // Debug: print raw response for troubleshooting when needed
-        // ignore: avoid_print
-        print('CuponesPublic response body: ${response.body}');
         dynamic decoded = jsonDecode(response.body);
 
-        // If the API returns a JSON string inside the body, try to decode again
         if (decoded is String) {
           try {
             decoded = jsonDecode(decoded);
@@ -37,15 +33,17 @@ class CuponesPublicRemoteDataSourceImpl implements CuponesPublicRemoteDataSource
         } else if (decoded is Map) {
           if (decoded['cupones'] is List) {
             dataList = decoded['cupones'] as List<dynamic>;
+          } else if (decoded['data'] is Map && decoded['data']['cupones'] is List) {
+             dataList = decoded['data']['cupones'] as List<dynamic>;
           } else if (decoded['data'] is List) {
             dataList = decoded['data'] as List<dynamic>;
           } else {
-            // try to find first list value
+            // Check if there's any field that is a list
             final firstList = decoded.values.firstWhere((v) => v is List, orElse: () => null);
             if (firstList is List) {
               dataList = firstList;
             } else {
-              throw ServerException('Formato de respuesta inesperado');
+              throw ServerException('No se encontró el listado de cupones en la respuesta');
             }
           }
         } else {

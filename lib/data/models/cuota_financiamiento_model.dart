@@ -13,15 +13,23 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
   });
 
   factory CuotaFinanciamientoModel.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return CuotaFinanciamientoModel(
-      id: json["idcuotas_financiamiento"] ?? 0,
-      idFinanciamiento: json["id_financiamiento"] ?? 0,
-      numeroCuota: json["numero_cuota"] ?? 0,
-      monto: double.tryParse(json["monto"]?.toString() ?? "0") ?? 0.0,
-      fechaVencimiento: json["fecha_vencimiento"] ?? '',
+      id: toInt(json["id"] ?? json["idcuotas_financiamiento"]),
+      idFinanciamiento: toInt(json["id_financiamiento"] ?? json["financiamiento_id"]),
+      numeroCuota: toInt(json["numero_cuota"]),
+      monto: double.tryParse((json["monto_cuota"] ?? json["monto"] ?? "0").toString()) ?? 0.0,
+      fechaVencimiento: (json["fecha_vencimiento"] ?? '').toString().split('T')[0],
       estado: json["estado"] ?? '',
-      fechaPago: json["fecha_pago"],
-      idPago: json["idPago"] ?? 0,
+      fechaPago: json["fecha_pago"]?.toString(),
+      idPago: toInt(json["idPago"] ?? json["id_pago"] ?? json["pago_id"]),
     );
   }
 

@@ -38,20 +38,31 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
       }
 
       final int idConductor = conductorInfo['id_conductor'];
-      final String tipo = conductorInfo['tipo'].toString() == "1" ? 'conductor' : 'cliente';
+      
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.cuponesEndpoint}?cliente_conductor_id=$idConductor');
       final response = await client
           .get(
-            Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/verificar/$tipo/$idConductor'),
+            url,
             headers: ApiConstants.defaultHeaders,
           )
           .timeout(ApiConstants.connectionTimeout);
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final Map<String, dynamic> fullResponse = jsonDecode(response.body);
         
-        if (data['tiene_cupones'] == true && data['cupones'] != null) {
-          List<dynamic> cuponesData = data['cupones'];
+        // Extract the map that contains the coupons
+        final dynamic nestedData = fullResponse['data'];
+        List<dynamic> cuponesData = [];
+        
+        if (nestedData is Map && nestedData.containsKey('cupones')) {
+          cuponesData = nestedData['cupones'];
+        } else if (nestedData is List) {
+          cuponesData = nestedData;
+        } else if (fullResponse.containsKey('cupones')) {
+           cuponesData = fullResponse['cupones'];
+        }
 
-          // Agregar campos adicionales que necesita el modelo
+        if (cuponesData.isNotEmpty) {
+          // Agregar campos adicionales que necesita el modelo si faltan
           List<Map<String, dynamic>> cuponesFormateados =
               cuponesData.map((cupon) {
                 Map<String, dynamic> cuponFormateado =
@@ -59,7 +70,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
 
                 // Agregar campos por defecto si no existen
                 cuponFormateado['categoria'] =
-                    cuponFormateado['categoria'] ?? 'Promociones';
+                    cuponFormateado['tipo_cupon'] ?? cuponFormateado['categoria'] ?? 'General';
                 cuponFormateado['descripcion'] =
                     cuponFormateado['descripcion'] ??
                     'Descuento especial disponible para ti';
@@ -114,25 +125,31 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
       }
 
       final int idConductor = conductorInfo['id_conductor'];
-      final String tipo = conductorInfo['tipo'].toString() == "1" ? 'conductor' : 'cliente';
 
+      final endpoint = ApiConstants.usarCuponEndpoint.replaceFirst('{id}', cuponId.toString());
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
+      print(url);
       final response = await client
           .post(
-            Uri.parse('${ApiConstants.cuponesBaseUrl}/cupones/usar-codigo/$tipo/$idConductor/$cuponId'),
+            url,
             headers: ApiConstants.defaultHeaders,
+            body: jsonEncode({
+              'cliente_conductor_id': idConductor,
+              'monto_descuento': 0.0, // Default for now, as use case doesn't provide it yet
+            }),
           )
           .timeout(ApiConstants.connectionTimeout);
 
       final responseData = _parseResponse(response);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           'success': responseData['success'] ?? true,
           'message': responseData['message'] ?? 'Cupón aplicado correctamente',
-          'data': responseData,
+          'data': responseData['data'] ?? responseData,
         };
       } else {
-        throw ServerException(responseData['message'] ?? 'Error al usar cupón');
+        throw ServerException(responseData['message'] ?? 'Error al usar cupón (Status: ${response.statusCode})');
       }
     } catch (e) {
       if (e is AppException) {

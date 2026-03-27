@@ -4,9 +4,12 @@ class ApiConstants {
       "http://192.168.100.50/arequipago-api/public/api";
   static const String baseUrlProduction =
       "https://magusemail.com/arequipago-api/public/api";
-  static const String cuponesBaseUrl = "https://arequipago-ventas.pe/ajs";
-  static const String puntajeBaseUrl = "https://arequipago-ventas.pe";
-  static const String imagenesBaseUrl = "https://arequipago-ventas.pe/public";
+  static const String storageUrl =
+      "https://arequipago-ventas.pe/storage";
+
+  // Deprecated URLs (Unified into baseUrlProduction)
+  static const String apiBaseUrl = "https://arequipago-ventas.pe/api";
+  static const String imagenesBaseUrl = "https://arequipago-ventas.pe/storage";
 
   // Environment
   static const bool useProduction = true;
@@ -21,12 +24,15 @@ class ApiConstants {
   static const String uploadProfilePictureEndpoint = '/upload-profile-picture';
   static const String financiamientosEndpoint =
       '/list-financiamiento/{id}/{tipo}';
-  static const String cuotasEndpoint = '/financiamiento-detalle/{id}';
-  static const String puntajeEndpoint = '/obtenerPuntajeYDatos';
-  static const String cuponesEndpoint = '/cupones/verificar/{tipo}/{id}';
-  static const String usarCuponEndpoint =
-      '/cupones/usar-codigo/{idConductor}/{idCupon}';
-  static const String beneficiosEndpoint = '/beneficios/listar';
+  static const String cuotasEndpoint = '/app/financiamientos/{id}';
+  static const String beneficiosEndpoint = '/app/promociones/beneficios';
+
+  static const String cuponesEndpoint = '/app/promociones/cupones/listar';
+
+  static const String resumenCrediticioEndpoint = '/app/resumen-crediticio';
+  static const String puntajeEndpoint = '/app/puntaje-crediticio/detalle';
+  static const String usarCuponEndpoint = '/app/promociones/cupones/{id}/uso';
+  
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

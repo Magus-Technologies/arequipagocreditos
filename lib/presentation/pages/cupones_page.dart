@@ -62,12 +62,12 @@ class _CuponesPageState extends State<CuponesPage> {
 
     try {
       final cuponesProvider = context.read<CuponesProvider>();
-      await cuponesProvider.usarCupon(cupon.id);
+      final success = await cuponesProvider.usarCupon(cupon.id);
       
       // Cerrar el diálogo de carga
       if (mounted) Navigator.pop(context);
 
-      if (cuponesProvider.errorMessage == null) {
+      if (success) {
         // Mostrar mensaje de éxito
         if (mounted) {
           showDialog(
@@ -78,9 +78,6 @@ class _CuponesPageState extends State<CuponesPage> {
             ),
           );
         }
-        
-        // Recargar la lista de cupones
-        cuponesProvider.loadCupones();
       } else {
         // Mostrar mensaje de error
         if (mounted) {

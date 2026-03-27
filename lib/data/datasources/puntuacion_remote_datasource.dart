@@ -19,10 +19,12 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
   Future<PuntuacionModel> getPuntuacion(int idConductor, int tipo) async {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
-
-      final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
-          .get(url)
+          .get(
+            url,
+            headers: ApiConstants.defaultHeaders,
+          )
           .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
@@ -54,10 +56,12 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
-      final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
-      
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
-          .get(url)
+          .get(
+            url,
+            headers: ApiConstants.defaultHeaders,
+          )
           .timeout(ApiConstants.connectionTimeout);
 
       if (response.statusCode == 200) {
@@ -65,8 +69,15 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
         
         // Verificar si la respuesta viene en el formato envuelto
         List<dynamic> historialJson = [];
-        if (data.containsKey('data') && data['data'].containsKey('historial')) {
-          historialJson = data['data']['historial'] as List<dynamic>;
+        if (data.containsKey('data')) {
+          final dataMap = data['data'] as Map<String, dynamic>;
+          if (dataMap.containsKey('historial_reciente')) {
+            historialJson = dataMap['historial_reciente'] as List<dynamic>;
+          } else if (dataMap.containsKey('historial')) {
+            historialJson = dataMap['historial'] as List<dynamic>;
+          }
+        } else if (data.containsKey('historial_reciente')) {
+          historialJson = data['historial_reciente'] as List<dynamic>;
         } else if (data.containsKey('historial')) {
           historialJson = data['historial'] as List<dynamic>;
         }
@@ -92,12 +103,11 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
-      final url = Uri.parse('${ApiConstants.puntajeBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
-      
+      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
           .put(
             url,
-            headers: {'Content-Type': 'application/json'},
+            headers: ApiConstants.defaultHeaders,
             body: jsonEncode({
               'puntaje_actual': nuevoPuntaje,
             }),
