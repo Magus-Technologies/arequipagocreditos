@@ -21,20 +21,21 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
 
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
@@ -100,11 +101,15 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                             child: Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.white.withAlpha((0.1 * 255).toInt()),
+                                color: Colors.white.withAlpha(
+                                  (0.1 * 255).toInt(),
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
+                                    color: Colors.black.withAlpha(
+                                      (0.1 * 255).toInt(),
+                                    ),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
@@ -118,7 +123,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                   ),
                                   SizedBox(height: 16),
                                   Text(
-                                    'Arequipa Créditos',
+                                    'CREDIGO DRIVERS',
                                     style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -152,16 +157,18 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                     children: [
                       authProvider.isLoading
                           ? const SpinKitThreeBounce(
-                              color: Colors.black87,
-                              size: 30.0,
-                            )
+                            color: Colors.black87,
+                            size: 30.0,
+                          )
                           : const SpinKitWave(
-                              color: Colors.black87,
-                              size: 40.0,
-                            ),
+                            color: Colors.black87,
+                            size: 40.0,
+                          ),
                       const SizedBox(height: 16),
                       Text(
-                        authProvider.isLoading ? 'Validando sesión...' : 'Iniciando aplicación...',
+                        authProvider.isLoading
+                            ? 'Validando sesión...'
+                            : 'Iniciando aplicación...',
                         style: const TextStyle(
                           color: Colors.black54,
                           fontSize: 16,

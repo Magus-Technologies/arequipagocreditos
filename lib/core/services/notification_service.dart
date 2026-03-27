@@ -83,6 +83,14 @@ class NotificationService {
           '🖱️ La app se abrió desde una notificación: ${message.notification?.title}',
         );
       });
+
+      // Manejar el caso cuando la app se abre desde una notificación estando TERMINADA
+      RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        log(
+          '🏁 La app se inició desde una notificación (Terminada): ${initialMessage.notification?.title}',
+        );
+      }
     } catch (e) {
       log('❌ Error al inicializar FCM: $e');
     }

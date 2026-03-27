@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       providers: DependencyInjection.providers,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Arequipa Créditos',
+        title: 'CREDIGO DRIVERS',
         theme: ThemeData(primarySwatch: Colors.red),
         home: AppWrapper(),
       ),
