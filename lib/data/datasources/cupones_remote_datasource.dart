@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/cupon_model.dart';
@@ -19,7 +20,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
   Future<List<CuponModel>> getCupones() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       
       if (conductorJson == null) {
         throw const CacheException('Usuario no encontrado');
@@ -106,7 +107,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
   Future<Map<String, dynamic>> usarCupon(int cuponId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       
       if (conductorJson == null) {
         throw const CacheException('Usuario no encontrado');

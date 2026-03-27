@@ -1,10 +1,10 @@
 class AppConstants {
   // App Info
   static const String appName = 'Arequipa GO Créditos';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.1.0';
   
   // Storage Keys
-  static const String userStorageKey = 'conductor';
+  static const String userStorageKey = 'conductor_v2';
   static const String themeStorageKey = 'theme_mode';
   static const String languageStorageKey = 'language';
   

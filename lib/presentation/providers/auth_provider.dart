@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import '../../core/errors/failures.dart';
 import '../../domain/entities/conductor_entity.dart';
 import '../../domain/usecases/auth_usecases.dart';
@@ -300,7 +301,7 @@ class AuthProvider extends ChangeNotifier {
   Future<Map<String, List<String>>> getServerDocumentAlerts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       if (conductorJson == null) return {'expired': [], 'near': []};
 
       final data = jsonDecode(conductorJson) as Map<String, dynamic>;

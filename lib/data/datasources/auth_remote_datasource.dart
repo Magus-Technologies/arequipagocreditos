@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/errors/exceptions.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/conductor_model.dart';
 
@@ -64,7 +65,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('conductor');
+      await prefs.remove(AppConstants.userStorageKey);
     } catch (e) {
       throw CacheException('Error al cerrar sesión: $e');
     }
@@ -74,7 +75,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<ConductorModel?> getCurrentUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
 
       if (conductorJson != null) {
         final data = jsonDecode(conductorJson) as Map<String, dynamic>;
@@ -91,14 +92,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<ConductorModel?> refreshUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
 
       if (conductorJson == null) {
         return null;
       }
 
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
-      // support both shapes: { 'conductor': {...}, ... } or flat conductor object
+      // support both shapes: { AppConstants.userStorageKey: {...}, ... } or flat conductor object
       final Map<String, dynamic> conductorMap =
           (conductorData['conductor'] is Map)
               ? Map<String, dynamic>.from(conductorData['conductor'])
@@ -154,7 +155,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<Map<String, dynamic>> changePassword(String newPassword) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       if (conductorJson == null) {
         throw const AuthException('No se encontró el usuario');
       }
@@ -267,7 +268,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<Map<String, dynamic>> uploadProfilePicture(File imageFile) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       if (conductorJson == null) {
         throw const AuthException('No se encontró el usuario');
       }
@@ -278,7 +279,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
       final conductorData = Map<String, dynamic>.from(decoded);
 
-      // Asegurarse de que exista la clave 'conductor'
+      // Asegurarse de que exista la clave AppConstants.userStorageKey
       if (conductorData['conductor'] == null ||
           conductorData['conductor'] is! Map) {
         throw const AuthException('Datos de conductor incompletos');
@@ -326,7 +327,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         conductorMap['foto_perfil_cambiada'] = 1;
         conductorData['conductor'] = conductorMap;
 
-        await prefs.setString('conductor', jsonEncode(conductorData));
+        await prefs.setString(AppConstants.userStorageKey, jsonEncode(conductorData));
 
         return {
           'success': true,
@@ -355,7 +356,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       if (conductorJson == null) {
         throw const AuthException('No se encontró el usuario');
       }
@@ -413,7 +414,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           }
 
           updatedCache['conductor'] = existingConductor;
-          await prefs.setString('conductor', jsonEncode(updatedCache));
+          await prefs.setString(AppConstants.userStorageKey, jsonEncode(updatedCache));
         }
 
         return {
@@ -437,7 +438,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> _saveUserToPrefs(Map<String, dynamic> userData) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('conductor', jsonEncode(userData));
+      await prefs.setString(AppConstants.userStorageKey, jsonEncode(userData));
     } catch (e) {
       throw CacheException('Error al guardar usuario: $e');
     }

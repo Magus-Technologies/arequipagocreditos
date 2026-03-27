@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/notification_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
@@ -160,7 +161,7 @@ class NotificationService {
   Future<void> _syncUserWithFCM(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conductorJson = prefs.getString('conductor');
+      final conductorJson = prefs.getString(AppConstants.userStorageKey);
       if (conductorJson == null) return;
 
       final Map<String, dynamic> conductorData = jsonDecode(conductorJson);
