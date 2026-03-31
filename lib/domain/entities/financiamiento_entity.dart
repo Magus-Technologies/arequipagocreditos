@@ -16,6 +16,7 @@ class FinanciamientoEntity {
   final String frecuencia;
   final String secondProduct;
   final String moneda;
+  final String? nombreProducto;
 
   const FinanciamientoEntity({
     required this.idFinanciamiento,
@@ -35,6 +36,7 @@ class FinanciamientoEntity {
     required this.frecuencia,
     required this.secondProduct,
     required this.moneda,
+    this.nombreProducto,
   });
 
   // Getters útiles
@@ -89,6 +91,7 @@ class FinanciamientoEntity {
     String? frecuencia,
     String? secondProduct,
     String? moneda,
+    String? nombreProducto,
   }) {
     return FinanciamientoEntity(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -108,6 +111,7 @@ class FinanciamientoEntity {
       frecuencia: frecuencia ?? this.frecuencia,
       secondProduct: secondProduct ?? this.secondProduct,
       moneda: moneda ?? this.moneda,
+      nombreProducto: nombreProducto ?? this.nombreProducto,
     );
   }
 }

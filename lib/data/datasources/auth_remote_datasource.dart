@@ -28,7 +28,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<ConductorModel> login(String nroDocumento, String password) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/auth/conductor');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
 
       final response = await client
           .post(
@@ -110,9 +110,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final dynamic rawTipo = conductorMap['tipo'];
       final int tipo = (rawTipo is int) ? rawTipo : int.tryParse((rawTipo ?? '0').toString()) ?? 0;
 
-      final url = Uri.parse(
-        '${ApiConstants.baseUrl}/get-perfil-usuario/$idConductor/$tipo',
-      );
+      final endpoint = ApiConstants.perfilUsuarioEndpoint
+          .replaceFirst('{id}', idConductor.toString())
+          .replaceFirst('{tipo}', tipo.toString());
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
@@ -163,7 +164,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final conductorData = jsonDecode(conductorJson) as Map<String, dynamic>;
       final String dni = conductorData['conductor']['nro_documento'];
       final url = Uri.parse(
-        '${ApiConstants.baseUrl}/update-password-conductor',
+        '${ApiConstants.baseUrl}${ApiConstants.updatePasswordConductorEndpoint}',
       );
 
       final response = await client
@@ -194,7 +195,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String dni,
   ) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/validate-dni');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.validateDniEndpoint}');
 
       final response = await client
           .post(
@@ -229,7 +230,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String newPassword,
   ) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/reset-password');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.resetPasswordEndpoint}');
 
       final response = await client
           .post(
@@ -298,7 +299,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiConstants.baseUrl}/upload-profile-picture'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.uploadProfilePictureEndpoint}'),
       );
 
       request.fields['idConductor'] = idConductor.toString();
@@ -383,7 +384,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ...data,
       };
 
-      final url = Uri.parse('${ApiConstants.baseUrl}/update-datos-usuario');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.updateDatosUsuarioEndpoint}');
 
       final response = await client
           .post(

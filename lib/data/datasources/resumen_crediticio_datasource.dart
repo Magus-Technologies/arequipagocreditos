@@ -22,7 +22,7 @@ class ResumenRemoteDataSourceImpl implements ResumenCrediticioRemoteDataSource {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
       final url = Uri.parse(
-        '${ApiConstants.apiBaseUrl}${ApiConstants.resumenCrediticioEndpoint}?tipo=$tipoUsuario&id=$idConductor',
+        '${ApiConstants.baseUrl}${ApiConstants.resumenCrediticioEndpoint}?tipo=$tipoUsuario&id=$idConductor',
       );
       final response = await client.get(
         url,

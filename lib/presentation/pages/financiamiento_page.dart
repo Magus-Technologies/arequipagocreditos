@@ -144,7 +144,7 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    'Código: ${financiamiento.codigoAsociado}',
+                                    'Código: ${financiamiento.idFinanciamiento}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
@@ -189,6 +189,26 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                 ),
                               ],
                             ),
+                            if (financiamiento.nombreProducto != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.inventory_2_outlined,
+                                      size: 18, color: Colors.purple),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      'Producto: ${financiamiento.nombreProducto}',
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             Row(
                               children: [

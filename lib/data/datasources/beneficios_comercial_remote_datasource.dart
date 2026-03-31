@@ -16,7 +16,7 @@ class BeneficiosComercialRemoteDataSourceImpl
   @override
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales() async {
     try {
-      final url = '${ApiConstants.apiBaseUrl}${ApiConstants.beneficiosEndpoint}';
+      final url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}';
 
       final response = await client.get(
         Uri.parse(url),

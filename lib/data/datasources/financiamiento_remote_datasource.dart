@@ -21,7 +21,10 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   @override
   Future<List<FinanciamientoModel>> getFinanciamientos(int idConductor, int tipo) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/list-financiamiento/$idConductor/$tipo');
+      final endpoint = ApiConstants.financiamientosEndpoint
+          .replaceFirst('{id}', idConductor.toString())
+          .replaceFirst('{tipo}', tipo.toString());
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
@@ -46,7 +49,7 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   Future<FinanciamientoModel> getFinanciamientoById(int id) async {
     try {
       final endpoint = ApiConstants.cuotasEndpoint.replaceFirst('{id}', id.toString());
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
@@ -78,7 +81,7 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   Future<List<CuotaFinanciamientoModel>> getCuotasFinanciamiento(int idFinanciamiento) async {
     try {
       final endpoint = ApiConstants.cuotasEndpoint.replaceFirst('{id}', idFinanciamiento.toString());
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client
           .get(url)
           .timeout(ApiConstants.connectionTimeout);
@@ -112,7 +115,7 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   @override
   Future<CuotaFinanciamientoModel> pagarCuota(int idCuota, double monto) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/pagar-cuota');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.pagarCuotaEndpoint}');
       
       final response = await client
           .post(
@@ -147,7 +150,8 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
   @override
   Future<String> generarReporteCuota(int idCuota) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}/reporte-cuota/$idCuota');
+      final endpoint = ApiConstants.reporteCuotaEndpoint.replaceFirst('{id}', idCuota.toString());
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       
       final response = await client
           .post(url)

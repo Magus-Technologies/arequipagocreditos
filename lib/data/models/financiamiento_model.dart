@@ -19,6 +19,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
     required super.frecuencia,
     required super.secondProduct,
     required super.moneda,
+    super.nombreProducto,
   });
 
    factory FinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -65,6 +66,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
       frecuencia: json['frecuencia'] != null ? json['frecuencia'].toString() : (json['frecuencia_pago'] != null ? json['frecuencia_pago']['nombre'] : (json['frecuencia_pago_id'] == 1 ? 'Semanal' : 'Mensual')),
       secondProduct: toStringValue(json['second_product']),
       moneda: json['moneda'] != null ? json['moneda'].toString() : (json['producto'] != null ? json['producto']['moneda'] : (json['moneda_id'] == 1 ? 'PEN' : 'S/.')),
+      nombreProducto: json['producto'] != null ? toStringValue(json['producto']['nombre']) : null,
     );
   }
 
@@ -87,6 +89,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
       'frecuencia': frecuencia,
       'second_product': secondProduct,
       'moneda': moneda,
+      'nombre_producto': nombreProducto,
     };
   }
 
@@ -108,6 +111,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
         frecuencia: frecuencia,
         secondProduct: secondProduct,
         moneda: moneda,
+        nombreProducto: nombreProducto,
       );
       
   @override
@@ -129,6 +133,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
     String? frecuencia,
     String? secondProduct,
     String? moneda,
+    String? nombreProducto,
   }) {
     return FinanciamientoModel(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -148,6 +153,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
       frecuencia: frecuencia ?? this.frecuencia,
       secondProduct: secondProduct ?? this.secondProduct,
       moneda: moneda ?? this.moneda,
+      nombreProducto: nombreProducto ?? this.nombreProducto,
     );
   }
 }

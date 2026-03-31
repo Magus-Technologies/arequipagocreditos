@@ -19,7 +19,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
   Future<PuntuacionModel> getPuntuacion(int idConductor, int tipo) async {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
           .get(
             url,
@@ -56,7 +56,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
           .get(
             url,
@@ -103,7 +103,7 @@ class PuntuacionRemoteDataSourceImpl implements PuntuacionRemoteDataSource {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
 
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.puntajeEndpoint}?tipo=$tipoUsuario&id=$idConductor');
       final response = await client
           .put(
             url,

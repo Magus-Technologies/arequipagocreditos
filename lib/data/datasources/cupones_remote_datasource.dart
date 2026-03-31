@@ -40,7 +40,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
 
       final int idConductor = conductorInfo['id_conductor'];
       
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}${ApiConstants.cuponesEndpoint}?cliente_conductor_id=$idConductor');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.cuponesEndpoint}?cliente_conductor_id=$idConductor');
       final response = await client
           .get(
             url,
@@ -128,8 +128,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
       final int idConductor = conductorInfo['id_conductor'];
 
       final endpoint = ApiConstants.usarCuponEndpoint.replaceFirst('{id}', cuponId.toString());
-      final url = Uri.parse('${ApiConstants.apiBaseUrl}$endpoint');
-      print(url);
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client
           .post(
             url,
