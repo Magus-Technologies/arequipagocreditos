@@ -20,6 +20,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
     required super.secondProduct,
     required super.moneda,
     super.nombreProducto,
+    super.tieneCuotaInicial,
+    super.cuotaInicialEstado,
+    super.cuotaInicialMonto,
   });
 
    factory FinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +70,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
       secondProduct: toStringValue(json['second_product']),
       moneda: json['moneda'] != null ? json['moneda'].toString() : (json['producto'] != null ? json['producto']['moneda'] : (json['moneda_id'] == 1 ? 'PEN' : 'S/.')),
       nombreProducto: json['producto'] != null ? toStringValue(json['producto']['nombre']) : null,
+      // Campos Caja Arequipa – presentes en list-financiamiento
+      tieneCuotaInicial: json['tiene_cuota_inicial'] == true || json['tiene_cuota_inicial'] == 1,
+      cuotaInicialEstado: json['cuota_inicial_estado']?.toString(),
+      cuotaInicialMonto: json['cuota_inicial_monto'] != null
+          ? double.tryParse(json['cuota_inicial_monto'].toString())
+          : null,
     );
   }
 
@@ -90,6 +99,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
       'second_product': secondProduct,
       'moneda': moneda,
       'nombre_producto': nombreProducto,
+      'tiene_cuota_inicial': tieneCuotaInicial,
+      'cuota_inicial_estado': cuotaInicialEstado,
+      'cuota_inicial_monto': cuotaInicialMonto,
     };
   }
 
@@ -112,6 +124,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
         secondProduct: secondProduct,
         moneda: moneda,
         nombreProducto: nombreProducto,
+        tieneCuotaInicial: tieneCuotaInicial,
+        cuotaInicialEstado: cuotaInicialEstado,
+        cuotaInicialMonto: cuotaInicialMonto,
       );
       
   @override
@@ -134,6 +149,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
     String? secondProduct,
     String? moneda,
     String? nombreProducto,
+    bool? tieneCuotaInicial,
+    String? cuotaInicialEstado,
+    double? cuotaInicialMonto,
   }) {
     return FinanciamientoModel(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -154,6 +172,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
       secondProduct: secondProduct ?? this.secondProduct,
       moneda: moneda ?? this.moneda,
       nombreProducto: nombreProducto ?? this.nombreProducto,
+      tieneCuotaInicial: tieneCuotaInicial ?? this.tieneCuotaInicial,
+      cuotaInicialEstado: cuotaInicialEstado ?? this.cuotaInicialEstado,
+      cuotaInicialMonto: cuotaInicialMonto ?? this.cuotaInicialMonto,
     );
   }
 }

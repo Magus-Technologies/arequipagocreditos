@@ -209,6 +209,65 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                 ],
                               ),
                             ],
+                            // Banner pago inicial pendiente (Caja Arequipa)
+                            if (financiamiento.tieneCuotaInicial &&
+                                financiamiento.cuotaInicialEstado?.toLowerCase() == 'pendiente') ...[
+                              const SizedBox(height: 10),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FinanciamientoDetallePage(
+                                        idFinanciamiento: financiamiento.idFinanciamiento,
+                                        moneda: financiamiento.moneda,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.orange.shade300,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: Colors.orange.shade700,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          financiamiento.cuotaInicialMonto != null
+                                              ? 'Pago inicial pendiente: ${financiamiento.moneda} ${financiamiento.cuotaInicialMonto!.toStringAsFixed(2)}'
+                                              : 'Tienes un pago inicial pendiente',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.orange.shade800,
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        color: Colors.orange.shade600,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             Row(
                               children: [

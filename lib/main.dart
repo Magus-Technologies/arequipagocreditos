@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'CREDIGO DRIVERS',
         theme: ThemeData(primarySwatch: Colors.red),
+        navigatorKey: NotificationService.navigatorKey,
         home: AppWrapper(),
       ),
     );

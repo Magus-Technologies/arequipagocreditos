@@ -249,136 +249,142 @@ class _HeaderState extends State<Header> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Barra superior decorativa
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+        bool isMarkingAll = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Notificaciones',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Barra superior decorativa
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    if (notifications.any((n) => !n.isRead))
-                      TextButton(
-                        onPressed: () {
-                          // Opcional: Marcar todas como leídas
-                        },
-                        child: const Text('Limpiar'),
-                      ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child:
-                    notifications.isEmpty
-                        ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.notifications_off_outlined,
-                                size: 80,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No hay notificaciones',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[500],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Notificaciones',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
-                        )
-                        : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) {
-                            final notification = notifications[index];
-                            final isRead = notification.isRead;
-
-                            // Definimos el Dismissible como el elemento principal
-                            return Dismissible(
-                              key: Key(
-                                notification.id,
-                              ), // Usar ID único de la notificación
-                              direction:
-                                  isRead
-                                      ? DismissDirection.none
-                                      : DismissDirection.endToStart,
-                              confirmDismiss: (direction) async {
-                                if (direction == DismissDirection.endToStart) {
-                                  // Marcamos como leído pero retornamos false para que el widget NO desaparezca
-                                  await notifProvider.markAsRead(
-                                    notification.id
-                                  );
-                                  return false;
-                                }
-                                return false;
-                              },
-                              background: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              child: FadeInRight(
-                                delay: Duration(milliseconds: 50 * index),
-                                duration: const Duration(milliseconds: 300),
-                                child: _NotificationItem(
-                                  notification: notification,
-                                  onTap: () async {
-                                    if (!isRead) {
-                                      await notifProvider.markAsRead(
-                                        notification.id
-                                      );
-                                    }
-                                    // ignore: use_build_context_synchronously
-                                    if (context.mounted) Navigator.pop(context);
-                                  },
-                                ),
-                              ),
-                            );
-                          },
                         ),
+                        if (notifications.any((n) => !n.isRead))
+                          isMarkingAll
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : TextButton(
+                                  onPressed: () async {
+                                    setModalState(() => isMarkingAll = true);
+                                    await notifProvider.markAllAsRead();
+                                    setModalState(() => isMarkingAll = false);
+                                  },
+                                  child: const Text('Limpiar todo'),
+                                ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Consumer<NotificationProvider>(
+                      builder: (context, provider, _) {
+                        final notifs = provider.notifications;
+                        return notifs.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_off_outlined,
+                                      size: 80,
+                                      color: Colors.grey[300],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No hay notificaciones',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.grey[500],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: notifs.length,
+                                itemBuilder: (context, index) {
+                                  final notification = notifs[index];
+                                  final isRead = notification.isRead;
+
+                                  return Dismissible(
+                                    key: Key(notification.id),
+                                    direction: isRead
+                                        ? DismissDirection.none
+                                        : DismissDirection.endToStart,
+                                    confirmDismiss: (direction) async {
+                                      if (direction == DismissDirection.endToStart) {
+                                        await provider.markAsRead(notification.id);
+                                        return false;
+                                      }
+                                      return false;
+                                    },
+                                    background: Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: const Icon(Icons.check, color: Colors.white),
+                                    ),
+                                    child: FadeInRight(
+                                      delay: Duration(milliseconds: 50 * index),
+                                      duration: const Duration(milliseconds: 300),
+                                      child: _NotificationItem(
+                                        notification: notification,
+                                        onTap: () async {
+                                          if (!isRead) {
+                                            await provider.markAsRead(notification.id);
+                                          }
+                                          // ignore: use_build_context_synchronously
+                                          if (context.mounted) Navigator.pop(context);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            );
+          },
         );
       },
     );

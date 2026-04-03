@@ -17,6 +17,10 @@ class FinanciamientoEntity {
   final String secondProduct;
   final String moneda;
   final String? nombreProducto;
+  // Caja Arequipa: cuota de pago inicial
+  final bool tieneCuotaInicial;
+  final String? cuotaInicialEstado;
+  final double? cuotaInicialMonto;
 
   const FinanciamientoEntity({
     required this.idFinanciamiento,
@@ -37,6 +41,9 @@ class FinanciamientoEntity {
     required this.secondProduct,
     required this.moneda,
     this.nombreProducto,
+    this.tieneCuotaInicial = false,
+    this.cuotaInicialEstado,
+    this.cuotaInicialMonto,
   });
 
   // Getters útiles
@@ -92,6 +99,9 @@ class FinanciamientoEntity {
     String? secondProduct,
     String? moneda,
     String? nombreProducto,
+    bool? tieneCuotaInicial,
+    String? cuotaInicialEstado,
+    double? cuotaInicialMonto,
   }) {
     return FinanciamientoEntity(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -112,6 +122,9 @@ class FinanciamientoEntity {
       secondProduct: secondProduct ?? this.secondProduct,
       moneda: moneda ?? this.moneda,
       nombreProducto: nombreProducto ?? this.nombreProducto,
+      tieneCuotaInicial: tieneCuotaInicial ?? this.tieneCuotaInicial,
+      cuotaInicialEstado: cuotaInicialEstado ?? this.cuotaInicialEstado,
+      cuotaInicialMonto: cuotaInicialMonto ?? this.cuotaInicialMonto,
     );
   }
 }

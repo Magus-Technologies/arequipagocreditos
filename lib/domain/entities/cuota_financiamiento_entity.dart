@@ -7,6 +7,8 @@ class CuotaFinanciamientoEntity {
   final String estado;
   final String? fechaPago;
   final int idPago;
+  /// true para la cuota 0 de Caja Arequipa (pago inicial)
+  final bool esInicial;
 
   const CuotaFinanciamientoEntity({
     required this.id,
@@ -17,6 +19,7 @@ class CuotaFinanciamientoEntity {
     required this.estado,
     this.fechaPago,
     required this.idPago,
+    this.esInicial = false,
   });
 
   // Getters útiles
@@ -84,6 +87,7 @@ class CuotaFinanciamientoEntity {
     String? estado,
     String? fechaPago,
     int? idPago,
+    bool? esInicial,
   }) {
     return CuotaFinanciamientoEntity(
       id: id ?? this.id,
@@ -94,6 +98,7 @@ class CuotaFinanciamientoEntity {
       estado: estado ?? this.estado,
       fechaPago: fechaPago ?? this.fechaPago,
       idPago: idPago ?? this.idPago,
+      esInicial: esInicial ?? this.esInicial,
     );
   }
 }

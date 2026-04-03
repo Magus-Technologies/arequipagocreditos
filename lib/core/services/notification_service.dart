@@ -9,12 +9,17 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:arequipagocreditos/presentation/pages/financiamiento_detalle_page.dart';
 
 class NotificationService {
-  final String _baseUrl = ApiConstants.baseUrl;
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  /// GlobalKey para navegar desde fuera del árbol de widgets.
+  /// Registra esto en MaterialApp.navigatorKey en main.dart.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   // Canal de notificación para Android (necesario para banners en primer plano)
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
@@ -83,6 +88,7 @@ class NotificationService {
         log(
           '🖱️ La app se abrió desde una notificación: ${message.notification?.title}',
         );
+        _handleNotificationTap(message.data);
       });
 
       // Manejar el caso cuando la app se abre desde una notificación estando TERMINADA
@@ -91,9 +97,35 @@ class NotificationService {
         log(
           '🏁 La app se inició desde una notificación (Terminada): ${initialMessage.notification?.title}',
         );
+        // Esperar a que el árbol de widgets esté listo antes de navegar
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleNotificationTap(initialMessage.data);
+        });
       }
     } catch (e) {
       log('❌ Error al inicializar FCM: $e');
+    }
+  }
+
+  /// Navega según el tipo de notificación recibida.
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    final String? type = data['type']?.toString();
+    if (type == 'orden_pago') {
+      final int financiamientoId =
+          int.tryParse(data['financiamiento_id']?.toString() ?? '') ?? 0;
+      if (financiamientoId == 0) return;
+
+      final context = navigatorKey.currentContext;
+      if (context == null) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FinanciamientoDetallePage(
+            idFinanciamiento: financiamientoId,
+            moneda: 'S/.', // el push no envía moneda; se usará la del modelo
+          ),
+        ),
+      );
     }
   }
 
@@ -194,7 +226,7 @@ class NotificationService {
       }
 
       // 3. Enviar token al backend
-      final url = Uri.parse('${ApiConstants.baseUrl}/update-datos-usuario');
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.updateDatosUsuarioEndpoint}');
       await http.post(
         url,
         headers: ApiConstants.defaultHeaders,
@@ -218,7 +250,11 @@ class NotificationService {
     try {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
       final response = await http.get(
-        Uri.parse("$_baseUrl/notifications/$idConductor/$tipoUsuario"),
+        Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.notificationsEndpoint}'
+              .replaceAll('{id}', idConductor)
+              .replaceAll('{tipo}', tipoUsuario),
+        ),
         headers: ApiConstants.defaultHeaders,
       );
 
@@ -254,7 +290,29 @@ class NotificationService {
       String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
       final response = await http.post(
         Uri.parse(
-          "$_baseUrl/notifications/$notificationId/$idConductor/$tipoUsuario/read",
+          '${ApiConstants.baseUrl}${ApiConstants.markAsReadEndpoint}'
+              .replaceAll('{notificationId}', notificationId)
+              .replaceAll('{id}', idConductor)
+              .replaceAll('{tipo}', tipoUsuario),
+        ),
+        headers: ApiConstants.defaultHeaders,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Marca todas las notificaciones del usuario como leídas
+  Future<bool> markAllAsRead(String idConductor, int tipo) async {
+    try {
+      final String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
+      final response = await http.post(
+        Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.readAllNotificationsEndpoint}'
+              .replaceAll('{id}', idConductor)
+              .replaceAll('{tipo}', tipoUsuario),
         ),
         headers: ApiConstants.defaultHeaders,
       );

@@ -30,6 +30,26 @@ class NotificationModel {
       createdAt: DateTime.parse(json['created_at']),
     );
   }
+
+  NotificationModel copyWith({
+    String? id,
+    String? type,
+    String? notifiableType,
+    int? notifiableId,
+    NotificationDataModel? data,
+    DateTime? readAt,
+    DateTime? createdAt,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      notifiableType: notifiableType ?? this.notifiableType,
+      notifiableId: notifiableId ?? this.notifiableId,
+      data: data ?? this.data,
+      readAt: readAt ?? this.readAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
 
 class NotificationDataModel {

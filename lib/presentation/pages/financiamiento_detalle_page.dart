@@ -424,6 +424,7 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
             estado: cuotaEntity.estado,
             fechaPago: cuotaEntity.fechaPago,
             idPago: cuotaEntity.idPago,
+            esInicial: cuotaEntity.esInicial,
           );
 
           return Padding(

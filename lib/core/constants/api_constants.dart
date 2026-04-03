@@ -33,6 +33,10 @@ class ApiConstants {
   static const String resumenCrediticioEndpoint = '/app/resumen-crediticio';
   static const String puntajeEndpoint = '/app/puntaje-crediticio/detalle';
   static const String usarCuponEndpoint = '/app/promociones/cupones/{id}/uso';
+
+  static const String notificationsEndpoint = '/notifications/{id}/{tipo}';
+  static const String markAsReadEndpoint = '/notifications/{notificationId}/{id}/{tipo}/read';
+  static const String readAllNotificationsEndpoint = '/notifications/read-all/{id}/{tipo}';
   
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);

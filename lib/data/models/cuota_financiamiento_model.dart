@@ -10,6 +10,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
     required super.estado,
     super.fechaPago,
     required super.idPago,
+    super.esInicial,
   });
 
   factory CuotaFinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +31,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       estado: json["estado"] ?? '',
       fechaPago: json["fecha_pago"]?.toString(),
       idPago: toInt(json["idPago"] ?? json["id_pago"] ?? json["pago_id"]),
+      esInicial: json["es_inicial"] == true || json["es_inicial"] == 1,
     );
   }
 
@@ -43,6 +45,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       "estado": estado,
       "fecha_pago": fechaPago,
       "idPago": idPago,
+      "es_inicial": esInicial,
     };
   }
 
@@ -55,6 +58,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
         estado: estado,
         fechaPago: fechaPago,
         idPago: idPago,
+        esInicial: esInicial,
       );
 
   @override
@@ -67,6 +71,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
     String? estado,
     String? fechaPago,
     int? idPago,
+    bool? esInicial,
   }) {
     return CuotaFinanciamientoModel(
       id: id ?? this.id,
@@ -77,6 +82,7 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       estado: estado ?? this.estado,
       fechaPago: fechaPago ?? this.fechaPago,
       idPago: idPago ?? this.idPago,
+      esInicial: esInicial ?? this.esInicial,
     );
   }
 }

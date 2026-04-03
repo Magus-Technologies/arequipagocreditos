@@ -64,6 +64,23 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Marca todas las notificaciones como leídas
+  Future<void> markAllAsRead() async {
+    if (_currentUserId == null || _currentTipo == null) return;
+    final success = await _notificationService.markAllAsRead(
+      _currentUserId!,
+      _currentTipo!,
+    );
+    if (success) {
+      // Actualización optimista local antes de confirmar con el servidor
+      _unreadCount = 0;
+      _notifications = _notifications
+          .map((n) => n.copyWith(readAt: DateTime.now()))
+          .toList();
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _pollingTimer?.cancel();
