@@ -48,8 +48,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         await _saveUserToPrefs(data);
 
         return conductor;
-      } else if (response.statusCode == 401) {
-        throw const AuthException('Credenciales incorrectas');
+      } else if (response.statusCode == 401 || response.statusCode == 404) {
+        String message = response.statusCode == 404 
+            ? 'El usuario no se encuentra registrado' 
+            : 'Contraseña incorrecta';
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map && data.containsKey('message')) {
+            message = data['message'];
+          }
+        } catch (_) {}
+        throw AuthException(message);
       } else if (response.statusCode >= 500) {
         throw const ServerException('Error del servidor');
       } else {

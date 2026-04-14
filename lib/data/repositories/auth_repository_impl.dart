@@ -18,6 +18,8 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.right(conductorModel.toEntity());
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
+    } on AuthException catch (e) {
+      return Either.left(AuthenticationFailure(e.message));
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } on NetworkException catch (e) {

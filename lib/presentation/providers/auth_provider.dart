@@ -327,8 +327,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _mapFailureToMessage(Failure failure) {
+    if (failure.message.isNotEmpty && 
+        failure is! ServerFailure && 
+        failure is! NetworkFailure && 
+        failure is! CacheFailure) {
+      return failure.message;
+    }
+
     switch (failure) {
       case ValidationFailure _:
+        return failure.message;
+      case AuthenticationFailure _:
         return failure.message;
       case ServerFailure _:
         return 'Error del servidor. Intenta nuevamente.';
@@ -337,7 +346,7 @@ class AuthProvider extends ChangeNotifier {
       case CacheFailure _:
         return 'Error de cache. Reinicia la aplicación.';
       default:
-        return 'Ha ocurrido un error inesperado.';
+        return failure.message.isNotEmpty ? failure.message : 'Ha ocurrido un error inesperado.';
     }
   }
 }
