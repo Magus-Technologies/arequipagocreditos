@@ -27,11 +27,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>La cámara se usa únicamente para que el usuario pueda cambiar su foto de perfil una sola vez; la foto se subirá a su cuenta en el servidor y reemplazará la imagen actual (por ejemplo, tomar una foto para su perfil).</string>
+	<string>Se requiere acceso a la cámara para tomar fotos de perfil y capturar imágenes de la documentación necesaria para el pre-registro del usuario (DNI, recibos, etc.).</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Se usa para guardar una copia de la foto tomada en su fototeca si el usuario elige conservarla.</string>
+	<string>Se requiere acceso para guardar imágenes capturadas o descargadas relacionadas con tu perfil y documentos en tu fototeca.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Se usa para seleccionar una foto de su fototeca como foto de perfil (por ejemplo, elegir una imagen existente).</string>
+	<string>Se requiere acceso a tu fototeca para que puedas seleccionar y adjuntar tu foto de perfil y los documentos requeridos para tu registro (DNI, boletas de pago, recibos, etc.).</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

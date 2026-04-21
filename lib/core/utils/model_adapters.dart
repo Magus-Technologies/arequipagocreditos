@@ -37,6 +37,12 @@ class ModelAdapters {
       anio: entity.anio,
       marca: entity.marca,
       modelo: entity.modelo,
+      // Campos de pasajeros añadidos recientemente
+      ingresoNetoMensual: entity.ingresoNetoMensual,
+      estadoAprobacion: entity.estadoAprobacion,
+      fechaRegistro: entity.fechaRegistro,
+      contactoEmergencia: entity.contactoEmergencia,
+      documentos: entity.documentos,
     );
   }
 

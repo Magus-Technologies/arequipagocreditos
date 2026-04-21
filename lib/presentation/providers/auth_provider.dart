@@ -1,4 +1,6 @@
+import 'package:arequipagocreditos/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
@@ -16,6 +18,8 @@ class AuthProvider extends ChangeNotifier {
   final ValidateDniForPasswordRecoveryUseCase _validateDniForPasswordRecoveryUseCase;
   final UpdateVehicleDataUseCase _updateVehicleDataUseCase;
   final RefreshUserDataUseCase _refreshUserDataUseCase;
+  final PreRegisterUseCase _preRegisterUseCase;
+  final DeleteAccountUseCase _deleteAccountUseCase;
   
   AuthProvider({
     required LoginUseCase loginUseCase,
@@ -25,13 +29,17 @@ class AuthProvider extends ChangeNotifier {
     required ValidateDniForPasswordRecoveryUseCase validateDniForPasswordRecoveryUseCase,
     required UpdateVehicleDataUseCase updateVehicleDataUseCase,
     required RefreshUserDataUseCase refreshUserDataUseCase,
+    required PreRegisterUseCase preRegisterUseCase,
+    required DeleteAccountUseCase deleteAccountUseCase,
   })  : _loginUseCase = loginUseCase,
         _logoutUseCase = logoutUseCase,
         _getLoggedUserUseCase = getLoggedUserUseCase,
         _changePasswordUseCase = changePasswordUseCase,
         _validateDniForPasswordRecoveryUseCase = validateDniForPasswordRecoveryUseCase,
         _updateVehicleDataUseCase = updateVehicleDataUseCase,
-        _refreshUserDataUseCase = refreshUserDataUseCase;
+        _refreshUserDataUseCase = refreshUserDataUseCase,
+        _preRegisterUseCase = preRegisterUseCase,
+        _deleteAccountUseCase = deleteAccountUseCase;
 
   AuthStatus _status = AuthStatus.initial;
   ConductorEntity? _currentUser;
@@ -55,10 +63,18 @@ class AuthProvider extends ChangeNotifier {
         _errorMessage = _mapFailureToMessage(failure);
         _setStatus(AuthStatus.error);
       },
-      (conductor) {
+      (conductor) async {
         _currentUser = conductor;
         _errorMessage = null;
         _setStatus(AuthStatus.authenticated);
+
+        // Sincronizar token FCM inmediatamente después del login exitoso
+        try {
+          final notificationService = NotificationService();
+          await notificationService.initializeFCM();
+        } catch (e) {
+          debugPrint('Error al sincronizar FCM después del login: $e');
+        }
       },
     );
   }
@@ -79,6 +95,23 @@ class AuthProvider extends ChangeNotifier {
         _setStatus(AuthStatus.unauthenticated);
       },
     );
+  }
+
+  Future<bool> deleteAccount() async {
+    _setStatus(AuthStatus.loading);
+
+    final result = await _deleteAccountUseCase.call();
+
+    return result.fold((failure) {
+      _errorMessage = _mapFailureToMessage(failure);
+      _setStatus(AuthStatus.authenticated); // Mantener autenticado si falla
+      return false;
+    }, (response) {
+      _currentUser = null;
+      _errorMessage = null;
+      _setStatus(AuthStatus.unauthenticated);
+      return true;
+    });
   }
 
   Future<void> checkAuthStatus() async {
@@ -205,6 +238,28 @@ class AuthProvider extends ChangeNotifier {
       _setStatus(AuthStatus.unauthenticated);
       return false;
     });
+  }
+
+  Future<Map<String, dynamic>?> preRegister(
+    Map<String, dynamic> data,
+    Map<String, File> files,
+  ) async {
+    _setStatus(AuthStatus.loading);
+
+    final result = await _preRegisterUseCase(data, files);
+
+    return result.fold(
+      (failure) {
+        _errorMessage = _mapFailureToMessage(failure);
+        _setStatus(AuthStatus.unauthenticated);
+        return null;
+      },
+      (response) {
+        _errorMessage = null;
+        _setStatus(AuthStatus.unauthenticated);
+        return response;
+      },
+    );
   }
 
   /// Devuelve una lista con los nombres de los documentos de vehículo que

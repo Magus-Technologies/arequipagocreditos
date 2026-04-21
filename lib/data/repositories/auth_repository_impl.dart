@@ -148,4 +148,38 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(UnknownFailure('Error al actualizar datos del vehículo: $e'));
     }
   }
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> preRegister(
+    Map<String, dynamic> data,
+    Map<String, File> files,
+  ) async {
+    try {
+      final result = await remoteDataSource.preRegister(data, files);
+      return Either.right(result);
+    } on ValidationException catch (e) {
+      return Either.left(ValidationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Either.left(NetworkFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error al realizar pre-registro: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> deleteAccount() async {
+    try {
+      final result = await remoteDataSource.deleteAccount();
+      return Either.right(result);
+    } on AuthException catch (e) {
+      return Either.left(AuthenticationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Either.left(NetworkFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error al eliminar cuenta: $e'));
+    }
+  }
 }

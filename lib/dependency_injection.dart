@@ -57,6 +57,8 @@ class DependencyInjection {
                 validateDniForPasswordRecoveryUseCase(),
             updateVehicleDataUseCase: _getUpdateVehicleDataUseCase(),
             refreshUserDataUseCase: refreshUserDataUseCase(),
+            preRegisterUseCase: _getPreRegisterUseCase(),
+            deleteAccountUseCase: _getDeleteAccountUseCase(),
           ),
     ),
 
@@ -189,6 +191,10 @@ class DependencyInjection {
       UploadProfilePictureUseCase(_authRepository);
   static UpdateVehicleDataUseCase _getUpdateVehicleDataUseCase() =>
       UpdateVehicleDataUseCase(_authRepository);
+  static PreRegisterUseCase _getPreRegisterUseCase() =>
+      PreRegisterUseCase(_authRepository);
+  static DeleteAccountUseCase _getDeleteAccountUseCase() =>
+      DeleteAccountUseCase(_authRepository);
 
   // Use Cases - Cupones
   static GetCuponesUseCase _getCuponesUseCase() =>

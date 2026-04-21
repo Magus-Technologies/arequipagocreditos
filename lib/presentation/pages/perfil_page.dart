@@ -21,9 +21,9 @@ class _PerfilPageState extends State<PerfilPage> {
   @override
   void initState() {
     super.initState();
-    // Refrescar datos del usuario al inicializar
+    // Refrescar datos desde el servidor para garantizar tener toda la info de pasajeros/vehiculos
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkAuthStatus();
+      context.read<AuthProvider>().refreshUserDataFromRemote();
     });
   }
 
@@ -286,10 +286,16 @@ class _PerfilPageState extends State<PerfilPage> {
             // Estado de la foto de perfil
             _buildProfileStatusCard(conductor),
             const SizedBox(height: 20),
-            // Tarjeta de información personal
+            // Tarjeta de información personal (Común para todos)
             PersonalInfoCard(conductor: conductor),
             const SizedBox(height: 10),
-            VehiculoInfoCard(conductor: conductor),
+            
+            // Tarjeta condicional según el tipo
+            if (conductor?.tipo == 4) 
+              PreregistroInfoCard(conductor: conductor)
+            else 
+              VehiculoInfoCard(conductor: conductor),
+            
             const SizedBox(height: 20),
             // Botón de Cerrar Sesión
             Container(
@@ -311,8 +317,74 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
             ),
             const SizedBox(height: 20),
+            // Botón de Eliminar Cuenta (Requerimiento Apple)
+            TextButton(
+              onPressed: () => _showDeleteAccountDialog(context),
+              child: const Text(
+                "Eliminar Cuenta",
+                style: TextStyle(
+                  color: Colors.red,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('¿Eliminar tu cuenta?'),
+        content: const Text(
+          'Esta acción solicitará la eliminación permanente de tus datos y acceso a la plataforma. Tu sesión se cerrará de inmediato.'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Cerrar el diálogo
+              
+              // Mostrar indicador de carga en la página
+              final authProvider = context.read<AuthProvider>();
+              final success = await authProvider.deleteAccount();
+
+              if (!context.mounted) return;
+
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Solicitud de eliminación procesada con éxito.'),
+                    backgroundColor: Colors.green,
+                  )
+                );
+                
+                // Navegar al inicio después de un breve momento
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuthBottomNav()),
+                  (route) => false,
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(authProvider.errorMessage ?? 'Error al procesar la solicitud'),
+                    backgroundColor: Colors.red,
+                  )
+                );
+              }
+            },
+            child: const Text('SOLICITAR ELIMINACIÓN', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

@@ -5,19 +5,21 @@ class InfoItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Color? color;
 
   const InfoItem({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: AppTheme.primary),
+        Icon(icon, color: color ?? AppTheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

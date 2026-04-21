@@ -9,7 +9,9 @@ class ConductorEntity {
   final int tipo;
   final String? fotoPerfil;
   final bool fotoPerfilCambiada;
-  final String? fechaNacimiento; // ahora nullable
+  final String? fechaNacimiento;
+  
+  // Vehículo
   final String? placa;
   final String? soat;
   final String? revisionTecnica;
@@ -18,6 +20,13 @@ class ConductorEntity {
   final int? anio;
   final String? marca;
   final String? modelo;
+
+  // Pasajeros
+  final String? ingresoNetoMensual;
+  final String? estadoAprobacion;
+  final String? fechaRegistro;
+  final Map<String, dynamic>? contactoEmergencia;
+  final List<Map<String, dynamic>>? documentos;
 
   const ConductorEntity({
     required this.idConductor,
@@ -39,11 +48,15 @@ class ConductorEntity {
     this.anio,
     this.marca,
     this.modelo,
+    this.ingresoNetoMensual,
+    this.estadoAprobacion,
+    this.fechaRegistro,
+    this.contactoEmergencia,
+    this.documentos,
   });
 
   String get nombreCompleto => nombres;
 
-  // Helper: intenta parsear y devolver DateTime, o null si no es válido
   DateTime? get fechaNacimientoAsDate {
     if (fechaNacimiento == null) return null;
     try {
@@ -53,11 +66,9 @@ class ConductorEntity {
     }
   }
 
-  // Helper: devuelve fecha formateada o un placeholder
   String get fechaNacimientoFormatted {
     final dt = fechaNacimientoAsDate;
     if (dt == null) return '-';
     return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-    // Puedes usar intl para formateos más avanzados
   }
 }

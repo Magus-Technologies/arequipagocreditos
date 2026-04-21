@@ -10,4 +10,5 @@ export 'historial_completo_page.dart';
 export 'financiamiento_detalle_page.dart';
 export 'splash_page.dart';
 export 'reset_password_page.dart';
+export 'pre_register_page.dart';
 export 'beneficios_page.dart';

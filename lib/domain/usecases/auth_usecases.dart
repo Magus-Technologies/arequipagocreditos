@@ -138,3 +138,40 @@ class UpdateVehicleDataUseCase {
     return await repository.updateVehicleData(data);
   }
 }
+
+class PreRegisterUseCase {
+  final AuthRepository repository;
+
+  PreRegisterUseCase(this.repository);
+
+  Future<Either<Failure, Map<String, dynamic>>> call(
+    Map<String, dynamic> data,
+    Map<String, File> files,
+  ) async {
+    // Basic validation
+    if (Platform.isAndroid) {
+      if (data['nro_documento'] == null || data['nro_documento'].toString().isEmpty) {
+        return Either.left(const ValidationFailure('El número de documento es requerido'));
+      }
+      if (files.isEmpty) {
+        return Either.left(const ValidationFailure('Se requieren los documentos adjuntos'));
+      }
+    }
+    
+    if (data['telefono'] == null || data['telefono'].toString().isEmpty) {
+      return Either.left(const ValidationFailure('El teléfono es requerido para contactarte'));
+    }
+
+    return await repository.preRegister(data, files);
+  }
+}
+
+class DeleteAccountUseCase {
+  final AuthRepository repository;
+
+  DeleteAccountUseCase(this.repository);
+
+  Future<Either<Failure, Map<String, dynamic>>> call() async {
+    return await repository.deleteAccount();
+  }
+}

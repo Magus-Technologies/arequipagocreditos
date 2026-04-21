@@ -21,6 +21,9 @@ class ApiConstants {
   static const String uploadProfilePictureEndpoint = '/app/upload-profile-picture';
   static const String updatePasswordConductorEndpoint = '/app/update-password-conductor';
   static const String updateDatosUsuarioEndpoint = '/app/update-datos-usuario';
+  static const String perfilPasajeroEndpoint = '/app/pasajeros/{id}';
+  static const String preRegistroEndpoint = '/app/pasajeros/pre-registro';
+  static const String deleteAccountEndpoint = '/app/conductor/eliminar-cuenta';
   static const String pagarCuotaEndpoint = '/app/pagar-cuota';
   static const String reporteCuotaEndpoint = '/app/reporte-cuota/{id}';
   static const String perfilUsuarioEndpoint = '/app/get-perfil-usuario/{id}/{tipo}';

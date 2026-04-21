@@ -9,3 +9,4 @@ export 'package:arequipagocreditos/presentation/components/profile_info.dart';
 export 'package:arequipagocreditos/presentation/components/personal_info_card.dart';
 export 'package:arequipagocreditos/presentation/components/image_picker_modal.dart';
 export 'package:arequipagocreditos/presentation/components/vehiculo_info_card.dart';
+export 'package:arequipagocreditos/presentation/components/preregistro_info_card.dart';
