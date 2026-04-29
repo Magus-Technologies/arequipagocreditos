@@ -43,6 +43,10 @@ class ModelAdapters {
       fechaRegistro: entity.fechaRegistro,
       contactoEmergencia: entity.contactoEmergencia,
       documentos: entity.documentos,
+      afiliacionFirmada: entity.afiliacionFirmada,
+      contratoAfiliacionUrl: entity.contratoAfiliacionUrl,
+      firmaAfiliacionUrl: entity.firmaAfiliacionUrl,
+      firmaAfiliacionAt: entity.firmaAfiliacionAt,
     );
   }
 
@@ -91,6 +95,16 @@ class ModelAdapters {
       frecuencia: entity.frecuencia,
       secondProduct: entity.secondProduct,
       moneda: entity.moneda,
+      nombreProducto: entity.nombreProducto,
+      tieneCuotaInicial: entity.tieneCuotaInicial,
+      cuotaInicialEstado: entity.cuotaInicialEstado,
+      cuotaInicialMonto: entity.cuotaInicialMonto,
+      firmado: entity.firmado,
+      contratoUrl: entity.contratoUrl,
+      firmaUrl: entity.firmaUrl,
+      firmadoAt: entity.firmadoAt,
+      aprobado: entity.aprobado,
+      estadoEntrega: entity.estadoEntrega,
     );
   }
 

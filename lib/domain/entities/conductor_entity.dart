@@ -28,6 +28,12 @@ class ConductorEntity {
   final Map<String, dynamic>? contactoEmergencia;
   final List<Map<String, dynamic>>? documentos;
 
+  // Firmas
+  final bool afiliacionFirmada;
+  final String? contratoAfiliacionUrl;
+  final String? firmaAfiliacionUrl;
+  final String? firmaAfiliacionAt;
+
   const ConductorEntity({
     required this.idConductor,
     required this.nombres,
@@ -53,6 +59,10 @@ class ConductorEntity {
     this.fechaRegistro,
     this.contactoEmergencia,
     this.documentos,
+    this.afiliacionFirmada = false,
+    this.contratoAfiliacionUrl,
+    this.firmaAfiliacionUrl,
+    this.firmaAfiliacionAt,
   });
 
   String get nombreCompleto => nombres;

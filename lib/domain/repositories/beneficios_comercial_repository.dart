@@ -3,5 +3,5 @@ import '../../core/errors/failures.dart';
 import '../entities/beneficio_entity.dart';
 
 abstract class BeneficiosComercialRepository {
-  Future<Either<Failure, List<BeneficioComercialEntity>>> getBeneficiosComerciales();
+  Future<Either<Failure, List<BeneficioComercialEntity>>> getBeneficiosComerciales({int? tipo});
 }

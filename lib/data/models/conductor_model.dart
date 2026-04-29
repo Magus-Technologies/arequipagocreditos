@@ -26,6 +26,10 @@ class ConductorModel extends ConductorEntity {
     super.fechaRegistro,
     super.contactoEmergencia,
     super.documentos,
+    required super.afiliacionFirmada,
+    super.contratoAfiliacionUrl,
+    super.firmaAfiliacionUrl,
+    super.firmaAfiliacionAt,
   });
 
   factory ConductorModel.fromJson(Map<String, dynamic> json) {
@@ -78,6 +82,10 @@ class ConductorModel extends ConductorEntity {
       documentos: c['documentos'] is List 
           ? (c['documentos'] as List).map((e) => Map<String, dynamic>.from(e)).toList()
           : null,
+      afiliacionFirmada: c['afiliacion_firmada'] == true || c['afiliacion_firmada'] == 1,
+      contratoAfiliacionUrl: c['contrato_afiliacion_url']?.toString(),
+      firmaAfiliacionUrl: c['firma_afiliacion_url']?.toString(),
+      firmaAfiliacionAt: c['firma_afiliacion_at']?.toString(),
     );
   }
 
@@ -107,6 +115,10 @@ class ConductorModel extends ConductorEntity {
       'fecha_registro': fechaRegistro,
       'contacto_emergencia': contactoEmergencia,
       'documentos': documentos,
+      'afiliacion_firmada': afiliacionFirmada,
+      'contrato_afiliacion_url': contratoAfiliacionUrl,
+      'firma_afiliacion_url': firmaAfiliacionUrl,
+      'firma_afiliacion_at': firmaAfiliacionAt,
     };
   }
 
@@ -135,5 +147,9 @@ class ConductorModel extends ConductorEntity {
     fechaRegistro: fechaRegistro,
     contactoEmergencia: contactoEmergencia,
     documentos: documentos,
+    afiliacionFirmada: afiliacionFirmada,
+    contratoAfiliacionUrl: contratoAfiliacionUrl,
+    firmaAfiliacionUrl: firmaAfiliacionUrl,
+    firmaAfiliacionAt: firmaAfiliacionAt,
   );
 }

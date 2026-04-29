@@ -7,6 +7,8 @@ class AppConstants {
   static const String userStorageKey = 'conductor_v2';
   static const String themeStorageKey = 'theme_mode';
   static const String languageStorageKey = 'language';
+  static const String contratoAfiliacionUrlKey = 'contrato_afiliacion_url_v1';
+  static const String afiliacionFirmadaKey = 'afiliacion_firmada_v1';
   
   // Pagination
   static const int defaultPageSize = 20;

@@ -10,25 +10,28 @@ import 'package:provider/provider.dart';
 import 'dependency_injection.dart';
 import 'presentation/providers/auth_provider.dart';
 
+import 'package:arequipagocreditos/presentation/pages/signature/firma_documento_page.dart';
+
 // Manejador de mensajes en segundo plano (debe estar fuera de cualquier clase)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
+  log('🔕 BG handler - notification payload: ${message.notification?.title}');
+  log('🔕 BG handler - data: ${message.data}');
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Firebase
+  // El handler de background debe registrarse antes de Firebase.initializeApp()
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   try {
     await Firebase.initializeApp();
 
-    // Configurar notificaciones FCM (No bloqueamos el inicio de la app)
+    // Inicializar FCM antes de runApp para capturar getInitialMessage correctamente
     final notificationService = NotificationService();
-    notificationService.initializeFCM();
-
-    // Registrar el manejador de notificaciones en segundo plano
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await notificationService.initializeFCM();
   } catch (e) {
     log("❌ Error al inicializar Firebase: $e");
   }
@@ -82,6 +85,14 @@ class _AppWrapperState extends State<AppWrapper> {
           case AuthStatus.loading:
             return SplashPage();
           case AuthStatus.authenticated:
+            // Procesar notificación pendiente (app abierta desde estado terminado)
+            if (NotificationService.pendingNotificationData != null) {
+              final data = NotificationService.pendingNotificationData!;
+              NotificationService.pendingNotificationData = null;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                NotificationService().handleNotificationTap(data);
+              });
+            }
             // Mostrar alerta una sola vez por sesión si hay documentos vencidos o próximos a vencer
             if (!_expiryAlertShown) {
               _expiryAlertShown =
@@ -138,6 +149,19 @@ class _AppWrapperState extends State<AppWrapper> {
                   );
                 }
               });
+            }
+
+            if (authProvider.currentUser != null &&
+                !authProvider.currentUser!.afiliacionFirmada &&
+                authProvider.currentUser!.contratoAfiliacionUrl != null) {
+              return FirmaDocumentoPage(
+                title: 'Contrato de Afiliación',
+                pdfUrl: authProvider.currentUser!.contratoAfiliacionUrl!,
+                tipo: 'afiliacion',
+                id: authProvider.currentUser!.idConductor,
+                canPop: false,
+                onSigned: () => authProvider.refreshUserDataFromRemote(),
+              );
             }
 
             return DashboardPage();

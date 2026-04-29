@@ -15,22 +15,28 @@ class BeneficiosProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
   Failure? _failure;
+  int _currentTipo = 1; // 1: Beneficio, 2: Servicio
 
   // Getters
   List<BeneficioComercialEntity> get beneficios => _beneficios;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   Failure? get failure => _failure;
+  int get currentTipo => _currentTipo;
   bool get hasError => _errorMessage.isNotEmpty;
   bool get isEmpty => _beneficios.isEmpty && !_isLoading && !hasError;
 
   /// Obtiene la lista de beneficios comerciales
-  Future<void> getBeneficios() async {
+  Future<void> getBeneficios({int? tipo}) async {
+    if (tipo != null) {
+      _currentTipo = tipo;
+    }
+    
     _setLoading(true);
     _clearError();
 
     try {
-      final result = await getBeneficiosComercialUseCase();
+      final result = await getBeneficiosComercialUseCase(tipo: _currentTipo);
       
       result.fold(
         (failure) => _handleFailure(failure),
@@ -45,12 +51,12 @@ class BeneficiosProvider extends ChangeNotifier {
 
   /// Reintenta obtener los beneficios
   Future<void> retry() async {
-    await getBeneficios();
+    await getBeneficios(tipo: _currentTipo);
   }
 
   /// Actualiza/refresca la lista de beneficios
   Future<void> refresh() async {
-    await getBeneficios();
+    await getBeneficios(tipo: _currentTipo);
   }
 
   /// Busca beneficios por término de búsqueda

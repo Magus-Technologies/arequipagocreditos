@@ -23,6 +23,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
     super.tieneCuotaInicial,
     super.cuotaInicialEstado,
     super.cuotaInicialMonto,
+    required super.firmado,
+    super.contratoUrl,
+    super.firmaUrl,
+    super.firmadoAt,
+    super.aprobado,
+    super.estadoEntrega,
   });
 
    factory FinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
       if (value is double) return value.toInt();
       if (value is String) return int.tryParse(value) ?? 0;
       return 0;
+    }
+
+    int? parseNullableInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      return int.tryParse(value.toString());
     }
 
     String toStringValue(dynamic value) {
@@ -60,7 +72,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
       grupoFinanciamiento: toStringValue(json['grupo_financiamiento'] ?? (json['grupo'] != null ? json['grupo']['nombre'] : null)),
       cantidadProducto: toStringValue(json['cantidad_producto'] ?? json['cantidad_cuotas']), 
       montoTotal: toStringValue(json['monto_total']),
-      cuotaInicial: toStringValue(json['cuota_inicial']),
+      cuotaInicial: toStringValue(json['cuota_inicial'] ?? json['monto_cuota']),
       cuotas: toInt(json['cuotas'] ?? json['cantidad_cuotas']),
       estado: toStringValue(json['estado']),
       fechaInicio: toStringValue(json['fecha_inicio']).split('T')[0],
@@ -76,6 +88,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
       cuotaInicialMonto: json['cuota_inicial_monto'] != null
           ? double.tryParse(json['cuota_inicial_monto'].toString())
           : null,
+      firmado: json['firmado'] == true || json['firmado'] == 1,
+      contratoUrl: json['contrato_url']?.toString(),
+      firmaUrl: json['firma_url']?.toString(),
+      firmadoAt: json['firmado_at']?.toString(),
+      aprobado: parseNullableInt(json['aprobado']),
+      estadoEntrega: json['estado_entrega']?.toString(),
     );
   }
 
@@ -102,6 +120,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
       'tiene_cuota_inicial': tieneCuotaInicial,
       'cuota_inicial_estado': cuotaInicialEstado,
       'cuota_inicial_monto': cuotaInicialMonto,
+      'firmado': firmado,
+      'contrato_url': contratoUrl,
+      'firma_url': firmaUrl,
+      'firmado_at': firmadoAt,
+      'aprobado': aprobado,
+      'estado_entrega': estadoEntrega,
     };
   }
 
@@ -127,6 +151,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
         tieneCuotaInicial: tieneCuotaInicial,
         cuotaInicialEstado: cuotaInicialEstado,
         cuotaInicialMonto: cuotaInicialMonto,
+        firmado: firmado,
+        contratoUrl: contratoUrl,
+        firmaUrl: firmaUrl,
+        firmadoAt: firmadoAt,
+        aprobado: aprobado,
+        estadoEntrega: estadoEntrega,
       );
       
   @override
@@ -152,6 +182,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
     bool? tieneCuotaInicial,
     String? cuotaInicialEstado,
     double? cuotaInicialMonto,
+    bool? firmado,
+    String? contratoUrl,
+    String? firmaUrl,
+    String? firmadoAt,
+    int? aprobado,
+    String? estadoEntrega,
   }) {
     return FinanciamientoModel(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -175,6 +211,12 @@ class FinanciamientoModel extends FinanciamientoEntity {
       tieneCuotaInicial: tieneCuotaInicial ?? this.tieneCuotaInicial,
       cuotaInicialEstado: cuotaInicialEstado ?? this.cuotaInicialEstado,
       cuotaInicialMonto: cuotaInicialMonto ?? this.cuotaInicialMonto,
+      firmado: firmado ?? this.firmado,
+      contratoUrl: contratoUrl ?? this.contratoUrl,
+      firmaUrl: firmaUrl ?? this.firmaUrl,
+      firmadoAt: firmadoAt ?? this.firmadoAt,
+      aprobado: aprobado ?? this.aprobado,
+      estadoEntrega: estadoEntrega ?? this.estadoEntrega,
     );
   }
 }

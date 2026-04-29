@@ -1,3 +1,4 @@
+import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
 import 'package:arequipagocreditos/presentation/components/image_preview.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final double avatarRadius = (size / 2) - 4; // ajuste interno
     final String heroTag = 'profile-avatar-${conductor?.idConductor ?? 'anon'}';
-    final String? imageUrl = conductor?.fotoPerfil;
+    final String imageUrl = ApiConstants.normalizeUrl(conductor?.fotoPerfil);
 
     return Stack(
       alignment: Alignment.center,
@@ -53,7 +54,7 @@ class ProfileAvatar extends StatelessWidget {
         // Avatar con imagen o icono; envuelto en GestureDetector/Hero
         GestureDetector(
           onTap: () {
-            if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+            if (imageUrl.trim().isNotEmpty) {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ImagePreview(imageUrl: imageUrl, heroTag: heroTag),
@@ -81,7 +82,7 @@ class ProfileAvatar extends StatelessWidget {
                 ],
               ),
               child: ClipOval(
-                child: imageUrl != null && imageUrl.trim().isNotEmpty
+                child: imageUrl.trim().isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: imageUrl,
                         width: size - 8,

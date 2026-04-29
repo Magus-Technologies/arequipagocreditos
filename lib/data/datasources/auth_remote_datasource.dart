@@ -68,6 +68,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(AppConstants.userStorageKey);
+      await prefs.remove(AppConstants.contratoAfiliacionUrlKey);
+      await prefs.remove(AppConstants.afiliacionFirmadaKey);
     } catch (e) {
       throw CacheException('Error al cerrar sesión: $e');
     }
@@ -111,7 +113,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final response = await client.get(url).timeout(ApiConstants.connectionTimeout);
-      print('${ApiConstants.baseUrl}$endpoint');
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body) as Map<String, dynamic>;
         Map<String, dynamic> profileData = {};
@@ -133,6 +134,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         // Preservar Tipo e ID
         profileData['id_conductor'] = profileData['id'] ?? idConductor;
         profileData['tipo'] = profileData['tipo'] ?? tipo;
+
+        // Preservar campos de afiliación: prioridad → perfil API → sesión existente → claves dedicadas
+        final savedContratoUrl = prefs.getString(AppConstants.contratoAfiliacionUrlKey);
+        final savedFirmada = prefs.getBool(AppConstants.afiliacionFirmadaKey);
+        profileData['afiliacion_firmada'] = profileData['afiliacion_firmada'] ?? conductorMap['afiliacion_firmada'] ?? savedFirmada ?? false;
+        profileData['contrato_afiliacion_url'] = profileData['contrato_afiliacion_url'] ?? conductorMap['contrato_afiliacion_url'] ?? savedContratoUrl;
+        profileData['firma_afiliacion_url'] = profileData['firma_afiliacion_url'] ?? conductorMap['firma_afiliacion_url'];
+        profileData['firma_afiliacion_at'] = profileData['firma_afiliacion_at'] ?? conductorMap['firma_afiliacion_at'];
 
         // Guardar de forma limpia
         final Map<String, dynamic> newSessionData = {
@@ -278,6 +287,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(AppConstants.userStorageKey, jsonEncode(userData));
+
+      // Guardar campos de afiliación en claves dedicadas para que
+      // no se pierdan cuando refreshUserData sobreescribe la sesión
+      final c = userData['conductor'] is Map
+          ? userData['conductor'] as Map<String, dynamic>
+          : userData;
+      final contratoUrl = c['contrato_afiliacion_url']?.toString();
+      final firmada = c['afiliacion_firmada'];
+      if (contratoUrl != null) {
+        await prefs.setString(AppConstants.contratoAfiliacionUrlKey, contratoUrl);
+      }
+      await prefs.setBool(AppConstants.afiliacionFirmadaKey, firmada == true || firmada == 1);
     } catch (e) {
       debugPrint('Error al guardar datos de sesión: $e');
     }

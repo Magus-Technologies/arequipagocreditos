@@ -1,3 +1,4 @@
+import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 
 class HeaderIcon extends StatelessWidget {
@@ -18,13 +19,15 @@ class HeaderIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     // Contenedor base con sombra/borde que compartimos entre icon e imagen
     Widget child;
-    if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+    final normalizedUrl = ApiConstants.normalizeUrl(imageUrl);
+
+    if (normalizedUrl.isNotEmpty) {
       child = ClipOval(
         child: SizedBox(
           width: size,
           height: size,
           child: Image.network(
-            imageUrl!,
+            normalizedUrl,
             fit: BoxFit.cover,
             // Si falla la carga, mostramos el icono como fallback
             errorBuilder: (context, error, stackTrace) {

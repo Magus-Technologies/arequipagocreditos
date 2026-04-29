@@ -8,7 +8,7 @@ class GetBeneficiosComercialUseCase {
 
   GetBeneficiosComercialUseCase(this.repository);
 
-  Future<Either<Failure, List<BeneficioComercialEntity>>> call() async {
-    return await repository.getBeneficiosComerciales();
+  Future<Either<Failure, List<BeneficioComercialEntity>>> call({int? tipo}) async {
+    return await repository.getBeneficiosComerciales(tipo: tipo);
   }
 }

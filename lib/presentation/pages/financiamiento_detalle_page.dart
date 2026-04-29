@@ -1,5 +1,6 @@
 import 'package:arequipagocreditos/data/models/cuota_financiamiento_model.dart';
 import 'package:arequipagocreditos/presentation/components/cuota_card.dart';
+import 'package:arequipagocreditos/presentation/pages/signature/firma_documento_page.dart';
 import 'package:arequipagocreditos/presentation/providers/financiamiento_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -8,11 +9,13 @@ import 'package:provider/provider.dart';
 class FinanciamientoDetallePage extends StatefulWidget {
   final int idFinanciamiento;
   final String moneda;
+  final VoidCallback? onSigned;
 
   const FinanciamientoDetallePage({
     super.key,
     required this.idFinanciamiento,
     required this.moneda,
+    this.onSigned,
   });
 
   @override
@@ -285,6 +288,52 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                           );
                         },
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Consumer<FinanciamientoProvider>(
+                      builder: (context, financiamientoProvider, child) {
+                        final current = financiamientoProvider.currentFinanciamiento;
+                        if (current == null ||
+                            current.firmado ||
+                            current.estado.toLowerCase() != 'activo' ||
+                            (current.aprobado ?? 0) != 1 ||
+                            current.contratoUrl == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FirmaDocumentoPage(
+                                    title: 'Contrato de Financiamiento',
+                                    pdfUrl: current.contratoUrl!,
+                                    tipo: 'contrato',
+                                    id: current.idFinanciamiento,
+                                    onSigned: () {
+                                      financiamientoProvider.markAsSigned(current.idFinanciamiento);
+                                      _fetchCuotas();
+                                      widget.onSigned?.call();
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit_note, size: 18),
+                            label: const Text('Firmar contrato'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

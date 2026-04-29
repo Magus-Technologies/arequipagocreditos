@@ -4,7 +4,7 @@ import '../../core/constants/api_constants.dart';
 import '../models/beneficio_comercial_model.dart';
 
 abstract class BeneficiosComercialRemoteDataSource {
-  Future<List<BeneficioComercialModel>> getBeneficiosComerciales();
+  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo});
 }
 
 class BeneficiosComercialRemoteDataSourceImpl
@@ -14,9 +14,12 @@ class BeneficiosComercialRemoteDataSourceImpl
   BeneficiosComercialRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<List<BeneficioComercialModel>> getBeneficiosComerciales() async {
+  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo}) async {
     try {
-      final url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}';
+      String url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}';
+      if (tipo != null) {
+        url += '?tipo=$tipo';
+      }
 
       final response = await client.get(
         Uri.parse(url),

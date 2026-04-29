@@ -86,7 +86,14 @@ class FinanciamientoProvider extends ChangeNotifier {
     result.fold(
       (failure) => _setError(_getFailureMessage(failure)),
       (financiamiento) {
-        _currentFinanciamiento = financiamiento;
+        final prev = _currentFinanciamiento;
+        _currentFinanciamiento = prev == null
+            ? financiamiento
+            : financiamiento.copyWith(
+                aprobado: financiamiento.aprobado ?? prev.aprobado,
+                contratoUrl: financiamiento.contratoUrl ?? prev.contratoUrl,
+                firmado: financiamiento.firmado || prev.firmado,
+              );
         _clearError();
       },
     );
@@ -204,6 +211,27 @@ class FinanciamientoProvider extends ChangeNotifier {
   void selectFinanciamiento(FinanciamientoEntity financiamiento) {
     _currentFinanciamiento = financiamiento;
     notifyListeners();
+  }
+
+  void markAsSigned(int id) {
+    bool changed = false;
+    
+    // Actualizar en la lista general
+    final index = _financiamientos.indexWhere((f) => f.idFinanciamiento == id);
+    if (index != -1) {
+      _financiamientos[index] = _financiamientos[index].copyWith(firmado: true);
+      changed = true;
+    }
+    
+    // Actualizar el seleccionado actualmente si coincide
+    if (_currentFinanciamiento != null && _currentFinanciamiento!.idFinanciamiento == id) {
+      _currentFinanciamiento = _currentFinanciamiento!.copyWith(firmado: true);
+      changed = true;
+    }
+    
+    if (changed) {
+      notifyListeners();
+    }
   }
 
   // Métodos privados

@@ -21,9 +21,13 @@ class NotificationService {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
-  // Canal de notificación para Android (necesario para banners en primer plano)
+  /// Datos de notificación pendientes cuando la app se abre desde estado terminado.
+  /// AppWrapper los consume una vez que el usuario está autenticado.
+  static Map<String, dynamic>? pendingNotificationData;
+
+  // Canal de notificación para Android — debe coincidir con el canal configurado en FCM
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-    'high_importance_channel',
+    'high_importance_channel_v2',
     'High Importance Notifications',
     description: 'This channel is used for important notifications.',
     importance: Importance.max,
@@ -85,10 +89,9 @@ class NotificationService {
 
       // Manejar clics en notificaciones cuando la app está en segundo plano pero no cerrada
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        log(
-          '🖱️ La app se abrió desde una notificación: ${message.notification?.title}',
-        );
-        _handleNotificationTap(message.data);
+        log('🖱️ onMessageOpenedApp FIRED - title: ${message.notification?.title}');
+        log('🖱️ onMessageOpenedApp data: ${message.data}');
+        handleNotificationTap(message.data);
       });
 
       // Manejar el caso cuando la app se abre desde una notificación estando TERMINADA
@@ -97,10 +100,9 @@ class NotificationService {
         log(
           '🏁 La app se inició desde una notificación (Terminada): ${initialMessage.notification?.title}',
         );
-        // Esperar a que el árbol de widgets esté listo antes de navegar
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleNotificationTap(initialMessage.data);
-        });
+        // Guardamos los datos para que AppWrapper los procese una vez
+        // que el usuario esté autenticado y el árbol de widgets listo.
+        pendingNotificationData = initialMessage.data;
       }
     } catch (e) {
       log('❌ Error al inicializar FCM: $e');
@@ -108,7 +110,7 @@ class NotificationService {
   }
 
   /// Navega según el tipo de notificación recibida.
-  void _handleNotificationTap(Map<String, dynamic> data) {
+  void handleNotificationTap(Map<String, dynamic> data) {
     final String? type = data['type']?.toString();
     if (type == 'orden_pago') {
       final int financiamientoId =
@@ -148,7 +150,18 @@ class NotificationService {
           macOS: initializationSettingsDarwin,
         );
 
-    await _localNotifications.initialize(initializationSettings);
+    await _localNotifications.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        final String? payload = response.payload;
+        if (payload != null && payload.isNotEmpty) {
+          try {
+            final Map<String, dynamic> data = jsonDecode(payload);
+            handleNotificationTap(data);
+          } catch (_) {}
+        }
+      },
+    );
 
     // Crear el canal en Android
     await _localNotifications
@@ -177,7 +190,7 @@ class NotificationService {
             importance: _channel.importance,
             priority: Priority.high,
             icon: iconName,
-            color: const Color(0xFFFEEC38), // Amarillo brillante (Arequipa)
+            color: const Color(0xFFFEEC38),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -185,6 +198,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
+        payload: jsonEncode(message.data),
       );
     }
   }

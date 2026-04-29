@@ -32,6 +32,7 @@ class ApiConstants {
   static const String beneficiosEndpoint = '/app/promociones/beneficios';
 
   static const String cuponesEndpoint = '/app/promociones/cupones/listar';
+  static const String firmarEndpoint = '/app/firmar/{tipo}/{id}';
 
   static const String resumenCrediticioEndpoint = '/app/resumen-crediticio';
   static const String puntajeEndpoint = '/app/puntaje-crediticio/detalle';
@@ -45,9 +46,20 @@ class ApiConstants {
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
-  // Headers
   static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  /// Normaliza una URL relativa anteponiendo el host base (sin /api)
+  static String normalizeUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    // El host base es la URL raíz sin el segmento /api
+    final uri = Uri.parse(baseUrl);
+    final hostBase = '${uri.scheme}://${uri.host}';
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$hostBase/$cleanPath';
+  }
 }

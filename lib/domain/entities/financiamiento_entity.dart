@@ -21,6 +21,12 @@ class FinanciamientoEntity {
   final bool tieneCuotaInicial;
   final String? cuotaInicialEstado;
   final double? cuotaInicialMonto;
+  final bool firmado;
+  final String? contratoUrl;
+  final String? firmaUrl;
+  final String? firmadoAt;
+  final int? aprobado;
+  final String? estadoEntrega;
 
   const FinanciamientoEntity({
     required this.idFinanciamiento,
@@ -44,6 +50,12 @@ class FinanciamientoEntity {
     this.tieneCuotaInicial = false,
     this.cuotaInicialEstado,
     this.cuotaInicialMonto,
+    this.firmado = false,
+    this.contratoUrl,
+    this.firmaUrl,
+    this.firmadoAt,
+    this.aprobado,
+    this.estadoEntrega,
   });
 
   // Getters útiles
@@ -102,6 +114,12 @@ class FinanciamientoEntity {
     bool? tieneCuotaInicial,
     String? cuotaInicialEstado,
     double? cuotaInicialMonto,
+    bool? firmado,
+    String? contratoUrl,
+    String? firmaUrl,
+    String? firmadoAt,
+    int? aprobado,
+    String? estadoEntrega,
   }) {
     return FinanciamientoEntity(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -125,6 +143,12 @@ class FinanciamientoEntity {
       tieneCuotaInicial: tieneCuotaInicial ?? this.tieneCuotaInicial,
       cuotaInicialEstado: cuotaInicialEstado ?? this.cuotaInicialEstado,
       cuotaInicialMonto: cuotaInicialMonto ?? this.cuotaInicialMonto,
+      firmado: firmado ?? this.firmado,
+      contratoUrl: contratoUrl ?? this.contratoUrl,
+      firmaUrl: firmaUrl ?? this.firmaUrl,
+      firmadoAt: firmadoAt ?? this.firmadoAt,
+      aprobado: aprobado ?? this.aprobado,
+      estadoEntrega: estadoEntrega ?? this.estadoEntrega,
     );
   }
 }

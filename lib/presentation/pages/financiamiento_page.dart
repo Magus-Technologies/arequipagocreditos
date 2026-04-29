@@ -171,6 +171,33 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                                     ),
                                   ),
                                 ),
+                                if (financiamiento.firmado) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withAlpha((0.1 * 255).toInt()),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.check_circle, size: 12, color: Colors.blue),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Firmado',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -299,44 +326,49 @@ class _FinanciamientoPageState extends State<FinanciamientoPage> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => FinanciamientoDetallePage(
-                                        idFinanciamiento: financiamiento.idFinanciamiento,
-                                        moneda: financiamiento.moneda,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    Provider.of<FinanciamientoProvider>(context, listen: false)
+                                        .selectFinanciamiento(financiamiento);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FinanciamientoDetallePage(
+                                          idFinanciamiento: financiamiento.idFinanciamiento,
+                                          moneda: financiamiento.moneda,
+                                          onSigned: () => _loadFinanciamientos(),
+                                        ),
                                       ),
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(context).primaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
                                     ),
-                                  );
-                                },
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Theme.of(context).primaryColor,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Ver detalles',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 14,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Ver detalles',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      size: 14,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
                           ],
                         ),
