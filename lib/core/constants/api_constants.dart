@@ -9,6 +9,8 @@ class ApiConstants {
 
 
   static const String imagenesBaseUrl = "https://arequipago-ventas.pe/storage";
+  static const String politicaPrivacidadUrl = "https://arequipago-ventas.pe/politica-privacidad";
+
 
   // Environment
   static const bool useProduction = true;

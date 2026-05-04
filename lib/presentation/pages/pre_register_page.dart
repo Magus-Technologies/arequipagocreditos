@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/api_constants.dart';
 import '../../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
@@ -49,6 +51,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   File? _docRecibo;
   File? _docBoletas;
   File? _docDni;
+  bool _aceptaTerminos = false; // controlled via callback from child widget
 
   final ImagePicker _picker = ImagePicker();
 
@@ -73,6 +76,16 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   }
 
   void _nextStep() {
+    if (_currentStep == _totalSteps && !_aceptaTerminos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe autorizar el tratamiento de datos para continuar'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     } else {
@@ -351,96 +364,110 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   }
 
   Widget _buildCurrentStepView() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      transitionBuilder: (child, animation) {
+        final slide = Tween<Offset>(
+          begin: const Offset(0.08, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey(_currentStep),
+        child: _buildStepContent(),
+      ),
+    );
+  }
+
+  Widget _buildStepContent() {
     switch (_currentStep) {
       case 1:
-        return FadeInRight(
-          duration: const Duration(milliseconds: 300),
-          child: Column(
-            children: [
-              _buildModernTextField(
-                _nroDocController, 
-                Platform.isIOS ? 'Nro Documento (Opcional)' : 'DNI / Nro Documento', 
-                Icons.badge_outlined, 
-                keyboardType: TextInputType.number
+        return Column(
+          children: [
+            _buildModernTextField(
+              _nroDocController, 
+              Platform.isIOS ? 'Nro Documento (Opcional)' : 'DNI / Nro Documento', 
+              Icons.badge_outlined, 
+              keyboardType: TextInputType.number
+            ),
+            const SizedBox(height: 20),
+            _buildModernTextField(_nombresController, 'Nombres Completos', Icons.person_outline),
+            const SizedBox(height: 20),
+            _buildModernTextField(_apellidoPaternoController, 'Apellido Paterno', Icons.account_circle_outlined),
+            const SizedBox(height: 20),
+            _buildModernTextField(_apellidoMaternoController, 'Apellido Materno', Icons.account_circle_outlined),
+            const SizedBox(height: 20),
+            InkWell(
+              onTap: _selectDate,
+              child: IgnorePointer(
+                child: _buildModernTextField(_fechaNacimientoController, 'Fecha de Nacimiento', Icons.calendar_today_outlined),
               ),
-              const SizedBox(height: 20),
-              _buildModernTextField(_nombresController, 'Nombres Completos', Icons.person_outline),
-              const SizedBox(height: 20),
-              _buildModernTextField(_apellidoPaternoController, 'Apellido Paterno', Icons.account_circle_outlined),
-              const SizedBox(height: 20),
-              _buildModernTextField(_apellidoMaternoController, 'Apellido Materno', Icons.account_circle_outlined),
-              const SizedBox(height: 20),
-              InkWell(
-                onTap: _selectDate,
-                child: IgnorePointer(
-                  child: _buildModernTextField(_fechaNacimientoController, 'Fecha de Nacimiento', Icons.calendar_today_outlined),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       case 2:
-        return FadeInRight(
-          duration: const Duration(milliseconds: 300),
-          child: Column(
-            children: [
-              _buildModernTextField(_telefonoController, 'Tu Teléfono', Icons.phone_android_outlined, keyboardType: TextInputType.phone),
-              const SizedBox(height: 20),
-              _buildModernTextField(_correoController, 'Correo Electrónico', Icons.mail_outline, keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 20),
-              _buildModernTextField(_ingresoMensualController, 'Ingreso Neto Aproximado', Icons.monetization_on_outlined, keyboardType: TextInputType.number),
-              const SizedBox(height: 20),
-              _buildModernTextField(_distritoController, 'Distrito de residencia', Icons.map_outlined),
-              const SizedBox(height: 20),
-              _buildModernTextField(_direccionController, 'Dirección exacta', Icons.home_outlined),
-            ],
-          ),
+        return Column(
+          children: [
+            _buildModernTextField(_telefonoController, 'Tu Teléfono', Icons.phone_android_outlined, keyboardType: TextInputType.phone),
+            const SizedBox(height: 20),
+            _buildModernTextField(_correoController, 'Correo Electrónico', Icons.mail_outline, keyboardType: TextInputType.emailAddress),
+            const SizedBox(height: 20),
+            _buildModernTextField(_ingresoMensualController, 'Ingreso Neto Aproximado', Icons.monetization_on_outlined, keyboardType: TextInputType.number),
+            const SizedBox(height: 20),
+            _buildModernTextField(_distritoController, 'Distrito de residencia', Icons.map_outlined),
+            const SizedBox(height: 20),
+            _buildModernTextField(_direccionController, 'Dirección exacta', Icons.home_outlined),
+          ],
         );
       case 3:
-        return FadeInRight(
-          duration: const Duration(milliseconds: 300),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle('Contacto de Emergencia'),
-              const SizedBox(height: 12),
-              _buildModernTextField(_emergenciaNombreController, 'Nombre completo', Icons.contact_emergency_outlined),
-              const SizedBox(height: 16),
-              _buildModernTextField(_emergenciaTelefonoController, 'Teléfono', Icons.phone_callback_outlined),
-              const SizedBox(height: 16),
-              _buildModernTextField(_emergenciaParentescoController, 'Parentesco', Icons.family_restroom_outlined),
-              const SizedBox(height: 30),
-              _buildSectionTitle('Carga de Documentación'),
-              const Text('Formatos admitidos: JPG, PNG o PDF', style: TextStyle(fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 16),
-              _buildModernFileTile(
-                Platform.isIOS ? 'Foto de Perfil (Opcional)' : 'Foto de Perfil (Rostro claro)', 
-                _fotoPerfil, 
-                () => _pickImage('perfil')
-              ),
-              _buildModernFileTile(
-                Platform.isIOS ? 'DNI o CE (Opcional)' : 'DNI o CE (Ambos lados)', 
-                _docDni, 
-                () => _pickFile('dni')
-              ),
-              _buildModernFileTile(
-                Platform.isIOS ? 'Recibo de Luz/Agua (Opcional)' : 'Recibo de Luz o Agua', 
-                _docRecibo, 
-                () => _pickFile('recibo')
-              ),
-              _buildModernFileTile(
-                Platform.isIOS ? 'Sustento de Ingresos (Opcional)' : 'Sustento de Ingresos', 
-                _docSustento, 
-                () => _pickFile('sustento')
-              ),
-              _buildModernFileTile('Boletas de Pago (Opcional)', _docBoletas, () => _pickFile('boletas')),
-            ],
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle('Contacto de Emergencia'),
+            const SizedBox(height: 12),
+            _buildModernTextField(_emergenciaNombreController, 'Nombre completo', Icons.contact_emergency_outlined),
+            const SizedBox(height: 16),
+            _buildModernTextField(_emergenciaTelefonoController, 'Teléfono', Icons.phone_callback_outlined),
+            const SizedBox(height: 16),
+            _buildModernTextField(_emergenciaParentescoController, 'Parentesco', Icons.family_restroom_outlined),
+            const SizedBox(height: 30),
+            _buildSectionTitle('Carga de Documentación'),
+            const Text('Formatos admitidos: JPG, PNG o PDF', style: TextStyle(fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 16),
+            _buildModernFileTile(
+              Platform.isIOS ? 'Foto de Perfil (Opcional)' : 'Foto de Perfil (Rostro claro)', 
+              _fotoPerfil, 
+              () => _pickImage('perfil')
+            ),
+            _buildModernFileTile(
+              Platform.isIOS ? 'DNI o CE (Opcional)' : 'DNI o CE (Ambos lados)', 
+              _docDni, 
+              () => _pickFile('dni')
+            ),
+            _buildModernFileTile(
+              Platform.isIOS ? 'Recibo de Luz/Agua (Opcional)' : 'Recibo de Luz o Agua', 
+              _docRecibo, 
+              () => _pickFile('recibo')
+            ),
+            _buildModernFileTile(
+              Platform.isIOS ? 'Sustento de Ingresos (Opcional)' : 'Sustento de Ingresos', 
+              _docSustento, 
+              () => _pickFile('sustento')
+            ),
+            _buildModernFileTile('Boletas de Pago (Opcional)', _docBoletas, () => _pickFile('boletas')),
+            const SizedBox(height: 20),
+            _buildPrivacyTerms(),
+          ],
         );
       default:
         return const SizedBox();
     }
   }
+
 
   Widget _buildSectionTitle(String title) {
     return Text(
@@ -521,6 +548,15 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     );
   }
 
+  Widget _buildPrivacyTerms() {
+    return PrivacyTermsCheckbox(
+      onChanged: (val) {
+        // Solo actualizamos la variable sin llamar a setState del padre
+        _aceptaTerminos = val;
+      },
+    );
+  }
+
   Widget _buildBottomButtonsFooter() {
     final authProvider = context.watch<AuthProvider>();
     
@@ -560,6 +596,87 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
                       _currentStep == _totalSteps ? 'ENVIAR SOLICITUD' : 'SIGUIENTE',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget aislado para el checkbox de política de privacidad.
+// Al tener su propio State, su setState no afecta al padre.
+class PrivacyTermsCheckbox extends StatefulWidget {
+  final ValueChanged<bool> onChanged;
+
+  const PrivacyTermsCheckbox({super.key, required this.onChanged});
+
+  @override
+  State<PrivacyTermsCheckbox> createState() => _PrivacyTermsCheckboxState();
+}
+
+class _PrivacyTermsCheckboxState extends State<PrivacyTermsCheckbox> {
+  bool _checked = false;
+
+  void _toggle(bool? val) {
+    setState(() => _checked = val ?? !_checked);
+    widget.onChanged(_checked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF176).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0xFFFDD835).withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 24,
+            width: 24,
+            child: Checkbox(
+              value: _checked,
+              onChanged: _toggle,
+              activeColor: Colors.black,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _toggle(!_checked),
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                  children: [
+                    const TextSpan(
+                      text: 'Autorizo el tratamiento de datos personales para finalidades acorde a la prestación del servicio, conforme al siguiente enlace: ',
+                    ),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: InkWell(
+                        onTap: () async {
+                          final url = Uri.parse(ApiConstants.politicaPrivacidadUrl);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: const Text(
+                          'Política de Privacidad',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
