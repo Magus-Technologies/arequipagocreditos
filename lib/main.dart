@@ -66,7 +66,7 @@ class AppWrapper extends StatefulWidget {
 class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   bool _expiryAlertShown = false;
   static const int _nearExpiryDays = 7;
-  static const int _sessionTimeoutMinutes = 1; // TODO: cambiar a 15 en producción
+  static const int _sessionTimeoutMinutes = 15;
   DateTime? _pausedAt;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
