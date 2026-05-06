@@ -2,6 +2,8 @@ import 'package:arequipagocreditos/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import '../../core/errors/failures.dart';
@@ -41,9 +43,18 @@ class AuthProvider extends ChangeNotifier {
         _preRegisterUseCase = preRegisterUseCase,
         _deleteAccountUseCase = deleteAccountUseCase;
 
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const _biometricDniKey = 'biometric_dni';
+  static const _biometricPasswordKey = 'biometric_password';
+
   AuthStatus _status = AuthStatus.initial;
   ConductorEntity? _currentUser;
   String? _errorMessage;
+  bool _hasBiometricCredentials = false;
+  String? _pendingBiometricDni;
+  String? _pendingBiometricPassword;
 
   // Getters
   AuthStatus get status => _status;
@@ -51,6 +62,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == AuthStatus.loading;
   bool get isAuthenticated => _status == AuthStatus.authenticated && _currentUser != null;
+  bool get hasBiometricCredentials => _hasBiometricCredentials;
+  bool get needsBiometricSetupOffer => _pendingBiometricDni != null && !_hasBiometricCredentials;
 
   // Métodos públicos
   Future<void> login(String nroDocumento, String password) async {
@@ -66,6 +79,10 @@ class AuthProvider extends ChangeNotifier {
       (conductor) async {
         _currentUser = conductor;
         _errorMessage = null;
+        if (!_hasBiometricCredentials) {
+          _pendingBiometricDni = nroDocumento;
+          _pendingBiometricPassword = password;
+        }
         _setStatus(AuthStatus.authenticated);
 
         // Sincronizar token FCM inmediatamente después del login exitoso
@@ -79,11 +96,15 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> logout() async {
+  Future<void> logout({bool clearBiometric = true}) async {
     _setStatus(AuthStatus.loading);
-    
+
+    if (clearBiometric) {
+      await clearBiometricCredentials();
+    }
+
     final result = await _logoutUseCase();
-    
+
     result.fold(
       (failure) {
         _errorMessage = _mapFailureToMessage(failure);
@@ -95,6 +116,61 @@ class AuthProvider extends ChangeNotifier {
         _setStatus(AuthStatus.unauthenticated);
       },
     );
+  }
+
+  Future<void> acceptBiometricSetup() async {
+    if (_pendingBiometricDni == null || _pendingBiometricPassword == null) return;
+    await saveBiometricCredentials(_pendingBiometricDni!, _pendingBiometricPassword!);
+    _pendingBiometricDni = null;
+    _pendingBiometricPassword = null;
+  }
+
+  void declineBiometricSetup() {
+    _pendingBiometricDni = null;
+    _pendingBiometricPassword = null;
+    notifyListeners();
+  }
+
+  Future<void> loadBiometricCredentialsStatus() async {
+    final dni = await _secureStorage.read(key: _biometricDniKey);
+    _hasBiometricCredentials = dni != null;
+    notifyListeners();
+  }
+
+  Future<void> saveBiometricCredentials(String dni, String password) async {
+    await _secureStorage.write(key: _biometricDniKey, value: dni);
+    await _secureStorage.write(key: _biometricPasswordKey, value: password);
+    _hasBiometricCredentials = true;
+    notifyListeners();
+  }
+
+  Future<void> clearBiometricCredentials() async {
+    await _secureStorage.delete(key: _biometricDniKey);
+    await _secureStorage.delete(key: _biometricPasswordKey);
+    _hasBiometricCredentials = false;
+    notifyListeners();
+  }
+
+  Future<bool> loginWithBiometrics(LocalAuthentication localAuth) async {
+    try {
+      final canAuth = await localAuth.canCheckBiometrics || await localAuth.isDeviceSupported();
+      if (!canAuth) return false;
+
+      final didAuth = await localAuth.authenticate(
+        localizedReason: 'Autentícate para ingresar a la aplicación',
+      );
+      if (!didAuth) return false;
+
+      final dni = await _secureStorage.read(key: _biometricDniKey);
+      final password = await _secureStorage.read(key: _biometricPasswordKey);
+      if (dni == null || password == null) return false;
+
+      await login(dni, password);
+      return _status == AuthStatus.authenticated;
+    } catch (e) {
+      debugPrint('Error en login biométrico: $e');
+      return false;
+    }
   }
 
   Future<bool> deleteAccount() async {

@@ -32,6 +32,8 @@
 	<string>Se requiere acceso para guardar imágenes capturadas o descargadas relacionadas con tu perfil y documentos en tu fototeca.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Se requiere acceso a tu fototeca para que puedas seleccionar y adjuntar tu foto de perfil y los documentos requeridos para tu registro (DNI, boletas de pago, recibos, etc.).</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Se requiere acceso a Face ID o Touch ID para desbloquear la aplicación de forma segura.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

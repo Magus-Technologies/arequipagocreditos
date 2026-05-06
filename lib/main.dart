@@ -1,5 +1,5 @@
 import 'dart:developer';
-
+import 'package:local_auth/local_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:arequipagocreditos/core/services/notification_service.dart';
@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dependency_injection.dart';
 import 'presentation/providers/auth_provider.dart';
-
 import 'package:arequipagocreditos/presentation/pages/signature/firma_documento_page.dart';
 
 // Manejador de mensajes en segundo plano (debe estar fuera de cualquier clase)
@@ -64,16 +63,39 @@ class AppWrapper extends StatefulWidget {
   State<AppWrapper> createState() => _AppWrapperState();
 }
 
-class _AppWrapperState extends State<AppWrapper> {
+class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   bool _expiryAlertShown = false;
   static const int _nearExpiryDays = 7;
+  static const int _sessionTimeoutMinutes = 1; // TODO: cambiar a 15 en producción
+  DateTime? _pausedAt;
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
   @override
   void initState() {
     super.initState();
-    // Verificar estado de autenticación al iniciar la app
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().checkAuthStatus();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed && _pausedAt != null) {
+      final elapsed = DateTime.now().difference(_pausedAt!);
+      _pausedAt = null;
+      if (elapsed.inMinutes >= _sessionTimeoutMinutes) {
+        context.read<AuthProvider>().logout(clearBiometric: false);
+      }
+    }
   }
 
   @override
@@ -85,6 +107,47 @@ class _AppWrapperState extends State<AppWrapper> {
           case AuthStatus.loading:
             return SplashPage();
           case AuthStatus.authenticated:
+            // Ofrecer configuración biométrica tras primer login manual
+            if (authProvider.needsBiometricSetupOffer) {
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!context.mounted) return;
+                final canAuth = await _localAuth.canCheckBiometrics ||
+                    await _localAuth.isDeviceSupported();
+                if (!context.mounted) return;
+                if (!canAuth) {
+                  context.read<AuthProvider>().declineBiometricSetup();
+                  return;
+                }
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Acceso biométrico'),
+                    content: const Text('¿Deseas activar el inicio de sesión con huella o Face ID para la próxima vez?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.read<AuthProvider>().declineBiometricSetup();
+                        },
+                        child: const Text('No, gracias'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await context.read<AuthProvider>().acceptBiometricSetup();
+                        },
+                        child: const Text('Activar'),
+                      ),
+                    ],
+                  ),
+                );
+              });
+            }
             // Procesar notificación pendiente (app abierta desde estado terminado)
             if (NotificationService.pendingNotificationData != null) {
               final data = NotificationService.pendingNotificationData!;

@@ -1,5 +1,6 @@
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,7 +17,30 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _dniController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final LocalAuthentication _localAuth = LocalAuthentication();
   bool _obscurePassword = true;
+  bool _biometricAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkBiometric());
+  }
+
+  Future<void> _checkBiometric() async {
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.loadBiometricCredentialsStatus();
+    if (!authProvider.hasBiometricCredentials) return;
+
+    final canAuth = await _localAuth.canCheckBiometrics || await _localAuth.isDeviceSupported();
+    if (!mounted) return;
+    setState(() => _biometricAvailable = canAuth);
+    if (canAuth) _loginWithBiometrics();
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    await context.read<AuthProvider>().loginWithBiometrics(_localAuth);
+  }
 
   @override
   void dispose() {
@@ -188,6 +212,31 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
+                            if (_biometricAvailable) ...[
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: authProvider.isLoading ? null : _loginWithBiometrics,
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.fingerprint, size: 52, color: Colors.black87),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Ingresar con biometría',
+                                      style: TextStyle(color: Colors.black54, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(children: [
+                                const Expanded(child: Divider()),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text('o', style: TextStyle(color: Colors.black45)),
+                                ),
+                                const Expanded(child: Divider()),
+                              ]),
+                            ],
                             const SizedBox(height: 30),
                             SizedBox(
                               width: double.infinity,
