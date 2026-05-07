@@ -66,7 +66,6 @@ class AppWrapper extends StatefulWidget {
 class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   bool _expiryAlertShown = false;
   static const int _nearExpiryDays = 7;
-  static const int _sessionTimeoutMinutes = 15;
   DateTime? _pausedAt;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
@@ -89,11 +88,15 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       _pausedAt = DateTime.now();
-    } else if (state == AppLifecycleState.resumed && _pausedAt != null) {
-      final elapsed = DateTime.now().difference(_pausedAt!);
-      _pausedAt = null;
-      if (elapsed.inMinutes >= _sessionTimeoutMinutes) {
-        context.read<AuthProvider>().logout(clearBiometric: false);
+      context.read<AuthProvider>().persistSessionPause();
+    } else if (state == AppLifecycleState.resumed) {
+      context.read<AuthProvider>().clearSessionPause();
+      if (_pausedAt != null) {
+        final elapsed = DateTime.now().difference(_pausedAt!);
+        _pausedAt = null;
+        if (elapsed.inMinutes >= AuthProvider.sessionTimeoutMinutes) {
+          context.read<AuthProvider>().logout(clearBiometric: false);
+        }
       }
     }
   }
@@ -107,7 +110,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
           case AuthStatus.loading:
             return SplashPage();
           case AuthStatus.authenticated:
-            // Ofrecer configuración biométrica tras primer login manual
+            // Ofrecer configuración biométrica tras login manual con credenciales disponibles
             if (authProvider.needsBiometricSetupOffer) {
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (!context.mounted) return;
@@ -140,6 +143,46 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
                         onPressed: () async {
                           Navigator.pop(context);
                           await context.read<AuthProvider>().acceptBiometricSetup();
+                        },
+                        child: const Text('Activar'),
+                      ),
+                    ],
+                  ),
+                );
+              });
+            } else if (authProvider.needsBiometricSetupViaRelogin) {
+              // Sesión restaurada automáticamente sin pasar por login manual
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!context.mounted) return;
+                final canAuth = await _localAuth.canCheckBiometrics ||
+                    await _localAuth.isDeviceSupported();
+                if (!context.mounted) return;
+                if (!canAuth) {
+                  context.read<AuthProvider>().declineBiometricSetup();
+                  return;
+                }
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Acceso biométrico'),
+                    content: const Text('¿Deseas activar el inicio de sesión con huella o Face ID? Necesitarás ingresar tus credenciales una vez para configurarlo.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.read<AuthProvider>().declineBiometricSetup();
+                        },
+                        child: const Text('No, gracias'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.read<AuthProvider>().logout(clearBiometric: false);
                         },
                         child: const Text('Activar'),
                       ),

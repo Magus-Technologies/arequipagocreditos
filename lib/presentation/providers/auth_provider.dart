@@ -48,6 +48,8 @@ class AuthProvider extends ChangeNotifier {
   );
   static const _biometricDniKey = 'biometric_dni';
   static const _biometricPasswordKey = 'biometric_password';
+  static const _sessionPausedAtKey = 'session_paused_at';
+  static const sessionTimeoutMinutes = 15;
 
   AuthStatus _status = AuthStatus.initial;
   ConductorEntity? _currentUser;
@@ -55,6 +57,7 @@ class AuthProvider extends ChangeNotifier {
   bool _hasBiometricCredentials = false;
   String? _pendingBiometricDni;
   String? _pendingBiometricPassword;
+  bool _biometricReloginDeclined = false;
 
   // Getters
   AuthStatus get status => _status;
@@ -63,7 +66,10 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _status == AuthStatus.loading;
   bool get isAuthenticated => _status == AuthStatus.authenticated && _currentUser != null;
   bool get hasBiometricCredentials => _hasBiometricCredentials;
+  // Tiene credenciales pendientes de login manual → se puede guardar directamente
   bool get needsBiometricSetupOffer => _pendingBiometricDni != null && !_hasBiometricCredentials;
+  // Auto-login sin biométrico configurado → pedir al usuario que cierre e inicie sesión
+  bool get needsBiometricSetupViaRelogin => _pendingBiometricDni == null && !_hasBiometricCredentials && !_biometricReloginDeclined && _status == AuthStatus.authenticated;
 
   // Métodos públicos
   Future<void> login(String nroDocumento, String password) async {
@@ -113,6 +119,7 @@ class AuthProvider extends ChangeNotifier {
       (_) {
         _currentUser = null;
         _errorMessage = null;
+        _biometricReloginDeclined = false;
         _setStatus(AuthStatus.unauthenticated);
       },
     );
@@ -128,6 +135,7 @@ class AuthProvider extends ChangeNotifier {
   void declineBiometricSetup() {
     _pendingBiometricDni = null;
     _pendingBiometricPassword = null;
+    _biometricReloginDeclined = true;
     notifyListeners();
   }
 
@@ -192,23 +200,51 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> checkAuthStatus() async {
     _setStatus(AuthStatus.loading);
-    
+
+    // Si el app fue cerrado mientras estaba en background, verificar si la sesión expiró
+    final prefs = await SharedPreferences.getInstance();
+    final savedPause = prefs.getString(_sessionPausedAtKey);
+    if (savedPause != null) {
+      await prefs.remove(_sessionPausedAtKey);
+      final pausedAt = DateTime.tryParse(savedPause);
+      if (pausedAt != null) {
+        final elapsed = DateTime.now().difference(pausedAt);
+        if (elapsed.inMinutes >= sessionTimeoutMinutes) {
+          await _logoutUseCase();
+          _currentUser = null;
+          _setStatus(AuthStatus.unauthenticated);
+          return;
+        }
+      }
+    }
+
     final result = await _getLoggedUserUseCase();
-    
+
     result.fold(
       (failure) {
         _currentUser = null;
         _setStatus(AuthStatus.unauthenticated);
       },
-      (conductor) {
+      (conductor) async {
         if (conductor != null) {
           _currentUser = conductor;
+          await loadBiometricCredentialsStatus();
           _setStatus(AuthStatus.authenticated);
         } else {
           _setStatus(AuthStatus.unauthenticated);
         }
       },
     );
+  }
+
+  Future<void> persistSessionPause() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sessionPausedAtKey, DateTime.now().toIso8601String());
+  }
+
+  Future<void> clearSessionPause() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionPausedAtKey);
   }
 
   Future<bool> changePassword(String newPassword) async {
