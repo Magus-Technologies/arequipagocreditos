@@ -4,6 +4,7 @@ import '../../core/errors/exceptions.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/financiamiento_model.dart';
 import '../models/cuota_financiamiento_model.dart';
+import '../models/documento_firmado_model.dart';
 
 abstract class FinanciamientoRemoteDataSource {
   Future<List<FinanciamientoModel>> getFinanciamientos(int idConductor, int tipo);
@@ -11,6 +12,8 @@ abstract class FinanciamientoRemoteDataSource {
   Future<List<CuotaFinanciamientoModel>> getCuotasFinanciamiento(int idFinanciamiento);
   Future<CuotaFinanciamientoModel> pagarCuota(int idCuota, double monto);
   Future<String> generarReporteCuota(int idCuota);
+  Future<FinanciamientoModel> createFinanciamiento(Map<String, dynamic> data);
+  Future<ListadoDocumentosModel> getListadoDocumentosFirmados(int idConductor);
 }
 
 class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSource {
@@ -166,9 +169,63 @@ class FinanciamientoRemoteDataSourceImpl implements FinanciamientoRemoteDataSour
         throw ServerException('Error al generar reporte: ${response.statusCode}');
       }
     } catch (e) {
-      if (e is AppException) {
-        rethrow;
+      if (e is AppException) rethrow;
+      throw ServerException('Error de conexión: $e');
+    }
+  }
+
+  @override
+  Future<FinanciamientoModel> createFinanciamiento(Map<String, dynamic> data) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.createFinanciamientoEndpoint}');
+      final response = await client
+          .post(
+            url,
+            headers: ApiConstants.defaultHeaders,
+            body: jsonEncode(data),
+          )
+          .timeout(ApiConstants.connectionTimeout);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['success'] == true) {
+          return FinanciamientoModel.fromJson(jsonResponse['data'] as Map<String, dynamic>);
+        } else {
+          throw ValidationException(jsonResponse['message'] ?? 'Error al crear financiamiento');
+        }
+      } else if (response.statusCode == 422) {
+        final error = jsonDecode(response.body);
+        throw ValidationException(error['message'] ?? 'Datos inválidos');
+      } else {
+        throw ServerException('Error al crear financiamiento: ${response.statusCode}');
       }
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Error de conexión: $e');
+    }
+  }
+
+  @override
+  Future<ListadoDocumentosModel> getListadoDocumentosFirmados(int idConductor) async {
+    try {
+      final endpoint = ApiConstants.documentosFirmadosEndpoint.replaceFirst('{id}', idConductor.toString());
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+      final response = await client
+          .get(url)
+          .timeout(ApiConstants.connectionTimeout);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['success'] == true) {
+          return ListadoDocumentosModel.fromJson(jsonResponse['data'] as Map<String, dynamic>);
+        } else {
+          throw ServerException(jsonResponse['message'] ?? 'Error al obtener documentos');
+        }
+      } else {
+        throw ServerException('Error al obtener documentos: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is AppException) rethrow;
       throw ServerException('Error de conexión: $e');
     }
   }

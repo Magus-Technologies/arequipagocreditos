@@ -3,6 +3,7 @@ import '../../core/errors/failures.dart';
 import '../../core/utils/either.dart';
 import '../../domain/entities/financiamiento_entity.dart';
 import '../../domain/entities/cuota_financiamiento_entity.dart';
+import '../../domain/entities/documento_firmado_entity.dart';
 import '../../domain/repositories/financiamiento_repository.dart';
 import '../datasources/financiamiento_remote_datasource.dart';
 
@@ -80,6 +81,32 @@ class FinanciamientoRepositoryImpl implements FinanciamientoRepository {
       return Either.left(ServerFailure(e.message));
     } on NetworkException catch (e) {
       return Either.left(NetworkFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error inesperado: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, FinanciamientoEntity>> createFinanciamiento(Map<String, dynamic> data) async {
+    try {
+      final model = await remoteDataSource.createFinanciamiento(data);
+      return Either.right(model.toEntity());
+    } on ValidationException catch (e) {
+      return Either.left(ValidationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(UnknownFailure('Error inesperado: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ListadoDocumentosEntity>> getListadoDocumentosFirmados(int idConductor) async {
+    try {
+      final model = await remoteDataSource.getListadoDocumentosFirmados(idConductor);
+      return Either.right(model);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
     } catch (e) {
       return Either.left(UnknownFailure('Error inesperado: $e'));
     }

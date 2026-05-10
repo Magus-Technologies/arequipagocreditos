@@ -1,5 +1,7 @@
 import 'package:arequipagocreditos/presentation/components/components.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
+import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
+import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -81,6 +83,51 @@ class MainModules extends StatelessWidget {
               ),
             ],
           ),
+          Row(
+            children: [
+              // Servicios Taller
+              Expanded(
+                child: SizedBox(
+                  height: 160,
+                  child: ModuleCard(
+                    icon: Icons.home_repair_service,
+                    title: 'Servicios Taller',
+                    backgroundColor: const Color(0xFF3B82F6), // Azul
+                    iconColor: Colors.white,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ServiciosTallerPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Documentos Firmados
+              Expanded(
+                child: SizedBox(
+                  height: 160,
+                  child: ModuleCard(
+                    icon: Icons.assignment_turned_in,
+                    title: 'Mis Documentos',
+                    backgroundColor: const Color(0xFF10B981), // Verde
+                    iconColor: Colors.white,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DocumentosFirmadosPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           // Indicador de "Próximamente más servicios"
           Container(
@@ -93,10 +140,10 @@ class MainModules extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.upcoming, color: Colors.blue.shade600, size: 20),
+                Icon(Icons.stars, color: Colors.blue.shade600, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Próximamente más servicios',
+                  'Aprovecha tus beneficios exclusivos',
                   style: TextStyle(
                     color: Colors.blue.shade700,
                     fontWeight: FontWeight.w600,

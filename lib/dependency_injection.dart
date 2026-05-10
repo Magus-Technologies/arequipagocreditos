@@ -36,6 +36,9 @@ import 'domain/usecases/puntuacion_usecases.dart';
 import 'domain/usecases/get_resumen_crediticio_usecase.dart';
 import 'domain/usecases/get_beneficios_comercial_usecase.dart';
 import 'domain/usecases/signature_usecases.dart';
+import 'domain/usecases/create_financiamiento_usecase.dart';
+import 'domain/usecases/get_beneficios_servicios_usecase.dart';
+import 'domain/usecases/get_documentos_firmados_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
@@ -47,6 +50,7 @@ import 'presentation/providers/resumen_crediticio_provider.dart';
 import 'presentation/providers/beneficios_provider.dart';
 import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/signature_provider.dart';
+import 'presentation/providers/financiamiento_servicio_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -122,6 +126,13 @@ class DependencyInjection {
     ChangeNotifierProvider<SignatureProvider>(
       create: (context) => SignatureProvider(
         firmarUseCase: _getFirmarUseCase(),
+      ),
+    ),
+    ChangeNotifierProvider<FinanciamientoServicioProvider>(
+      create: (context) => FinanciamientoServicioProvider(
+        getBeneficiosServiciosUseCase: _getGetBeneficiosServiciosUseCase(),
+        createFinanciamientoUseCase: _getCreateFinanciamientoUseCase(),
+        getDocumentosFirmadosUseCase: _getGetDocumentosFirmadosUseCase(),
       ),
     ),
   ];
@@ -255,4 +266,13 @@ class DependencyInjection {
   // Use Cases - Signature
   static FirmarUseCase _getFirmarUseCase() =>
       FirmarUseCase(_signatureRepository);
+
+  static GetBeneficiosServiciosUseCase _getGetBeneficiosServiciosUseCase() =>
+      GetBeneficiosServiciosUseCase(_beneficiosComercialRepository);
+
+  static CreateFinanciamientoUseCase _getCreateFinanciamientoUseCase() =>
+      CreateFinanciamientoUseCase(_financiamientoRepository);
+
+  static GetDocumentosFirmadosUseCase _getGetDocumentosFirmadosUseCase() =>
+      GetDocumentosFirmadosUseCase(_financiamientoRepository);
 }

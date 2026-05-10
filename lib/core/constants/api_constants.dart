@@ -44,6 +44,10 @@ class ApiConstants {
   static const String markAsReadEndpoint = '/notifications/{notificationId}/{id}/{tipo}/read';
   static const String readAllNotificationsEndpoint = '/notifications/read-all/{id}/{tipo}';
   
+  // New endpoints for financing flow
+  static const String createFinanciamientoEndpoint = '/app/financiamientos';
+  static const String documentosFirmadosEndpoint = '/app/documentos-firmados/{id}';
+  
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
