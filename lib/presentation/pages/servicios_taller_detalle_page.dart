@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/financiamiento_servicio_provider.dart';
-import '../components/taller_card.dart';
+import '../components/beneficio_servicio_card.dart';
 import '../../theme/app_theme.dart';
-import 'servicios_taller_detalle_page.dart';
+import 'calculo_financiamiento_page.dart';
 import '../components/beneficios_search_bar.dart';
 
-class ServiciosTallerPage extends StatefulWidget {
-  const ServiciosTallerPage({super.key});
+class ServiciosTallerDetallePage extends StatefulWidget {
+  final int tallerId;
+  final String tallerNombre;
+
+  const ServiciosTallerDetallePage({
+    super.key,
+    required this.tallerId,
+    required this.tallerNombre,
+  });
 
   @override
-  State<ServiciosTallerPage> createState() => _ServiciosTallerPageState();
+  State<ServiciosTallerDetallePage> createState() => _ServiciosTallerDetallePageState();
 }
 
-class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
+class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -21,8 +28,8 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanciamientoServicioProvider>();
-      provider.loadTalleres();
-      provider.setTallerSearchQuery('');
+      provider.loadBeneficiosServicios(tallerId: widget.tallerId);
+      provider.setBeneficioSearchQuery('');
     });
   }
 
@@ -63,11 +70,11 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                   ),
                   child: Consumer<FinanciamientoServicioProvider>(
                     builder: (context, provider, child) {
-                      if (provider.talleresLoading) {
+                      if (provider.isLoading) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      if (provider.talleresError != null) {
+                      if (provider.error != null) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -75,19 +82,22 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                               Icon(Icons.error_outline, size: 80, color: Colors.red.shade400),
                               const SizedBox(height: 16),
                               Text(
-                                'Error al cargar talleres',
+                                'Error al cargar servicios',
                                 style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                provider.talleresError!,
+                                provider.error!,
                                 style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: () => provider.loadTalleres(),
-                                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black87),
+                                onPressed: () => provider.loadBeneficiosServicios(tallerId: widget.tallerId),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primary,
+                                  foregroundColor: Colors.black87,
+                                ),
                                 child: const Text('Reintentar'),
                               ),
                             ],
@@ -95,7 +105,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                         );
                       }
 
-                      final talleres = provider.filteredTalleres;
+                      final servicios = provider.filteredBeneficios;
 
                       return Column(
                         children: [
@@ -103,13 +113,13 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                             controller: _searchController,
                             searchQuery: _searchController.text,
                             onChanged: (value) {
-                              setState(() {});
-                              provider.setTallerSearchQuery(value);
+                              setState(() {}); // Re-build to update search icon visibility
+                              provider.setBeneficioSearchQuery(value);
                             },
                             onClear: () {
                               _searchController.clear();
                               setState(() {});
-                              provider.setTallerSearchQuery('');
+                              provider.setBeneficioSearchQuery('');
                             },
                           ),
                           Padding(
@@ -118,7 +128,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Mostrando ${talleres.length} talleres',
+                                  'Encontrados ${servicios.length} servicios',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -130,7 +140,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                           ),
                           const SizedBox(height: 8),
                           Expanded(
-                            child: talleres.isEmpty
+                            child: servicios.isEmpty
                                 ? Center(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -138,29 +148,27 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                                         Icon(Icons.search_off, size: 80, color: Colors.grey.shade400),
                                         const SizedBox(height: 16),
                                         Text(
-                                          'No se encontraron talleres',
+                                          'No se encontraron servicios',
                                           style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                                         ),
                                       ],
                                     ),
                                   )
                                 : RefreshIndicator(
-                                    onRefresh: () => provider.loadTalleres(),
+                                    onRefresh: () => provider.loadBeneficiosServicios(tallerId: widget.tallerId),
                                     child: ListView.builder(
                                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                                      itemCount: talleres.length,
+                                      itemCount: servicios.length,
                                       itemBuilder: (context, index) {
-                                        final taller = talleres[index];
-                                        return TallerCard(
-                                          taller: taller,
+                                        final servicio = servicios[index];
+                                        return BeneficioServicioCard(
+                                          servicio: servicio,
                                           onTap: () {
+                                            provider.selectService(servicio);
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => ServiciosTallerDetallePage(
-                                                  tallerId: taller.id,
-                                                  tallerNombre: taller.nombreComercial,
-                                                ),
+                                                builder: (context) => const CalculoFinanciamientoPage(),
                                               ),
                                             );
                                           },
@@ -199,21 +207,22 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              const Expanded(
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
-                  'Servicios de Taller',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                  widget.tallerNombre,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 48),
             ],
           ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha((0.3 * 255).toInt()),
+              color: Colors.white.withAlpha((0.2 * 255).toInt()),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withAlpha((0.3 * 255).toInt()), width: 1),
             ),
@@ -222,10 +231,10 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.5 * 255).toInt()),
+                    color: Colors.white.withAlpha((0.3 * 255).toInt()),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.home_repair_service, color: Colors.black87, size: 24),
+                  child: const Icon(Icons.build, color: Colors.black87, size: 24),
                 ),
                 const SizedBox(width: 16),
                 const Expanded(
@@ -233,12 +242,12 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Talleres Disponibles',
+                        'Servicios disponibles',
                         style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Selecciona un taller para ver sus servicios',
+                        'Selecciona un servicio para financiarlo',
                         style: TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                     ],

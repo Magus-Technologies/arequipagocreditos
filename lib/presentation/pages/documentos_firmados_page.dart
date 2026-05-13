@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/constants/api_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/image_full_screen_view.dart';
 
 class DocumentosFirmadosPage extends StatefulWidget {
   const DocumentosFirmadosPage({super.key});
@@ -29,133 +30,192 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Documentos Firmados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Consumer<FinanciamientoServicioProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.error != null) {
-            return Center(child: Text('Error: ${provider.error}'));
-          }
-
-          final listado = provider.documentosFirmados;
-          if (listado == null || listado.documentos.isEmpty) {
-            return const Center(child: Text('No tienes documentos firmados aún.'));
-          }
-
-          return Column(
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primary,
+              AppTheme.primary.withAlpha((0.8 * 255).toInt()),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
             children: [
-              _buildResumen(listado.resumen),
+              _buildHeader(),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: listado.documentos.length,
-                  itemBuilder: (context, index) {
-                    final doc = listado.documentos[index];
-                    return _buildDocumentCard(doc);
-                  },
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: Consumer<FinanciamientoServicioProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (provider.error != null) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline, size: 80, color: Colors.red.shade400),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error al cargar documentos',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                provider.error!,
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final listado = provider.documentosFirmados;
+                      if (listado == null || listado.documentos.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.description_outlined, size: 80, color: Colors.grey.shade400),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Sin documentos firmados',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Aún no tienes documentos firmados',
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          _buildResumen(listado.resumen),
+                          Expanded(
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              itemCount: listado.documentos.length,
+                              itemBuilder: (context, index) {
+                                final doc = listado.documentos[index];
+                                return _buildDocumentCard(doc);
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildResumen(dynamic resumen) {
+  Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha((0.1 * 255).toInt()), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
       child: Column(
         children: [
-          Text(resumen.nombreConductor, 
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          Text('DNI: ${resumen.nroDocumento}', 
-            style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildResumenItem('Total', resumen.totalDocumentos.toString()),
-              _buildResumenItem('Contratos', resumen.contratos.toString()),
-              _buildResumenItem('Afiliación', resumen.afiliaciones.toString()),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const Expanded(
+                child: Text(
+                  'Documentos Firmados',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 48),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResumenItem(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildDocumentCard(dynamic doc) {
-    final bool isFinanciamiento = doc.tipo == 'financiamiento';
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: ExpansionTile(
-        title: Text(doc.nombreDocumento, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('Firmado el: ${DateFormat('dd/MM/yyyy HH:mm').format(doc.firmadoAt)}', 
-          style: const TextStyle(fontSize: 12)),
-        leading: Icon(isFinanciamiento ? Icons.description : Icons.person_add, 
-          color: isFinanciamiento ? Colors.blue : Colors.green),
-        children: [
-          Padding(
+          const SizedBox(height: 20),
+          Container(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha((0.3 * 255).toInt()),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                width: 1,
+              ),
+            ),
+            child: Row(
               children: [
-                if (isFinanciamiento) ...[
-                  _buildDetailRow('Grupo:', doc.grupoFinanciamiento ?? '-'),
-                  _buildDetailRow('Monto:', 'S/ ${doc.montoTotal?.toStringAsFixed(2) ?? '0.00'}'),
-                  _buildDetailRow('Cuotas:', '${doc.cantidadCuotas} (${doc.frecuenciaPago})'),
-                ],
-                _buildDetailRow('Firmado por:', doc.nombreFirmante),
-                _buildDetailRow('Cargo:', doc.cargo),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openUrl(ApiConstants.normalizeUrl(doc.firmaUrl)),
-                        icon: const Icon(Icons.image),
-                        label: const Text('Ver Firma'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (doc.contratoUrl != null)
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _openUrl(ApiConstants.normalizeUrl(doc.contratoUrl)),
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text('Ver PDF'),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha((0.5 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.folder_special, color: Colors.black87, size: 24),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mis Documentos',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                  ],
+                      SizedBox(height: 4),
+                      Text(
+                        'Contratos y afiliaciones',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -165,13 +225,216 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildResumen(dynamic resumen) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF1F2937),
+              const Color(0xFF374151),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha((0.15 * 255).toInt()),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              resumen.nombreConductor,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'DNI: ${resumen.nroDocumento}',
+              style: const TextStyle(color: Colors.white60, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(child: _buildResumenItem('Total', resumen.totalDocumentos.toString(), Icons.folder_copy)),
+                  VerticalDivider(color: Colors.white24, thickness: 1, width: 1),
+                  Expanded(child: _buildResumenItem('Contratos', resumen.contratos.toString(), Icons.description)),
+                  VerticalDivider(color: Colors.white24, thickness: 1, width: 1),
+                  Expanded(child: _buildResumenItem('Afiliación', resumen.afiliaciones.toString(), Icons.person_add)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResumenItem(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          Icon(icon, color: AppTheme.primary, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentCard(dynamic doc) {
+    final bool isFinanciamiento = doc.tipo == 'financiamiento';
+    final Color accentColor = isFinanciamiento ? Colors.blue.shade600 : Colors.green.shade600;
+    final IconData icon = isFinanciamiento ? Icons.description : Icons.person_add;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.06 * 255).toInt()),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: EdgeInsets.zero,
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accentColor.withAlpha((0.12 * 255).toInt()),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: accentColor, size: 22),
+          ),
+          title: Text(
+            doc.nombreDocumento,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              'Firmado el: ${DateFormat('dd/MM/yyyy HH:mm').format(doc.firmadoAt)}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            ),
+          ),
+          children: [
+            Divider(height: 1, color: Colors.grey.shade100),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isFinanciamiento) ...[
+                    _buildDetailRow(Icons.group, 'Grupo', doc.grupoFinanciamiento ?? '-'),
+                    _buildDetailRow(Icons.attach_money, 'Monto', 'S/ ${doc.montoTotal?.toStringAsFixed(2) ?? '0.00'}'),
+                    _buildDetailRow(Icons.calendar_month, 'Cuotas', '${doc.cantidadCuotas} (${doc.frecuenciaPago})'),
+                  ],
+                  _buildDetailRow(Icons.person, 'Firmado por', doc.nombreFirmante),
+                  _buildDetailRow(Icons.work, 'Cargo', doc.cargo),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final url = ApiConstants.normalizeUrl(doc.firmaUrl);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageFullScreenView(
+                                  imageUrl: url,
+                                  heroTag: 'firma_${doc.id}_${doc.tipo}',
+                                  title: 'Firma de ${doc.nombreFirmante}',
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.image, size: 16),
+                          label: const Text('Ver Firma'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      if (doc.contratoUrl != null) ...[
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _openUrl(ApiConstants.normalizeUrl(doc.contratoUrl)),
+                            icon: const Icon(Icons.picture_as_pdf, size: 16),
+                            label: const Text('Ver PDF'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: Colors.black87,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Text('$label ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(value, style: const TextStyle(fontSize: 13)),
+          Icon(icon, size: 16, color: Colors.grey.shade400),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey.shade700),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

@@ -17,7 +17,7 @@ plugins {
 
 android {
     namespace = "com.arequipago.arequipagocreditos"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "29.0.13599879"
 
     compileOptions {
@@ -32,7 +32,7 @@ android {
 
     defaultConfig {
         applicationId = "com.arequipago.arequipagocreditos"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

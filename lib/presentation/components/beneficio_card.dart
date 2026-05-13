@@ -2,6 +2,7 @@ import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/beneficio_entity.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/image_full_screen_view.dart';
 
 class BeneficioCard extends StatelessWidget {
   final BeneficioComercialEntity beneficio;
@@ -42,7 +43,7 @@ class BeneficioCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Cabecera con imagen y título
-                _buildHeader(),
+                _buildHeader(context),
                 
                 const SizedBox(height: 16),
                 _buildDivider(),
@@ -63,42 +64,48 @@ class BeneficioCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Imagen del beneficio
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey[100],
-            border: Border.all(
-              color: AppTheme.primary.withAlpha((0.3 * 255).toInt()),
-              width: 2,
+        GestureDetector(
+          onTap: () => _showImageFullScreen(context),
+          child: Hero(
+            tag: 'beneficio_image_${beneficio.id}',
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[100],
+                border: Border.all(
+                  color: AppTheme.primary.withAlpha((0.3 * 255).toInt()),
+                  width: 2,
+                ),
+              ),
+              child: beneficio.imagen != null && beneficio.imagen!.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey.shade400,
+                            size: 32,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
+                      Icons.card_giftcard,
+                      color: AppTheme.primary,
+                      size: 32,
+                    ),
             ),
           ),
-          child: beneficio.imagen != null && beneficio.imagen!.isNotEmpty
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey.shade400,
-                        size: 32,
-                      );
-                    },
-                  ),
-                )
-              : Icon(
-                  Icons.card_giftcard,
-                  color: AppTheme.primary,
-                  size: 32,
-                ),
         ),
         const SizedBox(width: 16),
         
@@ -275,6 +282,20 @@ class BeneficioCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showImageFullScreen(BuildContext context) {
+    if (beneficio.imagen == null || beneficio.imagen!.isEmpty) return;
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ImageFullScreenView(
+          imageUrl: '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
+          heroTag: 'beneficio_image_${beneficio.id}',
+          title: beneficio.nombre,
+        ),
+      ),
     );
   }
 }

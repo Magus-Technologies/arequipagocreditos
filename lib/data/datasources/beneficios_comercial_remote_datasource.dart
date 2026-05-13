@@ -3,10 +3,12 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import '../models/beneficio_comercial_model.dart';
 import '../models/beneficio_servicio_model.dart';
+import '../models/taller_model.dart';
 
 abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo});
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId});
+  Future<List<TallerModel>> getTalleres();
 }
 
 class BeneficiosComercialRemoteDataSourceImpl
@@ -30,7 +32,6 @@ class BeneficiosComercialRemoteDataSourceImpl
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final List<dynamic> beneficiosData = jsonResponse['data'];
           return beneficiosData
@@ -64,7 +65,6 @@ class BeneficiosComercialRemoteDataSourceImpl
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final List<dynamic> beneficiosData = jsonResponse['data'];
           return beneficiosData
@@ -80,6 +80,31 @@ class BeneficiosComercialRemoteDataSourceImpl
       }
     } catch (e) {
       throw Exception('Error al obtener beneficios de servicios: $e');
+    }
+  }
+
+  @override
+  Future<List<TallerModel>> getTalleres() async {
+    try {
+      final url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}?tipo=2';
+      final response = await client.get(
+        Uri.parse(url),
+        headers: ApiConstants.defaultHeaders,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          final List<dynamic> data = jsonResponse['data'];
+          return data.map((t) => TallerModel.fromJson(t)).toList();
+        } else {
+          throw Exception(jsonResponse['message'] ?? 'Error desconocido');
+        }
+      } else {
+        throw Exception('Error HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener talleres: $e');
     }
   }
 }

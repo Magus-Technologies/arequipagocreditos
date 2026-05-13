@@ -1,8 +1,10 @@
+import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/cupon_model.dart';
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../core/utils/date_utils.dart' as app_date_utils;
 import '../../core/utils/cupon_utils.dart';
+import 'image_full_screen_view.dart';
 
 class CuponCard extends StatefulWidget {
   final CuponModel cupon;
@@ -64,46 +66,61 @@ class _CuponCardState extends State<CuponCard> {
   }
 
   Widget _buildBannerImage() {
-    return SizedBox(
-      height: 120,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          // Imagen del banner
-          Image.network(
-            'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
-            height: 120,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                height: 120,
-                width: double.infinity,
-                color: Colors.grey.shade300,
-                child: Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey.shade600,
-                  size: 40,
-                ),
-              );
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                height: 120,
-                width: double.infinity,
-                color: Colors.grey.shade200,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                ),
-              );
-            },
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ImageFullScreenView(
+              imageUrl: '${ApiConstants.imagenesBaseUrl}/${cupon.imagenBanner!}',
+              heroTag: 'cupon_image_${cupon.id}',
+              title: cupon.titulo,
+            ),
           ),
+        );
+      },
+      child: SizedBox(
+        height: 120,
+        width: double.infinity,
+        child: Stack(
+          children: [
+            // Imagen del banner
+            Hero(
+              tag: 'cupon_image_${cupon.id}',
+              child: Image.network(
+                '${ApiConstants.imagenesBaseUrl}/${cupon.imagenBanner!}',
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 120,
+                    width: double.infinity,
+                    color: Colors.grey.shade300,
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey.shade600,
+                      size: 40,
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    height: 120,
+                    width: double.infinity,
+                    color: Colors.grey.shade200,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           // Overlay con gradiente para mejor legibilidad
           Container(
             height: 120,
@@ -141,8 +158,9 @@ class _CuponCardState extends State<CuponCard> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildContent() {
     return Stack(

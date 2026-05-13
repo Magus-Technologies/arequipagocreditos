@@ -133,6 +133,7 @@ class DependencyInjection {
         getBeneficiosServiciosUseCase: _getGetBeneficiosServiciosUseCase(),
         createFinanciamientoUseCase: _getCreateFinanciamientoUseCase(),
         getDocumentosFirmadosUseCase: _getGetDocumentosFirmadosUseCase(),
+        beneficiosRepository: _beneficiosComercialRepository,
       ),
     ),
   ];

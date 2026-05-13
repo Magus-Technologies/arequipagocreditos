@@ -6,12 +6,15 @@ import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import 'signature/firma_documento_page.dart';
 import 'financiamiento_detalle_page.dart';
+import '../widgets/image_full_screen_view.dart';
+import '../../core/constants/api_constants.dart';
 
 class CalculoFinanciamientoPage extends StatefulWidget {
   const CalculoFinanciamientoPage({super.key});
 
   @override
-  State<CalculoFinanciamientoPage> createState() => _CalculoFinanciamientoPageState();
+  State<CalculoFinanciamientoPage> createState() =>
+      _CalculoFinanciamientoPageState();
 }
 
 class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
@@ -20,22 +23,75 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   int _selectedFrecuenciaPagoId = 1; // 1=semanal, 2=quincenal, 3=mensual
   String _metodoPago = 'YAPE';
   final TextEditingController _operacionController = TextEditingController();
-  
-  final Map<int, String> _frecuencias = {
+  final TextEditingController _montoLibreController = TextEditingController();
+
+  final Map<int, String> _frecuenciasMap = {
     1: 'Semanal',
     2: 'Quincenal',
     3: 'Mensual',
   };
 
   final List<String> _metodos = [
-    'YAPE', 'PLIN', 'EFECTIVO', 'POS', 'QR', 'TARJETA',
-    'TRANSFERENCIA_BCP', 'TRANSFERENCIA_BBVA', 'TRANSFERENCIA_INTERBANK',
-    'TRANSFERENCIA_SCOTIABANK', 'TRANSFERENCIA_BN', 'DEPOSITO_BCP', 'DEPOSITO_BBVA'
+    'YAPE',
+    'PLIN',
+    'EFECTIVO',
+    'POS',
+    'QR',
+    'TARJETA',
+    'TRANSFERENCIA_BCP',
+    'TRANSFERENCIA_BBVA',
+    'TRANSFERENCIA_INTERBANK',
+    'TRANSFERENCIA_SCOTIABANK',
+    'TRANSFERENCIA_BN',
+    'DEPOSITO_BCP',
+    'DEPOSITO_BBVA',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<FinanciamientoServicioProvider>();
+      final servicio = provider.selectedService;
+      if (servicio != null) {
+        final det = servicio.detalleFinanciamiento;
+        setState(() {
+          // tipo_pago: 1=contado, 2=financiado, 3=ambos (user chooses)
+          if (servicio.tipoPago == 1) {
+            _isFinanciado = false;
+          } else {
+            _isFinanciado = true;
+          }
+
+          if (det != null) {
+            _selectedCuotas =
+                det.minCuotas > 0 ? det.minCuotas : det.cantidadCuotas;
+
+            final freq = det.frecuenciaPago.toLowerCase();
+            if (freq.contains('semanal')) {
+              _selectedFrecuenciaPagoId = 1;
+            } else if (freq.contains('quincenal')) {
+              _selectedFrecuenciaPagoId = 2;
+            } else if (freq.contains('mensual')) {
+              _selectedFrecuenciaPagoId = 3;
+            }
+          }
+
+          if (servicio.modoCalculo == 'monto_libre') {
+            _montoLibreController.text =
+                servicio.precioServicio > 0
+                    ? servicio.precioServicio.toStringAsFixed(2)
+                    : '';
+          }
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
     _operacionController.dispose();
+    _montoLibreController.dispose();
     super.dispose();
   }
 
@@ -45,25 +101,46 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     final servicio = provider.selectedService;
 
     if (servicio == null) {
-      return Scaffold(body: const Center(child: Text('No hay servicio seleccionado')));
+      return Scaffold(
+        body: const Center(child: Text('No hay servicio seleccionado')),
+      );
     }
 
     final detalle = servicio.detalleFinanciamiento;
-    
+    final String modoCalculo = servicio.modoCalculo;
+
     // Cálculos
-    final double precio = servicio.precioServicio;
+    double precio = servicio.precioServicio;
+    if (modoCalculo == 'fijo' && precio <= 0) {
+      precio =
+          servicio.cuotaInicial +
+          (servicio.cantidadCuotas * servicio.cuotaMensual);
+    } else if (modoCalculo == 'monto_libre') {
+      precio = double.tryParse(_montoLibreController.text) ?? 0.0;
+    }
+
     double cuotaInicial = 0;
     double montoAFinanciar = 0;
     double montoCuota = 0;
 
-    if (_isFinanciado && detalle != null) {
-      cuotaInicial = provider.calculateCuotaInicial(precio, detalle.porcentajeInicial);
+    if (modoCalculo == 'fijo' && detalle != null) {
+      cuotaInicial = servicio.cuotaInicial;
+      montoAFinanciar = precio - cuotaInicial;
+      montoCuota = servicio.cuotaMensual;
+      _selectedCuotas = servicio.cantidadCuotas;
+    } else if (_isFinanciado && detalle != null) {
+      final double pInicial =
+          detalle.porcentajeInicialDefault > 0
+              ? detalle.porcentajeInicialDefault
+              : detalle.porcentajeInicial;
+      cuotaInicial = provider.calculateCuotaInicial(precio, pInicial);
       montoAFinanciar = provider.calculateMontoAFinanciar(precio, cuotaInicial);
-      // Apply interest multiplier based on frecuencia (monthly has 10% extra)
-      final double interesAplicable = (_selectedFrecuenciaPagoId == 3)
-          ? detalle.interes * 1.1  // mensual: 10% adicional per spec
-          : detalle.interes;
-      montoCuota = provider.calculateCuotaMonto(montoAFinanciar, _selectedCuotas, interesAplicable);
+      final double interesAplicable = 10.0; // Fixed 10% per spec
+      montoCuota = provider.calculateCuotaMonto(
+        montoAFinanciar,
+        _selectedCuotas,
+        interesAplicable,
+      );
     } else {
       cuotaInicial = precio;
       montoAFinanciar = 0;
@@ -72,7 +149,10 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cálculo de Pago', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Cálculo de Pago',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppTheme.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -84,44 +164,116 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             // Resumen del Servicio
             _buildServiceSummary(servicio),
             const SizedBox(height: 24),
-            
+
             const Text(
               '¿Cómo deseas pagar?',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            
-            // Opciones de Pago (Contado / Financiado)
-            _buildPaymentTypeSelector(precio),
-            
-            if (_isFinanciado && detalle != null) ...[
+
+            // Selector contado/financiado solo cuando tipo_pago = 3
+            if (servicio.tipoPago == 3) ...[
+              _buildPaymentTypeSelector(precio),
               const SizedBox(height: 24),
-              _buildFinancingOptions(detalle, montoCuota, provider, servicio),
             ],
-            
+
+            // Opciones de financiamiento si aplica
+            if (_isFinanciado) ...[
+              if (modoCalculo == 'fijo' && detalle != null) ...[
+                // Resumen del plan fijo
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Inicial:',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            'S/ ${cuotaInicial.toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$_selectedCuotas cuotas ${detalle.frecuenciaPago}:',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            'S/ ${montoCuota.toStringAsFixed(2)} c/u',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (modoCalculo != 'fijo' && detalle != null) ...[
+                _buildFinancingOptions(
+                  detalle,
+                  montoCuota,
+                  provider,
+                  precio,
+                  cuotaInicial,
+                ),
+              ],
+            ],
+
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
-            
+
             // Datos del Pago Inicial
             _buildInitialPaymentForm(cuotaInicial),
-            
+
             const SizedBox(height: 32),
-            
+
             // Botón de Acción
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: provider.isLoading ? null : () => _confirmarFinanciamiento(provider, cuotaInicial, montoCuota),
+                onPressed:
+                    provider.isLoading
+                        ? null
+                        : () => _confirmarFinanciamiento(
+                          provider,
+                          cuotaInicial,
+                          montoCuota,
+                          precio,
+                        ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black87,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: provider.isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('ADQUIRIR SERVICIO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child:
+                    provider.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                          'ADQUIRIR SERVICIO',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
               ),
             ),
             const SizedBox(height: 20),
@@ -142,18 +294,117 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(servicio.nombre, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(servicio.descripcion, style: TextStyle(color: Colors.grey.shade600)),
-          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Precio Total:', style: TextStyle(fontSize: 16)),
-              Text('S/ ${servicio.precioServicio.toStringAsFixed(2)}', 
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+              if (servicio.imagen != null && servicio.imagen!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ImageFullScreenView(
+                                imageUrl:
+                                    '${ApiConstants.imagenesBaseUrl}/${servicio.imagen!}',
+                                heroTag: 'servicio_calc_image_${servicio.id}',
+                                title: servicio.nombre,
+                              ),
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: 'servicio_calc_image_${servicio.id}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          '${ApiConstants.imagenesBaseUrl}/${servicio.imagen!}',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      servicio.nombre,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      servicio.descripcion,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+          if (servicio.modoCalculo == 'monto_libre') ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            const Text(
+              'Ingresa el monto a financiar:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _montoLibreController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                prefixText: 'S/ ',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (val) {
+                setState(() {});
+              },
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Precio Total:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  'S/ ${servicio.precioServicio.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -193,7 +444,10 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withAlpha((0.05 * 255).toInt()) : Colors.white,
+          color:
+              isSelected
+                  ? AppTheme.primary.withAlpha((0.05 * 255).toInt())
+                  : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.primary : Colors.grey.shade300,
@@ -202,17 +456,29 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
         ),
         child: Row(
           children: [
-            Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, 
-              color: isSelected ? AppTheme.primary : Colors.grey),
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? Colors.amber.shade800 : Colors.grey,
+            ),
             const SizedBox(width: 16),
-            Icon(icon, color: isSelected ? AppTheme.primary : Colors.grey),
+            Icon(icon, color: isSelected ? Colors.amber.shade800 : Colors.grey),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? AppTheme.primary : Colors.black87)),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color:
+                          isSelected ? Colors.amber.shade800 : Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
                 ],
               ),
             ),
@@ -222,43 +488,97 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     );
   }
 
-  Widget _buildFinancingOptions(dynamic detalle, double montoCuota, FinanciamientoServicioProvider provider, dynamic servicio) {
+  Widget _buildFinancingOptions(
+    dynamic detalle,
+    double montoCuota,
+    FinanciamientoServicioProvider provider,
+    double precio,
+    double cuotaInicial,
+  ) {
+    List<DropdownMenuItem<int>> frecItems = [];
+    if (detalle.frecuenciasDisponibles != null &&
+        detalle.frecuenciasDisponibles.isNotEmpty) {
+      for (String freq in detalle.frecuenciasDisponibles) {
+        int val = 1;
+        if (freq.toLowerCase() == 'quincenal') val = 2;
+        if (freq.toLowerCase() == 'mensual') val = 3;
+        frecItems.add(
+          DropdownMenuItem(
+            value: val,
+            child: Text(_frecuenciasMap[val] ?? freq),
+          ),
+        );
+      }
+    } else {
+      frecItems =
+          _frecuenciasMap.entries
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .toList();
+    }
+
+    // Ensure selected frequency is valid (compute without mutating state in build)
+    if (!frecItems.any((item) => item.value == _selectedFrecuenciaPagoId) &&
+        frecItems.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedFrecuenciaPagoId = frecItems.first.value!);
+      });
+    }
+
+    final double pInicial =
+        detalle.porcentajeInicialDefault > 0
+            ? detalle.porcentajeInicialDefault
+            : detalle.porcentajeInicial;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Opciones de cuotas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text(
+          'Opciones de cuotas',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
-          children: List.generate(
-            detalle.maxCuotas - detalle.minCuotas + 1,
-            (index) {
-              int val = detalle.minCuotas + index;
-              bool isSel = _selectedCuotas == val;
-              return ChoiceChip(
-                label: Text('$val Cuotas'),
-                selected: isSel,
-                onSelected: (selected) {
-                  if (selected) setState(() => _selectedCuotas = val);
-                },
-                selectedColor: AppTheme.primary,
-                labelStyle: TextStyle(color: isSel ? Colors.white : Colors.black),
-              );
-            },
-          ),
+          children: List.generate(detalle.maxCuotas - detalle.minCuotas + 1, (
+            index,
+          ) {
+            int val = detalle.minCuotas + index;
+            bool isSel = _selectedCuotas == val;
+            return ChoiceChip(
+              label: Text('$val Cuotas'),
+              selected: isSel,
+              onSelected: (selected) {
+                if (selected) setState(() => _selectedCuotas = val);
+              },
+              selectedColor: AppTheme.primary,
+              labelStyle: TextStyle(
+                color: isSel ? Colors.black : Colors.black87,
+                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+              ),
+            );
+          }),
         ),
         const SizedBox(height: 16),
-        const Text('Frecuencia de pago', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const Text(
+          'Frecuencia de pago',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<int>(
-          initialValue: _selectedFrecuenciaPagoId,
-          items: _frecuencias.entries.map((e) =>
-            DropdownMenuItem(value: e.key, child: Text(e.value))
-          ).toList(),
-          onChanged: (val) => setState(() => _selectedFrecuenciaPagoId = val!),
+        InputDecorator(
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+          ),
+          child: DropdownButton<int>(
+            value: _selectedFrecuenciaPagoId,
+            items: frecItems,
+            onChanged: (val) =>
+                setState(() => _selectedFrecuenciaPagoId = val!),
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
           ),
         ),
         const SizedBox(height: 16),
@@ -274,20 +594,64 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Cuota inicial (${detalle.porcentajeInicial.toStringAsFixed(0)}%):',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('S/ ${provider.calculateCuotaInicial(servicio!.precioServicio, detalle.porcentajeInicial).toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Cuota inicial (${pInicial.toStringAsFixed(0)}%):',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'S/ ${cuotaInicial.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${_frecuencias[_selectedFrecuenciaPagoId]} por cuota:',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('S/ ${montoCuota.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                  const Text(
+                    'A financiar:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'S/ ${(precio - cuotaInicial).toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_frecuenciasMap[_selectedFrecuenciaPagoId]} por cuota (c/10%):',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'S/ ${montoCuota.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  Text(
+                    'S/ ${(cuotaInicial + montoCuota * _selectedCuotas).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -302,71 +666,116 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _isFinanciado ? 'Cuota Inicial a pagar: S/ ${monto.toStringAsFixed(2)}' : 'Total a pagar: S/ ${monto.toStringAsFixed(2)}',
+          _isFinanciado
+              ? 'Cuota Inicial a pagar: S/ ${monto.toStringAsFixed(2)}'
+              : 'Total a pagar: S/ ${monto.toStringAsFixed(2)}',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        const Text('Método de pago', style: TextStyle(fontSize: 14, color: Colors.grey)),
+        const Text(
+          'Método de pago',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
         DropdownButtonFormField<String>(
           initialValue: _metodoPago,
-          items: _metodos.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+          items:
+              _metodos
+                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                  .toList(),
           onChanged: (val) => setState(() => _metodoPago = val!),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
           ),
         ),
-        const SizedBox(height: 16),
-        const Text('Número de operación', style: TextStyle(fontSize: 14, color: Colors.grey)),
-        TextField(
-          controller: _operacionController,
-          decoration: InputDecoration(
-            hintText: 'Ej: 123456789',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        if (_metodoPago != 'EFECTIVO') ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Número de operación',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
-        ),
+          TextField(
+            controller: _operacionController,
+            decoration: InputDecoration(
+              hintText: 'Ej: 123456789',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  void _confirmarFinanciamiento(FinanciamientoServicioProvider provider, double cuotaInicial, double montoCuota) async {
-    if (_operacionController.text.isEmpty) {
+  void _confirmarFinanciamiento(
+    FinanciamientoServicioProvider provider,
+    double cuotaInicial,
+    double montoCuota,
+    double precio,
+  ) async {
+    if (provider.selectedService!.modoCalculo == 'monto_libre' && precio <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingrese el número de operación')),
+        const SnackBar(content: Text('Por favor ingrese un monto válido')),
+      );
+      return;
+    }
+
+    if (_metodoPago != 'EFECTIVO' && _operacionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor ingrese el número de operación'),
+        ),
       );
       return;
     }
 
     final auth = context.read<AuthProvider>();
     final conductorId = auth.currentUser?.idConductor ?? 0;
-    
+
     if (conductorId == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: No se pudo obtener el ID del conductor')),
+        const SnackBar(
+          content: Text('Error: No se pudo obtener el ID del conductor'),
+        ),
       );
       return;
     }
 
+    final servicio = provider.selectedService!;
+    final bool esFinanciado = _isFinanciado || servicio.modoCalculo == 'fijo';
+
+    // modalidad_pago solo se envía cuando tipo_pago = 3
+    final String? modalidadPago =
+        servicio.tipoPago == 3 ? (esFinanciado ? 'financiado' : 'contado') : null;
+
     final result = await provider.createFinanciamiento(
       conductorId: conductorId,
-      beneficioId: provider.selectedService!.id,
-      grupoId: provider.selectedService!.grupoFinanciamientoId ?? 112,
-      montoTotal: provider.selectedService!.precioServicio,
-      montoCuota: _isFinanciado ? montoCuota : 0,
-      cantidadCuotas: _isFinanciado ? _selectedCuotas : 0,
-      frecuenciaPagoId: _isFinanciado ? _selectedFrecuenciaPagoId : 1,
-      fechaInicio: DateFormat('yyyy-MM-dd').format(DateTime.now().add(const Duration(days: 7))),
+      beneficioId: servicio.id,
+      grupoId: servicio.grupoFinanciamientoId ?? 112,
+      montoTotal: precio,
       cuotaInicial: cuotaInicial,
       metodoPago: _metodoPago,
       numeroOperacion: _operacionController.text,
+      modalidadPago: modalidadPago,
+      montoCuota: esFinanciado ? montoCuota : 0,
+      cantidadCuotas: esFinanciado ? _selectedCuotas : 0,
+      frecuenciaPagoId: esFinanciado ? _selectedFrecuenciaPagoId : 1,
+      fechaInicio: esFinanciado
+          ? DateFormat('yyyy-MM-dd').format(DateTime.now().add(const Duration(days: 7)))
+          : null,
     );
 
     if (result != null) {
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Financiamiento creado exitosamente. Proceda a firmar el contrato.')),
+        const SnackBar(
+          content: Text(
+            'Financiamiento creado exitosamente. Pendiente por aprobación.',
+          ),
+        ),
       );
 
       // Redirigir a firma
@@ -374,23 +783,25 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => FirmaDocumentoPage(
-              title: 'Contrato de Financiamiento',
-              pdfUrl: result.contratoUrl!,
-              tipo: 'contrato',
-              id: result.idFinanciamiento, // CORRECTED: was result.id
-              onSigned: () {
-                // Navegar al detalle de cuotas
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => FinanciamientoDetallePage(
-                      idFinanciamiento: result.idFinanciamiento,
-                      moneda: result.moneda,
-                    ),
-                  ),
-                );
-              },
-            ),
+            builder:
+                (context) => FirmaDocumentoPage(
+                  title: 'Contrato de Financiamiento',
+                  pdfUrl: result.contratoUrl!,
+                  tipo: 'contrato',
+                  id: result.idFinanciamiento, // CORRECTED: was result.id
+                  onSigned: () {
+                    // Navegar al detalle de cuotas
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder:
+                            (context) => FinanciamientoDetallePage(
+                              idFinanciamiento: result.idFinanciamiento,
+                              moneda: result.moneda,
+                            ),
+                      ),
+                    );
+                  },
+                ),
           ),
         );
       } else {
@@ -398,9 +809,9 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       }
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${provider.error}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${provider.error}')));
     }
   }
 }

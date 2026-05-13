@@ -83,6 +83,7 @@ class MainModules extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
           Row(
             children: [
               // Servicios Taller
@@ -153,6 +154,7 @@ class MainModules extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );

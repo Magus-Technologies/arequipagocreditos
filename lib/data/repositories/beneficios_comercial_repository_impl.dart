@@ -4,6 +4,7 @@ import '../../domain/entities/beneficio_entity.dart';
 import '../../domain/entities/beneficio_servicio_entity.dart';
 import '../../domain/repositories/beneficios_comercial_repository.dart';
 import '../datasources/beneficios_comercial_remote_datasource.dart';
+import '../models/taller_model.dart';
 
 class BeneficiosComercialRepositoryImpl implements BeneficiosComercialRepository {
   final BeneficiosComercialRemoteDataSource remoteDataSource;
@@ -29,4 +30,14 @@ class BeneficiosComercialRepositoryImpl implements BeneficiosComercialRepository
       return Either.left(ServerFailure(e.toString()));
     }
   }
-}
+
+  @override
+  Future<Either<Failure, List<TallerModel>>> getTalleres() async {
+    try {
+      final talleres = await remoteDataSource.getTalleres();
+      return Either.right(talleres);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+}

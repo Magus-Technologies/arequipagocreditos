@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/beneficio_entity.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/image_full_screen_view.dart';
 
 class BeneficioDetailsModal extends StatelessWidget {
   final BeneficioComercialEntity beneficio;
@@ -158,7 +159,7 @@ class BeneficioDetailsModal extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder:
-            (context) => _ImageFullScreenView(
+            (context) => ImageFullScreenView(
               imageUrl: '${ApiConstants.imagenesBaseUrl}/${beneficio.imagen!}',
               heroTag: 'beneficio_image_${beneficio.id}',
               title: beneficio.nombre,
@@ -296,76 +297,3 @@ class BeneficioDetailsModal extends StatelessWidget {
   }
 }
 
-class _ImageFullScreenView extends StatelessWidget {
-  final String imageUrl;
-  final String heroTag;
-  final String title;
-
-  const _ImageFullScreenView({
-    required this.imageUrl,
-    required this.heroTag,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-      body: Center(
-        child: Hero(
-          tag: heroTag,
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 3.0,
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.contain,
-              width: double.infinity,
-              height: double.infinity,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value:
-                        loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                    color: Colors.white,
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.white, size: 64),
-                      SizedBox(height: 16),
-                      Text(
-                        'No se pudo cargar la imagen',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -100,50 +100,58 @@ class _DashboardPageState extends State<DashboardPage> {
                         topRight: Radius.circular(32),
                       ),
                     ),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 10),
-                          // Sección de módulos principales
-                          MainModules(),
-                          // Financiamientos expandible - solo si conductor está cargado
-                          if (conductor != null)
-                            ExpandableFinanciamientos(conductor: conductor),
-                          if (conductor == null)
-                            Container(
-                              margin: const EdgeInsets.all(24),
-                              padding: const EdgeInsets.all(40),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha((0.08 * 255).toInt()),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 4),
-                                    spreadRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Cargando información del usuario...',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 14,
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await authProvider.refreshUserDataFromRemote();
+                      },
+                      color: AppTheme.primary,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 10),
+                            // Sección de módulos principales
+                            MainModules(),
+                            // Financiamientos expandible - solo si conductor está cargado
+                            if (conductor != null)
+                              ExpandableFinanciamientos(conductor: conductor),
+                            if (conductor == null)
+                              Container(
+                                margin: const EdgeInsets.all(24),
+                                padding: const EdgeInsets.all(40),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha((0.08 * 255).toInt()),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
+                                      spreadRadius: 0,
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Cargando información del usuario...',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          const SizedBox(height: 24),
-                        ],
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
                     ),
                   ),
