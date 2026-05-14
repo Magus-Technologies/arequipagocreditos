@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../data/models/taller_model.dart';
 import '../providers/financiamiento_servicio_provider.dart';
 import '../components/beneficio_servicio_card.dart';
 import '../../theme/app_theme.dart';
@@ -7,13 +10,11 @@ import 'calculo_financiamiento_page.dart';
 import '../components/beneficios_search_bar.dart';
 
 class ServiciosTallerDetallePage extends StatefulWidget {
-  final int tallerId;
-  final String tallerNombre;
+  final TallerModel taller;
 
   const ServiciosTallerDetallePage({
     super.key,
-    required this.tallerId,
-    required this.tallerNombre,
+    required this.taller,
   });
 
   @override
@@ -28,7 +29,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanciamientoServicioProvider>();
-      provider.loadBeneficiosServicios(tallerId: widget.tallerId);
+      provider.loadBeneficiosServicios(tallerId: widget.taller.id);
       provider.setBeneficioSearchQuery('');
     });
   }
@@ -93,7 +94,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: () => provider.loadBeneficiosServicios(tallerId: widget.tallerId),
+                                onPressed: () => provider.loadBeneficiosServicios(tallerId: widget.taller.id),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primary,
                                   foregroundColor: Colors.black87,
@@ -155,7 +156,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
                                     ),
                                   )
                                 : RefreshIndicator(
-                                    onRefresh: () => provider.loadBeneficiosServicios(tallerId: widget.tallerId),
+                                    onRefresh: () => provider.loadBeneficiosServicios(tallerId: widget.taller.id),
                                     child: ListView.builder(
                                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                                       itemCount: servicios.length,
@@ -210,12 +211,30 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  widget.tallerNombre,
+                  widget.taller.nombreComercial,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (widget.taller.googleMapsUrl != null && widget.taller.googleMapsUrl!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                _HeaderActionButton(
+                  icon: Icons.map_outlined,
+                  color: Colors.white,
+                  backgroundColor: const Color(0xFF4285F4),
+                  onTap: () => launchUrl(Uri.parse(widget.taller.googleMapsUrl!)),
+                ),
+              ],
+              if (widget.taller.whatsappUrl != null && widget.taller.whatsappUrl!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                _HeaderActionButton(
+                  icon: FontAwesomeIcons.whatsapp,
+                  color: Colors.white,
+                  backgroundColor: const Color(0xFF25D366),
+                  onTap: () => launchUrl(Uri.parse(widget.taller.whatsappUrl!)),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 20),
@@ -257,6 +276,41 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+
+  const _HeaderActionButton({
+    required this.icon,
+    required this.color,
+    required this.backgroundColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withAlpha((0.3 * 255).toInt()),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: color, size: 20),
+        onPressed: onTap,
       ),
     );
   }

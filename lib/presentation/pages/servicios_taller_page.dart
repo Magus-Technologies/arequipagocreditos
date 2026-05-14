@@ -158,8 +158,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) => ServiciosTallerDetallePage(
-                                                  tallerId: taller.id,
-                                                  tallerNombre: taller.nombreComercial,
+                                                  taller: taller,
                                                 ),
                                               ),
                                             );

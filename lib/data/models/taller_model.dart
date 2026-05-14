@@ -10,6 +10,10 @@ class TallerModel {
   final int serviciosCount;
   final bool activo;
 
+  final String? whatsapp;
+  final String? googleMapsUrl;
+  final String? whatsappUrl;
+
   TallerModel({
     required this.id,
     required this.razonSocial,
@@ -21,6 +25,9 @@ class TallerModel {
     this.descripcion,
     required this.serviciosCount,
     required this.activo,
+    this.whatsapp,
+    this.googleMapsUrl,
+    this.whatsappUrl,
   });
 
   factory TallerModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +42,9 @@ class TallerModel {
       descripcion: json['descripcion'],
       serviciosCount: json['servicios_count'] ?? 0,
       activo: json['activo'] == true,
+      whatsapp: json['whatsapp'],
+      googleMapsUrl: json['google_maps_url'],
+      whatsappUrl: json['whatsapp_url'],
     );
   }
 }

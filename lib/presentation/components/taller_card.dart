@@ -1,5 +1,7 @@
 import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/taller_model.dart';
 import '../../theme/app_theme.dart';
 
@@ -92,6 +94,23 @@ class TallerCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    if (taller.whatsapp != null && taller.whatsapp!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_android, size: 13, color: const Color(0xFF25D366)),
+                          const SizedBox(width: 3),
+                          Text(
+                            taller.whatsapp!,
+                            style: const TextStyle(
+                              fontSize: 12, 
+                              color: Color(0xFF25D366),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -110,11 +129,29 @@ class TallerCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const Spacer(),
+                        if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty)
+                          _ActionButton(
+                            icon: Icons.map,
+                            label: 'Mapa',
+                            color: const Color(0xFF4285F4),
+                            onTap: () => launchUrl(Uri.parse(taller.googleMapsUrl!)),
+                          ),
+                        if (taller.whatsappUrl != null && taller.whatsappUrl!.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          _ActionButton(
+                            icon: FontAwesomeIcons.whatsapp,
+                            label: 'Chat',
+                            color: const Color(0xFF25D366),
+                            onTap: () => launchUrl(Uri.parse(taller.whatsappUrl!)),
+                          ),
+                        ],
                       ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               // Flecha
               Container(
                 width: 36,
@@ -131,6 +168,56 @@ class TallerCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withAlpha((0.1 * 255).toInt()),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withAlpha((0.2 * 255).toInt())),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: color,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );
