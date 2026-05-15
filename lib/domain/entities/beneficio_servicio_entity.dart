@@ -22,6 +22,7 @@ class BeneficioServicioEntity {
   final String moneda;
   final String? frecuenciaPago;
   final bool disponible;
+  final List<String> metodosPago;
 
   BeneficioServicioEntity({
     required this.id,
@@ -46,6 +47,7 @@ class BeneficioServicioEntity {
     this.moneda = 'S/.',
     this.frecuenciaPago,
     this.disponible = true,
+    this.metodosPago = const ['CAJA_AREQUIPA'],
   });
 }
 
@@ -65,6 +67,7 @@ class DetalleFinanciamientoEntity {
   final String moneda;
   final String modoCalculo;
   final double porcentajeInicialDefault;
+  final List<String> metodosPago;
 
   DetalleFinanciamientoEntity({
     required this.tipoPago,
@@ -82,5 +85,6 @@ class DetalleFinanciamientoEntity {
     required this.moneda,
     required this.modoCalculo,
     required this.porcentajeInicialDefault,
+    this.metodosPago = const ['CAJA_AREQUIPA'],
   });
 }

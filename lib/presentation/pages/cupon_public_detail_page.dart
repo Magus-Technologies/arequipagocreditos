@@ -7,6 +7,18 @@ class CuponPublicDetailPage extends StatelessWidget {
   final CuponEntity cupon;
   const CuponPublicDetailPage({super.key, required this.cupon});
 
+  void _openFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _FullScreenImagePage(
+          imageUrl: imageUrl,
+          heroTag: 'cupon_banner_${cupon.id}',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,65 +37,74 @@ class CuponPublicDetailPage extends StatelessWidget {
             children: [
               // Banner con overlay y badge
               if (cupon.imagenBanner != null && cupon.imagenBanner!.isNotEmpty)
-                SizedBox(
-                  height: 260,
-                  width: double.infinity,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.network(
-                          'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withAlpha((0.25 * 255).toInt()),
-                                Colors.black.withAlpha((0.6 * 255).toInt()),
-                              ],
+                GestureDetector(
+                  onTap: () => _openFullScreenImage(
+                    context,
+                    'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+                  ),
+                  child: SizedBox(
+                    height: 260,
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Hero(
+                            tag: 'cupon_banner_${cupon.id}',
+                            child: Image.network(
+                              'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 16,
-                        left: 12,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            cupon.valorFormateado,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withAlpha((0.25 * 255).toInt()),
+                                  Colors.black.withAlpha((0.6 * 255).toInt()),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          top: 16,
+                          left: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              cupon.valorFormateado,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -199,6 +220,70 @@ class CuponPublicDetailPage extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullScreenImagePage extends StatefulWidget {
+  final String imageUrl;
+  final String heroTag;
+  const _FullScreenImagePage({required this.imageUrl, required this.heroTag});
+
+  @override
+  State<_FullScreenImagePage> createState() => _FullScreenImagePageState();
+}
+
+class _FullScreenImagePageState extends State<_FullScreenImagePage> {
+  double _dragOffset = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = (1 - (_dragOffset.abs() / 300)).clamp(0.0, 1.0);
+
+    return Scaffold(
+      backgroundColor: Colors.black.withValues(alpha: opacity),
+      body: GestureDetector(
+        onVerticalDragUpdate: (details) {
+          setState(() => _dragOffset += details.delta.dy);
+        },
+        onVerticalDragEnd: (details) {
+          if (_dragOffset.abs() > 100 || details.velocity.pixelsPerSecond.dy.abs() > 600) {
+            Navigator.pop(context);
+          } else {
+            setState(() => _dragOffset = 0);
+          }
+        },
+        child: Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(0, _dragOffset),
+                child: Hero(
+                  tag: widget.heroTag,
+                  child: InteractiveViewer(
+                    child: Image.network(widget.imageUrl, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 12,
+              right: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 22),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

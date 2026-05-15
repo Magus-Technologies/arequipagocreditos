@@ -24,6 +24,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.moneda,
     super.frecuenciaPago,
     super.disponible,
+    super.metodosPago,
   });
 
   factory BeneficioServicioModel.fromJson(Map<String, dynamic> json) {
@@ -59,6 +60,9 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
                   (detalleJson['frecuencia_pago'] as String?)?.isEmpty == true) {
                 detalleJson['frecuencia_pago'] = json['frecuencia_pago'];
               }
+              if (detalleJson['metodos_pago'] == null) {
+                detalleJson['metodos_pago'] = json['metodos_pago'];
+              }
               return DetalleFinanciamientoModel.fromJson(detalleJson);
             })()
           : null,
@@ -74,7 +78,15 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
       moneda: json['moneda'] ?? 'S/.',
       frecuenciaPago: json['frecuencia_pago'],
       disponible: json['disponible'] == true,
+      metodosPago: _parseMetodosPago(json['metodos_pago']),
     );
+  }
+
+  static List<String> _parseMetodosPago(dynamic value) {
+    if (value is List && value.isNotEmpty) {
+      return value.map((e) => e.toString()).toList();
+    }
+    return const ['CAJA_AREQUIPA'];
   }
 }
 
@@ -95,6 +107,7 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
     required super.moneda,
     required super.modoCalculo,
     required super.porcentajeInicialDefault,
+    super.metodosPago,
   });
 
   factory DetalleFinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -104,6 +117,13 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       if (value is int) return value.toDouble();
       if (value is String) return double.tryParse(value) ?? 0.0;
       return 0.0;
+    }
+
+    List<String> parseMetodos(dynamic value) {
+      if (value is List && value.isNotEmpty) {
+        return value.map((e) => e.toString()).toList();
+      }
+      return const ['CAJA_AREQUIPA'];
     }
 
     return DetalleFinanciamientoModel(
@@ -125,6 +145,7 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       moneda: json['moneda'] ?? 'S/.',
       modoCalculo: json['modo_calculo'] ?? 'fijo',
       porcentajeInicialDefault: parseDouble(json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
+      metodosPago: parseMetodos(json['metodos_pago']),
     );
   }
 }

@@ -64,7 +64,6 @@ class BeneficiosComercialRemoteDataSourceImpl
       );
 
       if (response.statusCode == 200) {
-        print('BENEFICIOS SERVICIOS RESPONSE: ${response.body}');
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final List<dynamic> beneficiosData = jsonResponse['data'];
@@ -94,7 +93,6 @@ class BeneficiosComercialRemoteDataSourceImpl
       );
 
       if (response.statusCode == 200) {
-        print('TALLERES RESPONSE: ${response.body}');
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final List<dynamic> data = jsonResponse['data'];

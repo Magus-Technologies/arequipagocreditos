@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/entities/beneficio_entity.dart';
 import '../providers/beneficios_provider.dart';
+import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../components/beneficios_components.dart';
 
@@ -88,30 +89,31 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
                       child: Column(
                         children: [
                           const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildTypeTab(
-                                    context, 
-                                    'Beneficios', 
-                                    provider.currentTipo == 1,
-                                    () => provider.getBeneficios(tipo: 1)
+                          if (context.watch<AuthProvider>().isAuthenticated)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildTypeTab(
+                                      context,
+                                      'Beneficios',
+                                      provider.currentTipo == 1,
+                                      () => provider.getBeneficios(tipo: 1),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _buildTypeTab(
-                                    context, 
-                                    'Servicios', 
-                                    provider.currentTipo == 2,
-                                    () => provider.getBeneficios(tipo: 2)
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _buildTypeTab(
+                                      context,
+                                      'Servicios',
+                                      provider.currentTipo == 2,
+                                      () => provider.getBeneficios(tipo: 2),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 8),
                           BeneficiosSearchBar(
                             controller: _searchController,

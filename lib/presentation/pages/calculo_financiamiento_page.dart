@@ -21,9 +21,28 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   bool _isFinanciado = true;
   int _selectedCuotas = 2;
   int _selectedFrecuenciaPagoId = 1; // 1=semanal, 2=quincenal, 3=mensual
-  String _metodoPago = 'YAPE';
+  String _metodoPago = 'CAJA_AREQUIPA';
   final TextEditingController _operacionController = TextEditingController();
   final TextEditingController _montoLibreController = TextEditingController();
+
+  static const Map<String, String> kMetodoPagoLabels = {
+    'CAJA_AREQUIPA': 'Caja Arequipa',
+    'EFECTIVO': 'Efectivo',
+    'YAPE': 'Yape',
+    'PLIN': 'Plin',
+    'POS': 'POS',
+    'QR': 'QR',
+    'TARJETA': 'Tarjeta',
+    'TRANSFERENCIA_BCP': 'Transferencia BCP',
+    'TRANSFERENCIA_BBVA': 'Transferencia BBVA',
+    'TRANSFERENCIA_INTERBANK': 'Transferencia Interbank',
+    'TRANSFERENCIA_SCOTIABANK': 'Transferencia Scotiabank',
+    'TRANSFERENCIA_BN': 'Transferencia BN',
+    'DEPOSITO_BCP': 'Depósito BCP',
+    'DEPOSITO_BBVA': 'Depósito BBVA',
+    'DEPOSITO_INTERBANK': 'Depósito Interbank',
+    'PAGO_BONO': 'Pago con Bono',
+  };
 
   final Map<int, String> _frecuenciasMap = {
     1: 'Semanal',
@@ -31,21 +50,13 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     3: 'Mensual',
   };
 
-  final List<String> _metodos = [
-    'YAPE',
-    'PLIN',
-    'EFECTIVO',
-    'POS',
-    'QR',
-    'TARJETA',
-    'TRANSFERENCIA_BCP',
-    'TRANSFERENCIA_BBVA',
-    'TRANSFERENCIA_INTERBANK',
-    'TRANSFERENCIA_SCOTIABANK',
-    'TRANSFERENCIA_BN',
-    'DEPOSITO_BCP',
-    'DEPOSITO_BBVA',
-  ];
+  List<String> get _metodos {
+    final servicio = context.read<FinanciamientoServicioProvider>().selectedService;
+    final lista = servicio?.detalleFinanciamiento?.metodosPago.isNotEmpty == true
+        ? servicio!.detalleFinanciamiento!.metodosPago
+        : servicio?.metodosPago;
+    return (lista != null && lista.isNotEmpty) ? lista : const ['CAJA_AREQUIPA'];
+  }
 
   @override
   void initState() {
@@ -82,6 +93,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 servicio.precioServicio > 0
                     ? servicio.precioServicio.toStringAsFixed(2)
                     : '';
+          }
+
+          // Asegurar que el método seleccionado esté en la lista permitida
+          if (!_metodos.contains(_metodoPago)) {
+            _metodoPago = _metodos.first;
           }
         });
       }
@@ -162,7 +178,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Resumen del Servicio
-            _buildServiceSummary(servicio),
+            _buildServiceSummary(servicio, precio),
             const SizedBox(height: 24),
 
             const Text(
@@ -249,7 +265,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               height: 55,
               child: ElevatedButton(
                 onPressed:
-                    provider.isLoading
+                    provider.isLoading || precio <= 0
                         ? null
                         : () => _confirmarFinanciamiento(
                           provider,
@@ -258,7 +274,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                           precio,
                         ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
+                  backgroundColor:
+                      precio <= 0 ? Colors.grey.shade400 : Colors.black87,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -283,7 +300,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     );
   }
 
-  Widget _buildServiceSummary(dynamic servicio) {
+  Widget _buildServiceSummary(dynamic servicio, double precio) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -395,7 +412,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  'S/ ${servicio.precioServicio.toStringAsFixed(2)}',
+                  'S/ ${precio.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -662,6 +679,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   }
 
   Widget _buildInitialPaymentForm(double monto) {
+    final metodos = _metodos;
+    final label = kMetodoPagoLabels[_metodoPago] ?? _metodoPago;
+    final requiereOperacion =
+        _metodoPago != 'EFECTIVO' && _metodoPago != 'CAJA_AREQUIPA';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -676,24 +698,80 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           'Método de pago',
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
-        DropdownButtonFormField<String>(
-          initialValue: _metodoPago,
-          items:
-              _metodos
-                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+        const SizedBox(height: 8),
+        if (metodos.length == 1)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.grey.shade50,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.payment, size: 20, color: Colors.grey),
+                const SizedBox(width: 12),
+                Text(
+                  'Pago por: $label',
+                  style: const TextStyle(fontSize: 15),
+                ),
+              ],
+            ),
+          )
+        else
+          InputDecorator(
+            decoration: InputDecoration(
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            ),
+            child: DropdownButton<String>(
+              value: _metodoPago,
+              items: metodos
+                  .map((m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(kMetodoPagoLabels[m] ?? m),
+                      ))
                   .toList(),
-          onChanged: (val) => setState(() => _metodoPago = val!),
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              onChanged: (val) => setState(() => _metodoPago = val!),
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+            ),
           ),
-        ),
-        if (_metodoPago != 'EFECTIVO') ...[
+        if (_metodoPago == 'CAJA_AREQUIPA') ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline,
+                    size: 18, color: Colors.blue.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'El número de orden será el ID del financiamiento.\n'
+                    'Realiza el pago en cualquier agente Caja Arequipa.',
+                    style: TextStyle(
+                        fontSize: 13, color: Colors.blue.shade800),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (requiereOperacion) ...[
           const SizedBox(height: 16),
           const Text(
             'Número de operación',
             style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
+          const SizedBox(height: 8),
           TextField(
             controller: _operacionController,
             decoration: InputDecoration(
@@ -722,7 +800,9 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       return;
     }
 
-    if (_metodoPago != 'EFECTIVO' && _operacionController.text.isEmpty) {
+    final requiereOperacion =
+        _metodoPago != 'EFECTIVO' && _metodoPago != 'CAJA_AREQUIPA';
+    if (requiereOperacion && _operacionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor ingrese el número de operación'),
@@ -757,7 +837,9 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       montoTotal: precio,
       cuotaInicial: cuotaInicial,
       metodoPago: _metodoPago,
-      numeroOperacion: _operacionController.text,
+      numeroOperacion: _metodoPago == 'CAJA_AREQUIPA'
+          ? ''
+          : _operacionController.text,
       modalidadPago: modalidadPago,
       montoCuota: esFinanciado ? montoCuota : 0,
       cantidadCuotas: esFinanciado ? _selectedCuotas : 0,
