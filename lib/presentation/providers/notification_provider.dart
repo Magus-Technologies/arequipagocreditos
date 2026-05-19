@@ -18,6 +18,12 @@ class NotificationProvider extends ChangeNotifier {
   Future<void> init(String userId, int tipo) async {
     _currentUserId = userId;
     _currentTipo = tipo;
+
+    // Registrar callback para refrescar cuando llega una push en primer plano
+    NotificationService.onNotificationReceived = () {
+      refreshNotifications();
+    };
+
     // 1. Consulta inmediata
     await refreshNotifications();
 
@@ -84,6 +90,7 @@ class NotificationProvider extends ChangeNotifier {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    NotificationService.onNotificationReceived = null;
     super.dispose();
   }
 }

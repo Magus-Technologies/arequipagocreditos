@@ -4,6 +4,7 @@ import 'package:arequipagocreditos/presentation/components/header_icon.dart';
 import 'package:arequipagocreditos/presentation/pages/cupones_page.dart';
 import 'package:arequipagocreditos/presentation/pages/perfil_page.dart';
 import 'package:arequipagocreditos/presentation/pages/puntuacion_page.dart';
+import 'package:arequipagocreditos/presentation/pages/notification_detail_page.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/presentation/providers/resumen_crediticio_provider.dart';
@@ -369,8 +370,24 @@ class _HeaderState extends State<Header> {
                                           if (!isRead) {
                                             await provider.markAsRead(notification.id);
                                           }
+                                          // Si tiene contenido rico, navegar al detalle
+                                          final hasRichContent = notification.data.hasImage ||
+                                              notification.data.hasFile ||
+                                              notification.data.hasLink;
                                           // ignore: use_build_context_synchronously
-                                          if (context.mounted) Navigator.pop(context);
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                            if (hasRichContent) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => NotificationDetailPage(
+                                                    notification: notification,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          }
                                         },
                                       ),
                                     ),
@@ -488,7 +505,38 @@ class _NotificationItem extends StatelessWidget {
                           color: isRead ? Colors.grey[400] : Colors.black54,
                           height: 1.4,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      // Indicadores de contenido rico
+                      if (notification.data.hasImage ||
+                          notification.data.hasFile ||
+                          notification.data.hasLink) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            if (notification.data.hasImage)
+                              _RichContentChip(
+                                icon: Icons.image,
+                                label: 'Imagen',
+                                color: primaryColor,
+                              ),
+                            if (notification.data.hasFile)
+                              _RichContentChip(
+                                icon: Icons.attach_file,
+                                label: notification.data.fileName ?? 'Archivo',
+                                color: primaryColor,
+                              ),
+                            if (notification.data.hasLink)
+                              _RichContentChip(
+                                icon: Icons.link,
+                                label: 'Enlace',
+                                color: primaryColor,
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -530,5 +578,41 @@ class _NotificationItem extends StatelessWidget {
     } else {
       return DateFormat('dd/MM').format(date);
     }
+  }
+}
+
+class _RichContentChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _RichContentChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha((0.1 * 255).toInt()),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 }
