@@ -11,9 +11,9 @@ class CuponesRepositoryImpl implements CuponesRepository {
   CuponesRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, List<CuponEntity>>> getCupones() async {
+  Future<Either<Failure, List<CuponEntity>>> getCupones({String? audiencia}) async {
     try {
-      final cuponesModels = await remoteDataSource.getCupones();
+      final cuponesModels = await remoteDataSource.getCupones(audiencia: audiencia);
       final cuponesEntities = cuponesModels
           .map((model) => model.toEntity())
           .toList();

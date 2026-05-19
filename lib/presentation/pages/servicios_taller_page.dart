@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/financiamiento_servicio_provider.dart';
+import '../providers/auth_provider.dart';
 import '../components/taller_card.dart';
 import '../../theme/app_theme.dart';
 import 'servicios_taller_detalle_page.dart';
@@ -21,6 +22,13 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanciamientoServicioProvider>();
+      final authProvider = context.read<AuthProvider>();
+      
+      // Configurar audiencia según tipo de usuario
+      if (authProvider.currentUser != null) {
+        provider.setAudiencia(authProvider.currentUser!.tipo);
+      }
+      
       provider.loadTalleres();
       provider.setTallerSearchQuery('');
     });

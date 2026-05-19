@@ -19,6 +19,7 @@ class CuponModel extends CuponEntity {
     required super.puedeUsar,
     required super.estado,
     super.fechaAsignacion,
+    super.visiblePara,
   });
 
   factory CuponModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +57,9 @@ class CuponModel extends CuponEntity {
           json['created_at'] != null || json['fecha_asignacion'] != null
               ? DateTime.tryParse((json['created_at'] ?? json['fecha_asignacion']).toString()) ?? DateTime.now()
               : null,
+      visiblePara: json['visible_para'] is List
+          ? (json['visible_para'] as List).map((e) => e.toString()).toList()
+          : null,
     );
   }
 
@@ -99,6 +103,7 @@ class CuponModel extends CuponEntity {
     puedeUsar: puedeUsar,
     estado: estado,
     fechaAsignacion: fechaAsignacion,
+    visiblePara: visiblePara,
   );
 
   CuponModel copyWith({
@@ -119,6 +124,7 @@ class CuponModel extends CuponEntity {
     bool? puedeUsar,
     String? estado,
     DateTime? fechaAsignacion,
+    List<String>? visiblePara,
   }) {
     return CuponModel(
       id: id ?? this.id,
@@ -138,6 +144,7 @@ class CuponModel extends CuponEntity {
       puedeUsar: puedeUsar ?? this.puedeUsar,
       estado: estado ?? this.estado,
       fechaAsignacion: fechaAsignacion ?? this.fechaAsignacion,
+      visiblePara: visiblePara ?? this.visiblePara,
     );
   }
 }

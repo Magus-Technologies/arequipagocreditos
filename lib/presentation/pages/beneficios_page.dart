@@ -31,7 +31,15 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
     super.initState();
     // Cargar beneficios al inicializar la página
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BeneficiosProvider>().getBeneficios();
+      final authProvider = context.read<AuthProvider>();
+      final beneficiosProvider = context.read<BeneficiosProvider>();
+      
+      // Configurar audiencia según tipo de usuario
+      if (authProvider.currentUser != null) {
+        beneficiosProvider.setAudiencia(authProvider.currentUser!.tipo);
+      }
+      
+      beneficiosProvider.getBeneficios();
     });
   }
 
@@ -89,32 +97,6 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
                       child: Column(
                         children: [
                           const SizedBox(height: 16),
-                          if (context.watch<AuthProvider>().isAuthenticated)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildTypeTab(
-                                      context,
-                                      'Beneficios',
-                                      provider.currentTipo == 1,
-                                      () => provider.getBeneficios(tipo: 1),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildTypeTab(
-                                      context,
-                                      'Servicios',
-                                      provider.currentTipo == 2,
-                                      () => provider.getBeneficios(tipo: 2),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          const SizedBox(height: 8),
                           BeneficiosSearchBar(
                             controller: _searchController,
                             searchQuery: _searchQuery,
@@ -176,35 +158,6 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
             onTap: () => BeneficioDetailsModal.show(context, beneficio),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildTypeTab(BuildContext context, String title, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 45,
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppTheme.primary.withAlpha((0.3 * 255).toInt()),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            )
-          ] : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade600,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
-          ),
-        ),
       ),
     );
   }

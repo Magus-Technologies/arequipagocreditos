@@ -402,4 +402,28 @@ class NotificationService {
       return false;
     }
   }
+
+  /// Elimina una notificación específica
+  Future<bool> deleteNotification(
+    String notificationId,
+    String idConductor,
+    int tipo,
+  ) async {
+    try {
+      String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
+      final response = await http.delete(
+        Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.deleteNotificationEndpoint}'
+              .replaceAll('{notificationId}', notificationId)
+              .replaceAll('{id}', idConductor)
+              .replaceAll('{tipo}', tipoUsuario),
+        ),
+        headers: ApiConstants.defaultHeaders,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

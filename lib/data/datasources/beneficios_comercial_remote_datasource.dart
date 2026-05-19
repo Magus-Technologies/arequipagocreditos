@@ -6,8 +6,8 @@ import '../models/beneficio_servicio_model.dart';
 import '../models/taller_model.dart';
 
 abstract class BeneficiosComercialRemoteDataSource {
-  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo});
-  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId});
+  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia});
+  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia});
   Future<List<TallerModel>> getTalleres();
 }
 
@@ -18,12 +18,13 @@ class BeneficiosComercialRemoteDataSourceImpl
   BeneficiosComercialRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo}) async {
+  Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia}) async {
     try {
       String url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}';
-      if (tipo != null) {
-        url += '?tipo=$tipo';
-      }
+      final queryParams = <String>[];
+      if (tipo != null) queryParams.add('tipo=$tipo');
+      if (audiencia != null) queryParams.add('audiencia=$audiencia');
+      if (queryParams.isNotEmpty) url += '?${queryParams.join('&')}';
 
       final response = await client.get(
         Uri.parse(url),
@@ -51,11 +52,14 @@ class BeneficiosComercialRemoteDataSourceImpl
   }
 
   @override
-  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId}) async {
+  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia}) async {
     try {
       String url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}?tipo=2';
       if (tallerId != null) {
         url += '&taller_id=$tallerId';
+      }
+      if (audiencia != null) {
+        url += '&audiencia=$audiencia';
       }
 
       final response = await client.get(

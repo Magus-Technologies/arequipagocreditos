@@ -33,7 +33,7 @@ class NotificationProvider extends ChangeNotifier {
 
   void _startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(minutes: 10), (timer) {
+    _pollingTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
       if (_currentUserId != null) {
         refreshNotifications();
       }
@@ -85,6 +85,40 @@ class NotificationProvider extends ChangeNotifier {
           .toList();
       notifyListeners();
     }
+  }
+
+  /// Elimina una notificación específica
+  Future<bool> deleteNotification(String notificationId) async {
+    if (_currentUserId == null || _currentTipo == null) return false;
+    
+    // Actualización optimista: remover localmente primero
+    final removedIndex = _notifications.indexWhere((n) => n.id == notificationId);
+    NotificationModel? removedNotification;
+    if (removedIndex != -1) {
+      removedNotification = _notifications[removedIndex];
+      _notifications = List.from(_notifications)..removeAt(removedIndex);
+      if (!removedNotification.isRead) {
+        _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
+      }
+      notifyListeners();
+    }
+
+    final success = await _notificationService.deleteNotification(
+      notificationId,
+      _currentUserId!,
+      _currentTipo!,
+    );
+
+    if (!success && removedNotification != null) {
+      // Revertir si falló
+      _notifications = List.from(_notifications)..insert(removedIndex, removedNotification);
+      if (!removedNotification.isRead) {
+        _unreadCount++;
+      }
+      notifyListeners();
+    }
+
+    return success;
   }
 
   @override

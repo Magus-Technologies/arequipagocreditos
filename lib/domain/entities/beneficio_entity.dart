@@ -58,6 +58,7 @@ class BeneficioComercialEntity {
   final DateTime fechaActualizacion;
   final String moneda;
   final String frecuenciaPago;
+  final List<String>? visiblePara;
 
   BeneficioComercialEntity({
     required this.id,
@@ -75,5 +76,13 @@ class BeneficioComercialEntity {
     required this.fechaActualizacion,
     required this.moneda,
     required this.frecuenciaPago,
+    this.visiblePara,
   });
+
+  /// Retorna true si este beneficio es visible para la audiencia dada.
+  /// Si visiblePara es null, es visible para todos.
+  bool esVisiblePara(String audiencia) {
+    if (visiblePara == null) return true;
+    return visiblePara!.contains(audiencia);
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../core/errors/failures.dart';
+import '../../core/utils/audiencia_helper.dart';
 import '../../domain/entities/beneficio_entity.dart';
 import '../../domain/usecases/get_beneficios_comercial_usecase.dart';
 
@@ -16,6 +17,7 @@ class BeneficiosProvider extends ChangeNotifier {
   String _errorMessage = '';
   Failure? _failure;
   int _currentTipo = 1; // 1: Beneficio, 2: Servicio
+  String? _audiencia;
 
   // Getters
   List<BeneficioComercialEntity> get beneficios => _beneficios;
@@ -25,6 +27,11 @@ class BeneficiosProvider extends ChangeNotifier {
   int get currentTipo => _currentTipo;
   bool get hasError => _errorMessage.isNotEmpty;
   bool get isEmpty => _beneficios.isEmpty && !_isLoading && !hasError;
+
+  /// Configura la audiencia del usuario actual
+  void setAudiencia(int tipoUsuario) {
+    _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
+  }
 
   /// Obtiene la lista de beneficios comerciales
   Future<void> getBeneficios({int? tipo}) async {
@@ -36,11 +43,20 @@ class BeneficiosProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final result = await getBeneficiosComercialUseCase(tipo: _currentTipo);
+      final result = await getBeneficiosComercialUseCase(tipo: _currentTipo, audiencia: _audiencia);
       
       result.fold(
         (failure) => _handleFailure(failure),
-        (beneficios) => _handleSuccess(beneficios),
+        (beneficios) {
+          // Filtro local como respaldo: si visible_para no es null, filtrar por audiencia
+          if (_audiencia != null) {
+            _handleSuccess(
+              beneficios.where((b) => b.esVisiblePara(_audiencia!)).toList(),
+            );
+          } else {
+            _handleSuccess(beneficios);
+          }
+        },
       );
     } catch (e) {
       _handleError('Error inesperado: $e');

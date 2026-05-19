@@ -2,6 +2,7 @@ import 'package:arequipagocreditos/data/models/cupon_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cupones_provider.dart';
+import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/utils/model_adapters.dart';
 import '../widgets/cupon_card.dart';
@@ -30,7 +31,15 @@ class _CuponesPageState extends State<CuponesPage> {
     super.initState();
     // Cargar cupones al inicializar
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CuponesProvider>().loadCupones();
+      final authProvider = context.read<AuthProvider>();
+      final cuponesProvider = context.read<CuponesProvider>();
+      
+      // Configurar audiencia según tipo de usuario
+      if (authProvider.currentUser != null) {
+        cuponesProvider.setAudiencia(authProvider.currentUser!.tipo);
+      }
+      
+      cuponesProvider.loadCupones();
     });
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/errors/failures.dart';
+import '../../core/utils/audiencia_helper.dart';
 import '../../domain/entities/cupon_entity.dart';
 import '../../domain/usecases/cupones_usecases.dart';
 
@@ -24,6 +25,7 @@ class CuponesProvider extends ChangeNotifier {
   String _selectedCategory = 'Todos';
   String? _errorMessage;
   bool _isUsingCupon = false;
+  String? _audiencia;
 
   // Getters
   CuponesStatus get status => _status;
@@ -33,6 +35,11 @@ class CuponesProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _status == CuponesStatus.loading;
   bool get isUsingCupon => _isUsingCupon;
+
+  /// Configura la audiencia del usuario actual
+  void setAudiencia(int tipoUsuario) {
+    _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
+  }
 
   List<String> get availableCategories => [
     'Todos',
@@ -47,7 +54,7 @@ class CuponesProvider extends ChangeNotifier {
   Future<void> loadCupones() async {
     _setStatus(CuponesStatus.loading);
     
-    final result = await _getCuponesUseCase();
+    final result = await _getCuponesUseCase(audiencia: _audiencia);
     
     result.fold(
       (failure) {
@@ -55,7 +62,12 @@ class CuponesProvider extends ChangeNotifier {
         _setStatus(CuponesStatus.error);
       },
       (cupones) {
-        _allCupones = cupones;
+        // Filtro local como respaldo
+        if (_audiencia != null) {
+          _allCupones = cupones.where((c) => c.esVisiblePara(_audiencia!)).toList();
+        } else {
+          _allCupones = cupones;
+        }
         _errorMessage = null;
         _filterByCategory(_selectedCategory);
         _setStatus(CuponesStatus.loaded);

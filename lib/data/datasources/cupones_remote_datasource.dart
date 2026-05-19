@@ -7,7 +7,7 @@ import '../../core/constants/api_constants.dart';
 import '../models/cupon_model.dart';
 
 abstract class CuponesRemoteDataSource {
-  Future<List<CuponModel>> getCupones();
+  Future<List<CuponModel>> getCupones({String? audiencia});
   Future<Map<String, dynamic>> usarCupon(int cuponId);
 }
 
@@ -17,7 +17,7 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
   CuponesRemoteDataSourceImpl({http.Client? client}) : client = client ?? http.Client();
 
   @override
-  Future<List<CuponModel>> getCupones() async {
+  Future<List<CuponModel>> getCupones({String? audiencia}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final conductorJson = prefs.getString(AppConstants.userStorageKey);
@@ -40,7 +40,11 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
 
       final int idConductor = conductorInfo['id_conductor'];
       
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.cuponesEndpoint}?cliente_conductor_id=$idConductor');
+      String urlStr = '${ApiConstants.baseUrl}${ApiConstants.cuponesEndpoint}?cliente_conductor_id=$idConductor';
+      if (audiencia != null) {
+        urlStr += '&audiencia=$audiencia';
+      }
+      final url = Uri.parse(urlStr);
       final response = await client
           .get(
             url,

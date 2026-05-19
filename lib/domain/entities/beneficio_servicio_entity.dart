@@ -23,6 +23,7 @@ class BeneficioServicioEntity {
   final String? frecuenciaPago;
   final bool disponible;
   final List<String> metodosPago;
+  final List<String>? visiblePara;
 
   BeneficioServicioEntity({
     required this.id,
@@ -48,7 +49,14 @@ class BeneficioServicioEntity {
     this.frecuenciaPago,
     this.disponible = true,
     this.metodosPago = const ['CAJA_AREQUIPA'],
+    this.visiblePara,
   });
+
+  /// Retorna true si este servicio es visible para la audiencia dada.
+  bool esVisiblePara(String audiencia) {
+    if (visiblePara == null) return true;
+    return visiblePara!.contains(audiencia);
+  }
 }
 
 class DetalleFinanciamientoEntity {

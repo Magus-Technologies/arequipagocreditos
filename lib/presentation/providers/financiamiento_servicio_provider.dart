@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/audiencia_helper.dart';
 import '../../data/models/taller_model.dart';
 import '../../domain/usecases/create_financiamiento_usecase.dart';
 import '../../domain/usecases/get_beneficios_servicios_usecase.dart';
@@ -26,6 +27,8 @@ class FinanciamientoServicioProvider with ChangeNotifier {
 
   String? _error;
   String? get error => _error;
+
+  String? _audiencia;
 
   List<BeneficioServicioEntity> _beneficios = [];
   List<BeneficioServicioEntity> get beneficios => _beneficios;
@@ -74,16 +77,28 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     ).toList();
   }
 
+  /// Configura la audiencia del usuario actual
+  void setAudiencia(int tipoUsuario) {
+    _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
+  }
+
   Future<void> loadBeneficiosServicios({int? tallerId}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId);
+    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId, audiencia: _audiencia);
     
     result.fold(
       (failure) => _error = failure.message,
-      (beneficios) => _beneficios = beneficios,
+      (beneficios) {
+        // Filtro local como respaldo
+        if (_audiencia != null) {
+          _beneficios = beneficios.where((b) => b.esVisiblePara(_audiencia!)).toList();
+        } else {
+          _beneficios = beneficios;
+        }
+      },
     );
 
     _isLoading = false;

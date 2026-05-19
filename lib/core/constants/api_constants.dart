@@ -43,6 +43,7 @@ class ApiConstants {
   static const String notificationsEndpoint = '/notifications/{id}/{tipo}';
   static const String markAsReadEndpoint = '/notifications/{notificationId}/{id}/{tipo}/read';
   static const String readAllNotificationsEndpoint = '/notifications/read-all/{id}/{tipo}';
+  static const String deleteNotificationEndpoint = '/notifications/{notificationId}/{id}/{tipo}';
   
   // New endpoints for financing flow
   static const String createFinanciamientoEndpoint = '/app/financiamientos';

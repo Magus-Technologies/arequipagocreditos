@@ -23,10 +23,11 @@ class Header extends StatefulWidget {
   State<Header> createState() => _HeaderState();
 }
 
-class _HeaderState extends State<Header> {
+class _HeaderState extends State<Header> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Llama al provider para cargar los datos después del primer frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ResumenCrediticioProvider>(
@@ -44,6 +45,24 @@ class _HeaderState extends State<Header> {
       );
       notifProvider.init(widget.conductor.idConductor.toString(), widget.conductor.tipo);
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refrescar notificaciones cuando la app vuelve al primer plano
+      final notifProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      notifProvider.refreshNotifications();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -245,6 +264,9 @@ class _HeaderState extends State<Header> {
     List<NotificationModel> notifications,
     NotificationProvider notifProvider,
   ) {
+    // Refrescar notificaciones al abrir el modal
+    notifProvider.refreshNotifications();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -341,11 +363,13 @@ class _HeaderState extends State<Header> {
 
                                   return Dismissible(
                                     key: Key(notification.id),
-                                    direction: isRead
-                                        ? DismissDirection.none
-                                        : DismissDirection.endToStart,
+                                    direction: DismissDirection.horizontal,
                                     confirmDismiss: (direction) async {
                                       if (direction == DismissDirection.endToStart) {
+                                        // Deslizar a la izquierda → Eliminar
+                                        return await provider.deleteNotification(notification.id);
+                                      } else if (direction == DismissDirection.startToEnd && !isRead) {
+                                        // Deslizar a la derecha → Marcar como leída
                                         await provider.markAsRead(notification.id);
                                         return false;
                                       }
@@ -353,13 +377,23 @@ class _HeaderState extends State<Header> {
                                     },
                                     background: Container(
                                       margin: const EdgeInsets.only(bottom: 12),
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.only(right: 20),
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.only(left: 20),
                                       decoration: BoxDecoration(
                                         color: Colors.green,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: const Icon(Icons.check, color: Colors.white),
+                                    ),
+                                    secondaryBackground: Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: const Icon(Icons.delete_outline, color: Colors.white),
                                     ),
                                     child: FadeInRight(
                                       delay: Duration(milliseconds: 50 * index),

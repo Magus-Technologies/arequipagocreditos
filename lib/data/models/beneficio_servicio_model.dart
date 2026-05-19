@@ -25,6 +25,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.frecuenciaPago,
     super.disponible,
     super.metodosPago,
+    super.visiblePara,
   });
 
   factory BeneficioServicioModel.fromJson(Map<String, dynamic> json) {
@@ -79,7 +80,14 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
       frecuenciaPago: json['frecuencia_pago'],
       disponible: json['disponible'] == true,
       metodosPago: _parseMetodosPago(json['metodos_pago']),
+      visiblePara: _parseVisiblePara(json['visible_para']),
     );
+  }
+
+  static List<String>? _parseVisiblePara(dynamic value) {
+    if (value == null) return null;
+    if (value is List) return value.map((e) => e.toString()).toList();
+    return null;
   }
 
   static List<String> _parseMetodosPago(dynamic value) {

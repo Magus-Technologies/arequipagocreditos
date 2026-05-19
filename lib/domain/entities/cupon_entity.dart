@@ -16,6 +16,7 @@ class CuponEntity {
   final bool puedeUsar;
   final String estado;
   final DateTime? fechaAsignacion;
+  final List<String>? visiblePara;
 
   const CuponEntity({
     required this.id,
@@ -35,7 +36,14 @@ class CuponEntity {
     required this.puedeUsar,
     required this.estado,
     this.fechaAsignacion,
+    this.visiblePara,
   });
+
+  /// Retorna true si este cupón es visible para la audiencia dada.
+  bool esVisiblePara(String audiencia) {
+    if (visiblePara == null) return true;
+    return visiblePara!.contains(audiencia);
+  }
 
   bool get puedeUsarse => estado == "activo" && !estaVencido && tieneUsosDisponibles;
   

@@ -18,6 +18,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
     required super.fechaActualizacion,
     required super.moneda,
     required super.frecuenciaPago,
+    super.visiblePara,
   });
 
   factory BeneficioComercialModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +41,12 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       return 0.0;
     }
 
+    List<String>? parseVisiblePara(dynamic value) {
+      if (value == null) return null;
+      if (value is List) return value.map((e) => e.toString()).toList();
+      return null;
+    }
+
     return BeneficioComercialModel(
       id: json['id'] ?? 0,
       nombre: json['nombre'] ?? '',
@@ -56,6 +63,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       fechaActualizacion: DateTime.tryParse(json['updated_at'] ?? json['fecha_actualizacion'] ?? '') ?? DateTime.now(),
       moneda: json['moneda'] ?? 'S/.',
       frecuenciaPago: (json['frecuencia_pago'] ?? '').toString(),
+      visiblePara: parseVisiblePara(json['visible_para']),
     );
   }
 

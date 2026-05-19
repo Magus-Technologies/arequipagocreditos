@@ -8,8 +8,8 @@ class GetCuponesUseCase {
   
   GetCuponesUseCase(this.repository);
   
-  Future<Either<Failure, List<CuponEntity>>> call() async {
-    return await repository.getCupones();
+  Future<Either<Failure, List<CuponEntity>>> call({String? audiencia}) async {
+    return await repository.getCupones(audiencia: audiencia);
   }
 }
 
