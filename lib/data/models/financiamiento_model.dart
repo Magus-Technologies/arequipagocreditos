@@ -29,6 +29,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
     super.firmadoAt,
     super.aprobado,
     super.estadoEntrega,
+    super.estadoApp,
   });
 
    factory FinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -63,8 +64,11 @@ class FinanciamientoModel extends FinanciamientoEntity {
       return 0;
     }
 
+    // POST response wraps id inside json['financiamiento']
+    final financiamientoNested = json['financiamiento'] as Map<String, dynamic>?;
+
     return FinanciamientoModel(
-      idFinanciamiento: toInt(json['idfinanciamiento'] ?? json['id']),
+      idFinanciamiento: toInt(financiamientoNested?['id'] ?? json['idfinanciamiento'] ?? json['id']),
       idConductor: toInt(json['id_conductor'] ?? json['cliente_conductor_id']),
       idProducto: toInt(json['idproductosv2'] ?? json['producto_id']),
       idCoti: json['id_coti'] != null ? toInt(json['id_coti']) : 0,
@@ -92,8 +96,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
       contratoUrl: json['contrato_url']?.toString(),
       firmaUrl: json['firma_url']?.toString(),
       firmadoAt: json['firmado_at']?.toString(),
-      aprobado: parseNullableInt(json['aprobado']),
+      aprobado: parseNullableInt(json['aprobado'] ?? financiamientoNested?['aprobado']),
       estadoEntrega: json['estado_entrega']?.toString(),
+      estadoApp: json['estado_app']?.toString(),
     );
   }
 
@@ -157,8 +162,9 @@ class FinanciamientoModel extends FinanciamientoEntity {
         firmadoAt: firmadoAt,
         aprobado: aprobado,
         estadoEntrega: estadoEntrega,
+        estadoApp: estadoApp,
       );
-      
+
   @override
   FinanciamientoModel copyWith({
     int? idFinanciamiento,
@@ -188,6 +194,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
     String? firmadoAt,
     int? aprobado,
     String? estadoEntrega,
+    String? estadoApp,
   }) {
     return FinanciamientoModel(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -217,6 +224,7 @@ class FinanciamientoModel extends FinanciamientoEntity {
       firmadoAt: firmadoAt ?? this.firmadoAt,
       aprobado: aprobado ?? this.aprobado,
       estadoEntrega: estadoEntrega ?? this.estadoEntrega,
+      estadoApp: estadoApp ?? this.estadoApp,
     );
   }
 }

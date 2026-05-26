@@ -39,6 +39,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   final _provinciaController = TextEditingController(text: 'AREQUIPA');
   final _distritoController = TextEditingController();
   final _direccionController = TextEditingController();
+  final _googleMapsUrlController = TextEditingController();
 
   // Controllers Step 3
   final _emergenciaNombreController = TextEditingController();
@@ -69,6 +70,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     _provinciaController.dispose();
     _distritoController.dispose();
     _direccionController.dispose();
+    _googleMapsUrlController.dispose();
     _emergenciaNombreController.dispose();
     _emergenciaTelefonoController.dispose();
     _emergenciaParentescoController.dispose();
@@ -179,6 +181,8 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
       'provincia': _provinciaController.text,
       'distrito': _distritoController.text,
       'direccion_detallada': _direccionController.text,
+      if (_googleMapsUrlController.text.trim().isNotEmpty)
+        'google_maps_url': _googleMapsUrlController.text.trim(),
       'emergencia_nombre': _emergenciaNombreController.text,
       'emergencia_telefono': _emergenciaTelefonoController.text,
       'emergencia_parentesco': _emergenciaParentescoController.text,
@@ -421,6 +425,13 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             _buildModernTextField(_distritoController, 'Distrito de residencia', Icons.map_outlined),
             const SizedBox(height: 20),
             _buildModernTextField(_direccionController, 'Dirección exacta', Icons.home_outlined),
+            const SizedBox(height: 20),
+            _buildModernTextField(
+              _googleMapsUrlController,
+              'Link Google Maps (Opcional)',
+              Icons.location_on_outlined,
+              keyboardType: TextInputType.url,
+            ),
           ],
         );
       case 3:

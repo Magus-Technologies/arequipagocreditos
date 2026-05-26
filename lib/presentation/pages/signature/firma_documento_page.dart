@@ -19,6 +19,8 @@ class FirmaDocumentoPage extends StatefulWidget {
   final int id;
   final VoidCallback? onSigned;
   final bool canPop;
+  /// Si es true, en lugar de llamar al API de firma devuelve el base64 via Navigator.pop.
+  final bool captureOnly;
 
   const FirmaDocumentoPage({
     super.key,
@@ -28,6 +30,7 @@ class FirmaDocumentoPage extends StatefulWidget {
     required this.id,
     this.onSigned,
     this.canPop = true,
+    this.captureOnly = false,
   });
 
   @override
@@ -281,6 +284,12 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
   }
 
   void _submitSignature(String base64Firma) async {
+    // Modo captura: devolver el base64 al caller sin llamar al API
+    if (widget.captureOnly) {
+      Navigator.of(context).pop(base64Firma);
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final sigProvider = context.read<SignatureProvider>();
     final user = authProvider.currentUser!;

@@ -8,7 +8,7 @@ class GetBeneficiosServiciosUseCase {
 
   GetBeneficiosServiciosUseCase(this.repository);
 
-  Future<Either<Failure, List<BeneficioServicioEntity>>> call({int? tallerId, String? audiencia}) async {
-    return await repository.getBeneficiosServicios(tallerId: tallerId, audiencia: audiencia);
+  Future<Either<Failure, List<BeneficioServicioEntity>>> call({int? tallerId, String? audiencia, int? clienteConductorId}) async {
+    return await repository.getBeneficiosServicios(tallerId: tallerId, audiencia: audiencia, clienteConductorId: clienteConductorId);
   }
 }

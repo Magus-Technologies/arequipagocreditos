@@ -27,6 +27,7 @@ class FinanciamientoEntity {
   final String? firmadoAt;
   final int? aprobado;
   final String? estadoEntrega;
+  final String? estadoApp;
 
   const FinanciamientoEntity({
     required this.idFinanciamiento,
@@ -56,6 +57,7 @@ class FinanciamientoEntity {
     this.firmadoAt,
     this.aprobado,
     this.estadoEntrega,
+    this.estadoApp,
   });
 
   // Getters útiles
@@ -120,6 +122,7 @@ class FinanciamientoEntity {
     String? firmadoAt,
     int? aprobado,
     String? estadoEntrega,
+    String? estadoApp,
   }) {
     return FinanciamientoEntity(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -149,6 +152,7 @@ class FinanciamientoEntity {
       firmadoAt: firmadoAt ?? this.firmadoAt,
       aprobado: aprobado ?? this.aprobado,
       estadoEntrega: estadoEntrega ?? this.estadoEntrega,
+      estadoApp: estadoApp ?? this.estadoApp,
     );
   }
 }

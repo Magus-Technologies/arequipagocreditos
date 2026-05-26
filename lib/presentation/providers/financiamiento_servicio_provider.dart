@@ -36,6 +36,9 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   BeneficioServicioEntity? _selectedService;
   BeneficioServicioEntity? get selectedService => _selectedService;
 
+  TallerModel? _selectedTaller;
+  TallerModel? get selectedTaller => _selectedTaller;
+
   ListadoDocumentosEntity? _documentosFirmados;
   ListadoDocumentosEntity? get documentosFirmados => _documentosFirmados;
 
@@ -82,12 +85,12 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
   }
 
-  Future<void> loadBeneficiosServicios({int? tallerId}) async {
+  Future<void> loadBeneficiosServicios({int? tallerId, int? clienteConductorId}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId, audiencia: _audiencia);
+    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId, audiencia: _audiencia, clienteConductorId: clienteConductorId);
     
     result.fold(
       (failure) => _error = failure.message,
@@ -124,6 +127,30 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   void selectService(BeneficioServicioEntity service) {
     _selectedService = service;
     notifyListeners();
+  }
+
+  void setSelectedTaller(TallerModel taller) {
+    _selectedTaller = taller;
+  }
+
+  Future<Map<String, dynamic>?> calificarTaller({
+    required int tallerId,
+    required int clienteConductorId,
+    required int puntuacion,
+    String? comentario,
+    int? financiamientoId,
+  }) async {
+    try {
+      return await beneficiosRepository.calificarTaller(
+        tallerId: tallerId,
+        clienteConductorId: clienteConductorId,
+        puntuacion: puntuacion,
+        comentario: comentario,
+        financiamientoId: financiamientoId,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> loadDocumentosFirmados(int conductorId) async {
@@ -171,6 +198,9 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     String? fechaInicio,
     // Required only when tipo_pago = 3
     String? modalidadPago,
+    // Contrato/firma
+    String? firmaBase64,
+    String? nroDocumento,
   }) async {
     _isLoading = true;
     _error = null;
@@ -197,6 +227,14 @@ class FinanciamientoServicioProvider with ChangeNotifier {
 
     if (numeroOperacion != null && numeroOperacion.isNotEmpty) {
       data['numero_operacion_inicial'] = numeroOperacion;
+    }
+
+    if (firmaBase64 != null && firmaBase64.isNotEmpty) {
+      data['firma_base64'] = firmaBase64;
+    }
+
+    if (nroDocumento != null && nroDocumento.isNotEmpty) {
+      data['nro_documento'] = nroDocumento;
     }
 
     final result = await createFinanciamientoUseCase(data);

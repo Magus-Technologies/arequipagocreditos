@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW TABLES LIKE 'calificaciones_talleres';\" credigo)",
+      "Bash(\"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW DATABASES;\")",
+      "Bash(\"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW TABLES LIKE 'calificaciones_talleres';\" magus_credigo)",
+      "Bash(\"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"DESCRIBE calificaciones_talleres; SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='magus_credigo' AND TABLE_NAME='clientes_conductores' AND COLUMN_NAME='id';\" magus_credigo)",
+      "Bash(\"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='magus_credigo' AND TABLE_NAME='talleres' AND COLUMN_NAME='id';\" magus_credigo)"
+    ],
+    "additionalDirectories": [
+      "c:\\laragon\\www\\credigo\\resources\\js\\components\\promociones\\talleres",
+      "c:\\laragon\\www\\credigo\\routes"
+    ]
+  }
+}

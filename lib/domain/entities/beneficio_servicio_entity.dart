@@ -1,3 +1,33 @@
+class ClienteAlertasEntity {
+  final bool puedeSolicitar;
+  final String? motivoPrincipal;
+  final List<String> motivos;
+  final int? puntajeActual;
+  final bool tienePuntajeBajo;
+  final bool estaEnIncobrables;
+  final bool estaDesvinculado;
+  final bool tienePendientes;
+  final int cantidadPendientes;
+  final bool documentosCompletos;
+  final List<String> documentosFaltantes;
+  final bool yaAdquirioServicio;
+
+  const ClienteAlertasEntity({
+    required this.puedeSolicitar,
+    this.motivoPrincipal,
+    this.motivos = const [],
+    this.puntajeActual,
+    this.tienePuntajeBajo = false,
+    this.estaEnIncobrables = false,
+    this.estaDesvinculado = false,
+    this.tienePendientes = false,
+    this.cantidadPendientes = 0,
+    this.documentosCompletos = true,
+    this.documentosFaltantes = const [],
+    this.yaAdquirioServicio = false,
+  });
+}
+
 class BeneficioServicioEntity {
   final int id;
   final String nombre;
@@ -24,6 +54,8 @@ class BeneficioServicioEntity {
   final bool disponible;
   final List<String> metodosPago;
   final List<String>? visiblePara;
+  final ClienteAlertasEntity? clienteAlertas;
+  final String? notaImportante;
 
   BeneficioServicioEntity({
     required this.id,
@@ -50,6 +82,8 @@ class BeneficioServicioEntity {
     this.disponible = true,
     this.metodosPago = const ['CAJA_AREQUIPA'],
     this.visiblePara,
+    this.clienteAlertas,
+    this.notaImportante,
   });
 
   /// Retorna true si este servicio es visible para la audiencia dada.
@@ -57,6 +91,20 @@ class BeneficioServicioEntity {
     if (visiblePara == null) return true;
     return visiblePara!.contains(audiencia);
   }
+}
+
+class ContratoDetalleEntity {
+  final bool disponible;
+  final int? templateId;
+  final String? nombre;
+  final String? url;
+
+  const ContratoDetalleEntity({
+    required this.disponible,
+    this.templateId,
+    this.nombre,
+    this.url,
+  });
 }
 
 class DetalleFinanciamientoEntity {
@@ -76,6 +124,15 @@ class DetalleFinanciamientoEntity {
   final String modoCalculo;
   final double porcentajeInicialDefault;
   final List<String> metodosPago;
+  // Nuevos campos v2
+  final double porcentajeInicialMin;
+  final double porcentajeInicialMax;
+  final double? montoProducto;
+  final bool aprobacionAutomatica;
+  final bool requiereDobleValidacion;
+  final bool permitirUnaSolaAprobacion;
+  final bool contratoDisponible;
+  final ContratoDetalleEntity? contrato;
 
   DetalleFinanciamientoEntity({
     required this.tipoPago,
@@ -94,5 +151,13 @@ class DetalleFinanciamientoEntity {
     required this.modoCalculo,
     required this.porcentajeInicialDefault,
     this.metodosPago = const ['CAJA_AREQUIPA'],
+    this.porcentajeInicialMin = 0,
+    this.porcentajeInicialMax = 100,
+    this.montoProducto,
+    this.aprobacionAutomatica = true,
+    this.requiereDobleValidacion = false,
+    this.permitirUnaSolaAprobacion = false,
+    this.contratoDisponible = false,
+    this.contrato,
   });
 }

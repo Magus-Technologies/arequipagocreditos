@@ -1,5 +1,44 @@
 import '../../domain/entities/beneficio_servicio_entity.dart';
 
+class ClienteAlertasModel extends ClienteAlertasEntity {
+  const ClienteAlertasModel({
+    required super.puedeSolicitar,
+    super.motivoPrincipal,
+    super.motivos,
+    super.puntajeActual,
+    super.tienePuntajeBajo,
+    super.estaEnIncobrables,
+    super.estaDesvinculado,
+    super.tienePendientes,
+    super.cantidadPendientes,
+    super.documentosCompletos,
+    super.documentosFaltantes,
+    super.yaAdquirioServicio,
+  });
+
+  factory ClienteAlertasModel.fromJson(Map<String, dynamic> json) {
+    List<String> parseStringList(dynamic value) {
+      if (value is List) return value.map((e) => e.toString()).toList();
+      return const [];
+    }
+
+    return ClienteAlertasModel(
+      puedeSolicitar: json['puede_solicitar'] == true,
+      motivoPrincipal: json['motivo_principal']?.toString(),
+      motivos: parseStringList(json['motivos']),
+      puntajeActual: json['puntaje_actual'] is int ? json['puntaje_actual'] : null,
+      tienePuntajeBajo: json['tiene_puntaje_bajo'] == true,
+      estaEnIncobrables: json['esta_en_incobrables'] == true,
+      estaDesvinculado: json['esta_desvinculado'] == true,
+      tienePendientes: json['tiene_pendientes'] == true,
+      cantidadPendientes: json['cantidad_pendientes'] is int ? json['cantidad_pendientes'] : 0,
+      documentosCompletos: json['documentos_completos'] == true,
+      documentosFaltantes: parseStringList(json['documentos_faltantes']),
+      yaAdquirioServicio: json['ya_adquirio_servicio'] == true,
+    );
+  }
+}
+
 class BeneficioServicioModel extends BeneficioServicioEntity {
   BeneficioServicioModel({
     required super.id,
@@ -26,6 +65,8 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.disponible,
     super.metodosPago,
     super.visiblePara,
+    super.clienteAlertas,
+    super.notaImportante,
   });
 
   factory BeneficioServicioModel.fromJson(Map<String, dynamic> json) {
@@ -37,50 +78,55 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
       return 0.0;
     }
 
+    final detalleRaw = json['detalle_financiamiento'] as Map<String, dynamic>?;
+    final fijoRaw = detalleRaw?['fijo'] as Map<String, dynamic>?;
+    final porcentualRaw = detalleRaw?['porcentual'] as Map<String, dynamic>?;
+
+    // New endpoint: read flat fields from detalle sub-blocks; fallback to root for legacy
+    final cuotaInicial = parseDouble(fijoRaw?['cuota_inicial'] ?? json['cuota_inicial']);
+    final cuotaMensual = parseDouble(fijoRaw?['cuota_mensual'] ?? json['cuota_mensual']);
+    final cantidadCuotas = (fijoRaw?['cantidad_cuotas'] ?? json['cantidad_cuotas'] ?? 0) as int;
+    final precioServicio = parseDouble(porcentualRaw?['precio_servicio'] ?? json['precio_servicio']);
+    final moneda = (detalleRaw?['moneda'] ?? json['moneda'] ?? 'S/.') as String;
+    final frecuenciaPago = (detalleRaw?['frecuencia_pago_default'] ?? detalleRaw?['frecuencia_pago'] ?? json['frecuencia_pago']) as String?;
+    final metodosPagoRaw = detalleRaw?['metodos_pago'] ?? json['metodos_pago'];
+    final visibleParaRaw = detalleRaw?['visible_para'] ?? json['visible_para'];
+    final modoCalculo = (json['modo_calculo'] ?? detalleRaw?['modo_calculo'] ?? 'fijo') as String;
+
     return BeneficioServicioModel(
       id: json['id'] ?? 0,
       nombre: json['nombre'] ?? '',
       descripcion: json['descripcion'] ?? '',
       tallerId: json['taller_id'] ?? 0,
-      precioServicio: parseDouble(json['precio_servicio']),
-      cuotaInicialTipo: json['cuota_inicial_tipo'] ?? 0,
-      cuotaInicialPorcentaje: parseDouble(json['cuota_inicial_porcentaje']),
-      tipoPago: json['tipo_pago'] ?? 0,
+      precioServicio: precioServicio,
+      cuotaInicialTipo: json['cuota_inicial_tipo'] ?? detalleRaw?['cuota_inicial_tipo'] ?? 0,
+      cuotaInicialPorcentaje: parseDouble(json['cuota_inicial_porcentaje'] ?? detalleRaw?['cuota_inicial_porcentaje']),
+      tipoPago: json['tipo_pago'] ?? detalleRaw?['tipo_pago'] ?? 0,
       grupoFinanciamientoId: json['grupo_financiamiento_id'] ?? json['plan_financiamiento_id'],
-      detalleFinanciamiento: json['detalle_financiamiento'] != null
-          ? (() {
-              final detalleJson = Map<String, dynamic>.from(
-                json['detalle_financiamiento'] as Map,
-              );
-              // Merge root-level fields if missing inside detalle_financiamiento
-              if (detalleJson['frecuencias_disponibles'] == null) {
-                detalleJson['frecuencias_disponibles'] =
-                    json['frecuencias_disponibles'];
-              }
-              if (detalleJson['frecuencia_pago'] == null ||
-                  (detalleJson['frecuencia_pago'] as String?)?.isEmpty == true) {
-                detalleJson['frecuencia_pago'] = json['frecuencia_pago'];
-              }
-              if (detalleJson['metodos_pago'] == null) {
-                detalleJson['metodos_pago'] = json['metodos_pago'];
-              }
-              return DetalleFinanciamientoModel.fromJson(detalleJson);
-            })()
+      detalleFinanciamiento: detalleRaw != null
+          ? DetalleFinanciamientoModel.fromJson(detalleRaw)
           : null,
-      modoCalculo: json['modo_calculo'] ?? 'fijo',
-      permiteMontoLibre: json['permite_monto_libre'] ?? false,
-      porcentajeInicialDefault: parseDouble(json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
-      minCuotas: json['min_cuotas'] ?? 0,
-      maxCuotas: json['max_cuotas'] ?? 0,
+      modoCalculo: modoCalculo,
+      permiteMontoLibre: json['permite_monto_libre'] ?? detalleRaw?['permite_monto_libre'] ?? false,
+      porcentajeInicialDefault: parseDouble(
+        json['porcentaje_inicial_default'] ?? json['porcentaje_inicial'] ??
+        detalleRaw?['porcentaje_inicial_default'] ?? detalleRaw?['porcentaje_inicial'],
+      ),
+      minCuotas: json['min_cuotas'] ?? detalleRaw?['min_cuotas'] ?? 0,
+      maxCuotas: json['max_cuotas'] ?? detalleRaw?['max_cuotas'] ?? 0,
       imagen: json['imagen'],
-      cuotaInicial: parseDouble(json['cuota_inicial']),
-      cantidadCuotas: json['cantidad_cuotas'] ?? 0,
-      cuotaMensual: parseDouble(json['cuota_mensual']),
-      moneda: json['moneda'] ?? 'S/.',
-      frecuenciaPago: json['frecuencia_pago'],
+      cuotaInicial: cuotaInicial,
+      cantidadCuotas: cantidadCuotas,
+      cuotaMensual: cuotaMensual,
+      moneda: moneda,
+      frecuenciaPago: frecuenciaPago,
       disponible: json['disponible'] == true,
-      metodosPago: _parseMetodosPago(json['metodos_pago']),
-      visiblePara: _parseVisiblePara(json['visible_para']),
+      metodosPago: _parseMetodosPago(metodosPagoRaw),
+      visiblePara: _parseVisiblePara(visibleParaRaw),
+      clienteAlertas: json['cliente_alertas'] != null
+          ? ClienteAlertasModel.fromJson(json['cliente_alertas'] as Map<String, dynamic>)
+          : null,
+      notaImportante: json['nota_importante']?.toString(),
     );
   }
 
@@ -95,6 +141,24 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
       return value.map((e) => e.toString()).toList();
     }
     return const ['CAJA_AREQUIPA'];
+  }
+}
+
+class ContratoDetalleModel extends ContratoDetalleEntity {
+  const ContratoDetalleModel({
+    required super.disponible,
+    super.templateId,
+    super.nombre,
+    super.url,
+  });
+
+  factory ContratoDetalleModel.fromJson(Map<String, dynamic> json) {
+    return ContratoDetalleModel(
+      disponible: json['disponible'] == true,
+      templateId: json['template_id'] is int ? json['template_id'] as int : null,
+      nombre: json['nombre']?.toString(),
+      url: json['url']?.toString(),
+    );
   }
 }
 
@@ -116,6 +180,14 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
     required super.modoCalculo,
     required super.porcentajeInicialDefault,
     super.metodosPago,
+    super.porcentajeInicialMin,
+    super.porcentajeInicialMax,
+    super.montoProducto,
+    super.aprobacionAutomatica,
+    super.requiereDobleValidacion,
+    super.permitirUnaSolaAprobacion,
+    super.contratoDisponible,
+    super.contrato,
   });
 
   factory DetalleFinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -127,12 +199,22 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       return 0.0;
     }
 
+    double? parseNullableDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
     List<String> parseMetodos(dynamic value) {
       if (value is List && value.isNotEmpty) {
         return value.map((e) => e.toString()).toList();
       }
       return const ['CAJA_AREQUIPA'];
     }
+
+    final porcentajeDefault = parseDouble(json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']);
 
     return DetalleFinanciamientoModel(
       tipoPago: json['tipo_pago'] ?? 0,
@@ -145,15 +227,25 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       interes: parseDouble(json['interes'] ?? json['tasa_interes']),
       minCuotas: json['min_cuotas'] ?? json['cantidad_cuotas'] ?? 0,
       maxCuotas: json['max_cuotas'] ?? json['cantidad_cuotas'] ?? 0,
-      frecuenciaPago: json['frecuencia_pago'] ?? '',
+      frecuenciaPago: json['frecuencia_pago_default'] ?? json['frecuencia_pago'] ?? '',
       frecuenciasDisponibles: (json['frecuencias_disponibles'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
       moneda: json['moneda'] ?? 'S/.',
       modoCalculo: json['modo_calculo'] ?? 'fijo',
-      porcentajeInicialDefault: parseDouble(json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
+      porcentajeInicialDefault: porcentajeDefault,
       metodosPago: parseMetodos(json['metodos_pago']),
+      porcentajeInicialMin: parseDouble(json['porcentaje_inicial_min'] ?? json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
+      porcentajeInicialMax: parseDouble(json['porcentaje_inicial_max'] ?? json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
+      montoProducto: parseNullableDouble(json['monto_producto']),
+      aprobacionAutomatica: json['aprobacion_automatica'] != false,
+      requiereDobleValidacion: json['requiere_doble_validacion'] == true,
+      permitirUnaSolaAprobacion: json['permitir_una_sola_aprobacion'] == true,
+      contratoDisponible: json['contrato_disponible'] == true,
+      contrato: json['contrato'] is Map<String, dynamic>
+          ? ContratoDetalleModel.fromJson(json['contrato'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

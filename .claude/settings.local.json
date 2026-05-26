@@ -4,7 +4,16 @@
       "Bash(dir)",
       "Bash(dir \"c:\\\\laragon\\\\www\\\\arequipagocreditos\")",
       "Bash(Get-ChildItem \"c:\\\\laragon\\\\www\\\\arequipagocreditos\" -Recurse -Name)",
-      "Bash(Select-Object -First 80)"
+      "Bash(Select-Object -First 80)",
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\arequipagocreditos\" -Recurse -Include \"*.dart\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Set-Location \"C:\\\\laragon\\\\www\\\\credigo\"; php artisan migrate --no-ansi; echo \"EXIT: $LASTEXITCODE\")",
+      "PowerShell(Set-Location \"C:\\\\laragon\\\\www\\\\credigo\"; php artisan --version 2>&1; echo \"exit: $LASTEXITCODE\")",
+      "PowerShell(Set-Location \"C:\\\\laragon\\\\www\\\\credigo\"; php -d display_errors=1 artisan --version 2>&1; echo \"exit: $LASTEXITCODE\")",
+      "PowerShell(& php \"C:\\\\laragon\\\\www\\\\credigo\\\\artisan\" migrate --no-ansi 2>&1; echo \"exit: $LASTEXITCODE\")",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }
