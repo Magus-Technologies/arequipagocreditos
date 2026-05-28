@@ -238,7 +238,7 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       metodosPago: parseMetodos(json['metodos_pago']),
       porcentajeInicialMin: parseDouble(json['porcentaje_inicial_min'] ?? json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
       porcentajeInicialMax: parseDouble(json['porcentaje_inicial_max'] ?? json['porcentaje_inicial_default'] ?? json['porcentaje_inicial']),
-      montoProducto: parseNullableDouble(json['monto_producto']),
+      montoProducto: parseNullableDouble(json['tope_maximo'] ?? json['monto_producto']),
       aprobacionAutomatica: json['aprobacion_automatica'] != false,
       requiereDobleValidacion: json['requiere_doble_validacion'] == true,
       permitirUnaSolaAprobacion: json['permitir_una_sola_aprobacion'] == true,

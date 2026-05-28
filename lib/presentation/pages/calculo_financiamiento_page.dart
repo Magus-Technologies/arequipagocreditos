@@ -125,11 +125,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     final detalle = servicio.detalleFinanciamiento;
     final String modoCalculo = servicio.modoCalculo;
 
-    // Si hay monto_producto fijo del admin, ese es el precio (no editable)
+    final double? tope = detalle?.montoProducto;
+    final bool tieneTope = tope != null && tope > 0;
+
     double precio;
-    if (detalle?.montoProducto != null && detalle!.montoProducto! > 0) {
-      precio = detalle.montoProducto!;
-    } else if (modoCalculo == 'fijo' && servicio.precioServicio <= 0) {
+    if (modoCalculo == 'fijo' && servicio.precioServicio <= 0) {
       precio = servicio.cuotaInicial + (servicio.cantidadCuotas * servicio.cuotaMensual);
     } else if (modoCalculo == 'monto_libre') {
       precio = double.tryParse(_montoLibreController.text) ?? 0.0;
@@ -156,8 +156,6 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       montoCuota = 0;
     }
 
-    final bool montoFijoAdmin = detalle?.montoProducto != null && detalle!.montoProducto! > 0;
-
     final notaServicio = servicio.notaImportante;
     final notaTaller = provider.selectedTaller?.notaImportante;
 
@@ -175,7 +173,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildServiceSummary(servicio, precio, montoFijoAdmin),
+            _buildServiceSummary(servicio, precio, tope),
             if (notaServicio != null && notaServicio.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildNotaAlerta(notaServicio),
@@ -239,7 +237,16 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     );
   }
 
-  Widget _buildServiceSummary(dynamic servicio, double precio, bool montoFijoAdmin) {
+  String? _validarMonto(double precio, double? tope) {
+    if (precio <= 0) return 'Ingresa el monto del servicio';
+    if (tope != null && precio > tope) {
+      return 'El monto no puede superar S/ ${tope.toStringAsFixed(0)}';
+    }
+    return null;
+  }
+
+  Widget _buildServiceSummary(dynamic servicio, double precio, double? tope) {
+    final bool tieneTope = tope != null && tope > 0;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -306,7 +313,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 8),
-          if (servicio.modoCalculo == 'monto_libre' && !montoFijoAdmin) ...[
+          if (servicio.modoCalculo == 'monto_libre') ...[
             const Text(
               'Ingresa el monto a financiar:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -319,6 +326,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 prefixText: 'S/ ',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                helperText: tieneTope ? 'Máximo permitido: S/ ${tope.toStringAsFixed(0)}' : null,
+                errorText: _validarMonto(precio, tieneTope ? tope : null),
               ),
               onChanged: (val) => setState(() {}),
             ),
@@ -326,31 +335,13 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  montoFijoAdmin ? 'Precio fijo:' : 'Precio Total:',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                const Text(
+                  'Precio Total:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                Row(
-                  children: [
-                    Text(
-                      'S/ ${precio.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
-                    ),
-                    if (montoFijoAdmin) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'Fijo',
-                          style: TextStyle(fontSize: 11, color: Colors.orange.shade800, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  'S/ ${precio.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
                 ),
               ],
             ),
