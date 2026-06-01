@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -42,20 +41,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     );
 
     _startAnimations();
-    _navigateToLogin();
   }
 
   void _startAnimations() {
     _fadeController.forward();
     _scaleController.forward();
-  }
-
-  void _navigateToLogin() {
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    });
   }
 
   @override

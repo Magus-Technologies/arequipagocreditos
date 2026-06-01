@@ -220,17 +220,18 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
           ),
         );
       }
-    } else if (authProvider.errorMessage != null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage!), 
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
+    } else if (mounted) {
+      final msg = authProvider.errorMessage
+          ?? (response != null ? (response['message'] ?? response['error']) : null)
+          ?? 'Error al enviar la solicitud. Intente nuevamente.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg.toString()),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 
@@ -426,11 +427,47 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             const SizedBox(height: 20),
             _buildModernTextField(_direccionController, 'Dirección exacta', Icons.home_outlined),
             const SizedBox(height: 20),
-            _buildModernTextField(
-              _googleMapsUrlController,
-              'Link Google Maps (Opcional)',
-              Icons.location_on_outlined,
+            TextFormField(
+              controller: _googleMapsUrlController,
               keyboardType: TextInputType.url,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: 'Link Google Maps (Opcional)',
+                labelStyle: const TextStyle(color: Colors.black45),
+                prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.black87, size: 22),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.open_in_new, color: Colors.black54),
+                  tooltip: 'Abrir Google Maps',
+                  onPressed: () async {
+                    try {
+                      final Uri uri = Platform.isIOS
+                          ? Uri.parse('comgooglemaps://')
+                          : Uri.parse('geo:0,0');
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (_) {
+                      try {
+                        await launchUrl(
+                          Uri.parse('https://www.google.com/maps/search/'),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No se pudo abrir Google Maps')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+                helperText: 'Abre Maps, busca tu dirección, comparte y pega el enlace aquí',
+                helperStyle: const TextStyle(fontSize: 11, color: Colors.black45),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: AppTheme.primary, width: 2)),
+              ),
             ),
           ],
         );

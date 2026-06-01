@@ -74,9 +74,9 @@ class _PerfilPageState extends State<PerfilPage> {
       onSuccess: () => context.read<AuthProvider>().checkAuthStatus(),
       onError: (error) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
         }
       },
       context: context,
@@ -89,9 +89,9 @@ class _PerfilPageState extends State<PerfilPage> {
       onSuccess: () => context.read<AuthProvider>().checkAuthStatus(),
       onError: (error) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
         }
       },
       context: context,
@@ -103,9 +103,10 @@ class _PerfilPageState extends State<PerfilPage> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final conductorEntity = authProvider.currentUser;
-        final conductor = conductorEntity != null 
-            ? ModelAdapters.conductorEntityToModel(conductorEntity) 
-            : null;
+        final conductor =
+            conductorEntity != null
+                ? ModelAdapters.conductorEntityToModel(conductorEntity)
+                : null;
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -134,7 +135,9 @@ class _PerfilPageState extends State<PerfilPage> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                                color: Colors.white.withAlpha(
+                                  (0.3 * 255).toInt(),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: IconButton(
@@ -157,7 +160,9 @@ class _PerfilPageState extends State<PerfilPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 48), // Para balancear el AppBar
+                            const SizedBox(
+                              width: 48,
+                            ), // Para balancear el AppBar
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -165,9 +170,10 @@ class _PerfilPageState extends State<PerfilPage> {
                         ProfileAvatar(
                           conductor: conductor,
                           isUploadingImage: _isUploadingImage,
-                          onChangeProfilePicture: () => _changeProfilePicture(
-                            conductor?.fotoPerfilCambiada ?? false
-                          ),
+                          onChangeProfilePicture:
+                              () => _changeProfilePicture(
+                                conductor?.fotoPerfilCambiada ?? false,
+                              ),
                         ),
                         const SizedBox(height: 16),
                         // Nombre y DNI en el header
@@ -183,15 +189,17 @@ class _PerfilPageState extends State<PerfilPage> {
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16, 
-                            vertical: 8
+                            horizontal: 16,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha((0.3 * 255).toInt()),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            conductor != null ? 'DNI: ${conductor.nroDocumento}' : '',
+                            conductor != null
+                                ? 'DNI: ${conductor.nroDocumento}'
+                                : '',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black87,
@@ -219,9 +227,7 @@ class _PerfilPageState extends State<PerfilPage> {
                           topRight: Radius.circular(30),
                         ),
                         child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                          ),
+                          decoration: const BoxDecoration(color: Colors.white),
                           child: _buildContent(authProvider, conductor),
                         ),
                       ),
@@ -238,9 +244,7 @@ class _PerfilPageState extends State<PerfilPage> {
 
   Widget _buildContent(AuthProvider authProvider, conductor) {
     if (authProvider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     return RefreshIndicator(
@@ -262,18 +266,24 @@ class _PerfilPageState extends State<PerfilPage> {
         if (expired.isNotEmpty || near.isNotEmpty) {
           final parts = <String>[];
           if (expired.isNotEmpty) parts.add('Vencidos: ${expired.join(', ')}');
-          if (near.isNotEmpty) parts.add('A vencer en los próximos 7 días: ${near.join(', ')}');
-          if(!mounted) return;
+          if (near.isNotEmpty) {
+            parts.add('A vencer en los próximos 7 días: ${near.join(', ')}');
+          }
+          if (!mounted) return;
           showDialog<void>(
             context: context,
             barrierDismissible: true,
-            builder: (context) => AlertDialog(
-              title: const Text('Aviso de documentos'),
-              content: Text(parts.join('\n')),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
-              ],
-            ),
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Aviso de documentos'),
+                  content: Text(parts.join('\n')),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
           );
         }
       },
@@ -289,13 +299,13 @@ class _PerfilPageState extends State<PerfilPage> {
             // Tarjeta de información personal (Común para todos)
             PersonalInfoCard(conductor: conductor),
             const SizedBox(height: 10),
-            
+
             // Tarjeta condicional según el tipo
-            if (conductor?.tipo == 4) 
+            if (conductor?.tipo == 4)
               PreregistroInfoCard(conductor: conductor)
-            else 
+            else
               VehiculoInfoCard(conductor: conductor),
-            
+
             const SizedBox(height: 20),
             // Botón de Cerrar Sesión
             Container(
@@ -338,54 +348,73 @@ class _PerfilPageState extends State<PerfilPage> {
   void _showDeleteAccountDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('¿Eliminar tu cuenta?'),
-        content: const Text(
-          'Esta acción solicitará la eliminación permanente de tus datos y acceso a la plataforma. Tu sesión se cerrará de inmediato.'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext); // Cerrar el diálogo
-              
-              // Mostrar indicador de carga en la página
-              final authProvider = context.read<AuthProvider>();
-              final success = await authProvider.deleteAccount();
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text('¿Eliminar tu cuenta?'),
+            content: const Text(
+              'Esta acción solicitará la eliminación permanente de tus datos y acceso a la plataforma. Tu sesión se cerrará de inmediato.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text(
+                  'CANCELAR',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext); // Cerrar el diálogo
 
-              if (!context.mounted) return;
+                  // Mostrar indicador de carga en la página
+                  final authProvider = context.read<AuthProvider>();
+                  final success = await authProvider.deleteAccount();
 
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Solicitud de eliminación procesada con éxito.'),
-                    backgroundColor: Colors.green,
-                  )
-                );
-                
-                // Navegar al inicio después de un breve momento
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AuthBottomNav()),
-                  (route) => false,
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(authProvider.errorMessage ?? 'Error al procesar la solicitud'),
-                    backgroundColor: Colors.red,
-                  )
-                );
-              }
-            },
-            child: const Text('SOLICITAR ELIMINACIÓN', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  if (!context.mounted) return;
+
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Solicitud de eliminación procesada con éxito.',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+
+                    // Navegar al inicio después de un breve momento
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AuthBottomNav(),
+                      ),
+                      (route) => false,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          authProvider.errorMessage ??
+                              'Error al procesar la solicitud',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: const Text(
+                  'SOLICITAR ELIMINACIÓN',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -408,11 +437,7 @@ class _PerfilPageState extends State<PerfilPage> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.photo_camera,
-                color: AppTheme.primary,
-                size: 20,
-              ),
+              Icon(Icons.photo_camera, color: AppTheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Estado de la Foto de Perfil',
@@ -435,7 +460,11 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade600, size: 24),
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green.shade600,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -473,7 +502,11 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade600, size: 24),
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade600,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

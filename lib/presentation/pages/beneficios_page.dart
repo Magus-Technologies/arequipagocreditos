@@ -20,10 +20,9 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
   String _filtroCategoria = 'Todos';
   final List<String> _categorias = [
     'Todos',
-    'Electrónicos',
-    'Hogar',
     'Vehículos',
-    'Servicios'
+    'Celulares',
+    'Otros',
   ];
 
   @override
