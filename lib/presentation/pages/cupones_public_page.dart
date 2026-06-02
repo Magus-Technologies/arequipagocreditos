@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import '../../domain/entities/cupon_entity.dart';
 import '../widgets/cupon_public_card.dart';
 import '../pages/cupon_public_detail_page.dart';
+import '../providers/auth_provider.dart';
 import '../providers/cupones_public_provider.dart';
 
 class CuponesPublicPage extends StatefulWidget {
@@ -18,7 +19,12 @@ class _CuponesPublicPageState extends State<CuponesPublicPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CuponesPublicProvider>().loadPublicCupones();
+      final authProvider = context.read<AuthProvider>();
+      final provider = context.read<CuponesPublicProvider>();
+      if (authProvider.currentUser != null) {
+        provider.setAudiencia(authProvider.currentUser!.tipo);
+      }
+      provider.loadPublicCupones();
     });
   }
 

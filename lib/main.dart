@@ -266,7 +266,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
                 tipo: 'afiliacion',
                 id: authProvider.currentUser!.idConductor,
                 canPop: false,
-                onSigned: () => authProvider.refreshUserDataFromRemote(),
+                onSigned: () => authProvider.refreshUserDataSilently(),
               );
             }
 

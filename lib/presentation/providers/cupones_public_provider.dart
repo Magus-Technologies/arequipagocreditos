@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/errors/failures.dart';
+import '../../core/utils/audiencia_helper.dart';
 import '../../domain/entities/cupon_entity.dart';
 import '../../domain/usecases/get_public_cupones_usecase.dart';
 
@@ -12,11 +13,16 @@ class CuponesPublicProvider extends ChangeNotifier {
   PublicCuponesStatus _status = PublicCuponesStatus.initial;
   List<CuponEntity> _cupones = [];
   String? _errorMessage;
+  String? _audiencia;
 
   PublicCuponesStatus get status => _status;
   List<CuponEntity> get cupones => _cupones;
   bool get isLoading => _status == PublicCuponesStatus.loading;
   String? get errorMessage => _errorMessage;
+
+  void setAudiencia(int tipoUsuario) {
+    _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
+  }
 
   Future<void> loadPublicCupones() async {
     _status = PublicCuponesStatus.loading;
@@ -29,7 +35,9 @@ class CuponesPublicProvider extends ChangeNotifier {
       _status = PublicCuponesStatus.error;
       notifyListeners();
     }, (cupones) {
-      _cupones = cupones;
+      _cupones = _audiencia != null
+          ? cupones.where((c) => c.esVisiblePara(_audiencia!)).toList()
+          : cupones;
       _errorMessage = null;
       _status = PublicCuponesStatus.loaded;
       notifyListeners();

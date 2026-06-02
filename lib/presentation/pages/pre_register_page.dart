@@ -77,12 +77,45 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     super.dispose();
   }
 
+  String? _validateCurrentStep() {
+    bool empty(TextEditingController c) => c.text.trim().isEmpty;
+
+    switch (_currentStep) {
+      case 1:
+        if (Platform.isAndroid && empty(_nroDocController)) return 'Ingresa tu DNI o número de documento';
+        if (empty(_nombresController))         return 'Ingresa tus nombres completos';
+        if (empty(_apellidoPaternoController)) return 'Ingresa tu apellido paterno';
+        if (empty(_apellidoMaternoController)) return 'Ingresa tu apellido materno';
+        if (empty(_fechaNacimientoController)) return 'Selecciona tu fecha de nacimiento';
+      case 2:
+        if (empty(_telefonoController))       return 'Ingresa tu teléfono';
+        if (empty(_correoController))         return 'Ingresa tu correo electrónico';
+        if (empty(_ingresoMensualController)) return 'Ingresa tu ingreso neto aproximado';
+        if (empty(_distritoController))       return 'Ingresa tu distrito de residencia';
+        if (empty(_direccionController))      return 'Ingresa tu dirección exacta';
+      case 3:
+        if (empty(_emergenciaNombreController))    return 'Ingresa el nombre del contacto de emergencia';
+        if (empty(_emergenciaTelefonoController))  return 'Ingresa el teléfono del contacto de emergencia';
+        if (empty(_emergenciaParentescoController)) return 'Ingresa el parentesco del contacto de emergencia';
+        if (Platform.isAndroid) {
+          if (_docDni == null)     return 'Adjunta tu DNI o CE';
+          if (_docRecibo == null)  return 'Adjunta el recibo de luz o agua';
+          if (_docSustento == null) return 'Adjunta el sustento de ingresos';
+        }
+        if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
+    }
+    return null;
+  }
+
   void _nextStep() {
-    if (_currentStep == _totalSteps && !_aceptaTerminos) {
+    final error = _validateCurrentStep();
+    if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debe autorizar el tratamiento de datos para continuar'),
+        SnackBar(
+          content: Text(error),
           backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
       return;

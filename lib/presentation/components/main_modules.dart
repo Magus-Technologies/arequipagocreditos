@@ -2,14 +2,21 @@ import 'package:arequipagocreditos/presentation/components/components.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
+import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class MainModules extends StatelessWidget {
   const MainModules({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tipo = context.select<AuthProvider, int>(
+      (auth) => auth.currentUser?.tipo ?? 0,
+    );
+    final esPasajero = tipo == 4;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -86,35 +93,37 @@ class MainModules extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              // Servicios Taller
-              Expanded(
-                child: SizedBox(
-                  height: 160,
-                  child: ModuleCard(
-                    icon: Icons.home_repair_service,
-                    title: 'Servicios Taller',
-                    backgroundColor: const Color(0xFF3B82F6), // Azul
-                    iconColor: Colors.white,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ServiciosTallerPage(),
-                        ),
-                      );
-                    },
+              if (!esPasajero) ...[
+                // Servicios Taller — solo visible para no-pasajeros
+                Expanded(
+                  child: SizedBox(
+                    height: 160,
+                    child: ModuleCard(
+                      icon: Icons.home_repair_service,
+                      title: 'Servicios Taller',
+                      backgroundColor: const Color(0xFF3B82F6),
+                      iconColor: Colors.white,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ServiciosTallerPage(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              // Documentos Firmados
+                const SizedBox(width: 16),
+              ],
+              // Mis Documentos — siempre visible
               Expanded(
                 child: SizedBox(
                   height: 160,
                   child: ModuleCard(
                     icon: Icons.assignment_turned_in,
                     title: 'Mis Documentos',
-                    backgroundColor: const Color(0xFF10B981), // Verde
+                    backgroundColor: const Color(0xFF10B981),
                     iconColor: Colors.white,
                     onTap: () {
                       Navigator.push(

@@ -337,7 +337,6 @@ class AuthProvider extends ChangeNotifier {
 
     return result.fold((failure) {
       _errorMessage = _mapFailureToMessage(failure);
-      // mantener estado autenticado si ya lo estaba
       _setStatus(AuthStatus.authenticated);
       return false;
     }, (conductor) {
@@ -349,6 +348,19 @@ class AuthProvider extends ChangeNotifier {
       }
       _setStatus(AuthStatus.unauthenticated);
       return false;
+    });
+  }
+
+  /// Refresca datos del servidor SIN cambiar a AuthStatus.loading.
+  /// Usar tras operaciones exitosas (firma, etc.) para evitar flash de SplashPage.
+  Future<void> refreshUserDataSilently() async {
+    final result = await _refreshUserDataUseCase.call();
+    result.fold((_) {}, (conductor) {
+      if (conductor != null) {
+        _currentUser = conductor;
+        _errorMessage = null;
+        notifyListeners();
+      }
     });
   }
 

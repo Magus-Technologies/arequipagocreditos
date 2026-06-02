@@ -138,7 +138,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         // Preservar campos de afiliación: prioridad → perfil API → sesión existente → claves dedicadas
         final savedContratoUrl = prefs.getString(AppConstants.contratoAfiliacionUrlKey);
         final savedFirmada = prefs.getBool(AppConstants.afiliacionFirmadaKey);
-        profileData['afiliacion_firmada'] = profileData['afiliacion_firmada'] ?? conductorMap['afiliacion_firmada'] ?? savedFirmada ?? false;
+        // savedFirmada == true tiene prioridad absoluta: una vez firmado, siempre firmado,
+        // aunque el servidor devuelva false (no null) por retraso de sincronización.
+        final bool localFirmada = savedFirmada == true;
+        final bool serverFirmada = profileData['afiliacion_firmada'] == true || profileData['afiliacion_firmada'] == 1;
+        final bool existingFirmada = conductorMap['afiliacion_firmada'] == true || conductorMap['afiliacion_firmada'] == 1;
+        profileData['afiliacion_firmada'] = localFirmada || serverFirmada || existingFirmada;
         profileData['contrato_afiliacion_url'] = profileData['contrato_afiliacion_url'] ?? conductorMap['contrato_afiliacion_url'] ?? savedContratoUrl;
         profileData['firma_afiliacion_url'] = profileData['firma_afiliacion_url'] ?? conductorMap['firma_afiliacion_url'];
         profileData['firma_afiliacion_at'] = profileData['firma_afiliacion_at'] ?? conductorMap['firma_afiliacion_at'];
