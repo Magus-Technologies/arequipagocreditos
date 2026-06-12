@@ -23,6 +23,7 @@ class FinanciamientoEntity {
   final double? cuotaInicialMonto;
   final bool firmado;
   final String? contratoUrl;
+  final String? boletaInicialUrl;
   final String? firmaUrl;
   final String? firmadoAt;
   final int? aprobado;
@@ -53,6 +54,7 @@ class FinanciamientoEntity {
     this.cuotaInicialMonto,
     this.firmado = false,
     this.contratoUrl,
+    this.boletaInicialUrl,
     this.firmaUrl,
     this.firmadoAt,
     this.aprobado,
@@ -118,6 +120,7 @@ class FinanciamientoEntity {
     double? cuotaInicialMonto,
     bool? firmado,
     String? contratoUrl,
+    String? boletaInicialUrl,
     String? firmaUrl,
     String? firmadoAt,
     int? aprobado,
@@ -148,6 +151,7 @@ class FinanciamientoEntity {
       cuotaInicialMonto: cuotaInicialMonto ?? this.cuotaInicialMonto,
       firmado: firmado ?? this.firmado,
       contratoUrl: contratoUrl ?? this.contratoUrl,
+      boletaInicialUrl: boletaInicialUrl ?? this.boletaInicialUrl,
       firmaUrl: firmaUrl ?? this.firmaUrl,
       firmadoAt: firmadoAt ?? this.firmadoAt,
       aprobado: aprobado ?? this.aprobado,

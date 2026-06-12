@@ -1,3 +1,4 @@
+import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/cuota_financiamiento_model.dart';
 import 'package:arequipagocreditos/presentation/components/cuota_card.dart';
 import 'package:arequipagocreditos/presentation/pages/signature/firma_documento_page.dart';
@@ -5,6 +6,7 @@ import 'package:arequipagocreditos/presentation/providers/financiamiento_provide
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FinanciamientoDetallePage extends StatefulWidget {
   final int idFinanciamiento;
@@ -293,45 +295,69 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
                     Consumer<FinanciamientoProvider>(
                       builder: (context, financiamientoProvider, child) {
                         final current = financiamientoProvider.currentFinanciamiento;
-                        if (current == null ||
-                            current.firmado ||
-                            current.estado.toLowerCase() != 'activo' ||
-                            (current.aprobado ?? 0) != 1 ||
-                            current.contratoUrl == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FirmaDocumentoPage(
-                                    title: 'Contrato de Financiamiento',
-                                    pdfUrl: current.contratoUrl!,
-                                    tipo: 'contrato',
-                                    id: current.idFinanciamiento,
-                                    onSigned: () {
-                                      financiamientoProvider.markAsSigned(current.idFinanciamiento);
-                                      _fetchCuotas();
-                                      widget.onSigned?.call();
-                                    },
+                        if (current == null) return const SizedBox.shrink();
+                        return Column(
+                          children: [
+                            if (!current.firmado &&
+                                current.estado.toLowerCase() == 'activo' &&
+                                (current.aprobado ?? 0) == 1 &&
+                                current.contratoUrl != null)
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FirmaDocumentoPage(
+                                          title: 'Contrato de Financiamiento',
+                                          pdfUrl: current.contratoUrl!,
+                                          tipo: 'contrato',
+                                          id: current.idFinanciamiento,
+                                          onSigned: () {
+                                            financiamientoProvider.markAsSigned(current.idFinanciamiento);
+                                            _fetchCuotas();
+                                            widget.onSigned?.call();
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit_note, size: 18),
+                                  label: const Text('Firmar contrato'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit_note, size: 18),
-                            label: const Text('Firmar contrato'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ),
-                          ),
+                            if (current.boletaInicialUrl?.isNotEmpty == true) ...[
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _openUrl(
+                                    ApiConstants.normalizeUrl(current.boletaInicialUrl),
+                                  ),
+                                  icon: const Icon(Icons.receipt_long, size: 18),
+                                  label: const Text('Boleta de pago inicial'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: AppTheme.primary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(color: AppTheme.primary),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         );
                       },
                     ),
@@ -370,6 +396,17 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo abrir: $url')),
+      );
+    }
   }
 
   Widget _buildContent(FinanciamientoProvider financiamientoProvider) {

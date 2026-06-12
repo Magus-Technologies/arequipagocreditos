@@ -101,6 +101,7 @@ class ModelAdapters {
       cuotaInicialMonto: entity.cuotaInicialMonto,
       firmado: entity.firmado,
       contratoUrl: entity.contratoUrl,
+      boletaInicialUrl: entity.boletaInicialUrl,
       firmaUrl: entity.firmaUrl,
       firmadoAt: entity.firmadoAt,
       aprobado: entity.aprobado,

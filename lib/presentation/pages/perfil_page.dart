@@ -71,7 +71,7 @@ class _PerfilPageState extends State<PerfilPage> {
     ImagePickerHelper.pickImage(
       source: source,
       setLoading: (loading) => setState(() => _isUploadingImage = loading),
-      onSuccess: () => context.read<AuthProvider>().checkAuthStatus(),
+      onSuccess: () => context.read<AuthProvider>().refreshUserDataSilently(),
       onError: (error) {
         if (mounted) {
           ScaffoldMessenger.of(
@@ -86,7 +86,7 @@ class _PerfilPageState extends State<PerfilPage> {
   void _handleFilePickerSelection() {
     ImagePickerHelper.pickImageWithFilePicker(
       setLoading: (loading) => setState(() => _isUploadingImage = loading),
-      onSuccess: () => context.read<AuthProvider>().checkAuthStatus(),
+      onSuccess: () => context.read<AuthProvider>().refreshUserDataSilently(),
       onError: (error) {
         if (mounted) {
           ScaffoldMessenger.of(
@@ -327,17 +327,18 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
             ),
             const SizedBox(height: 20),
-            // Botón de Eliminar Cuenta (Requerimiento Apple)
-            TextButton(
-              onPressed: () => _showDeleteAccountDialog(context),
-              child: const Text(
-                "Eliminar Cuenta",
-                style: TextStyle(
-                  color: Colors.red,
-                  decoration: TextDecoration.underline,
+            // Solo pasajeros (tipo 4) pueden solicitar eliminación de cuenta
+            if (conductor?.tipo == 4)
+              TextButton(
+                onPressed: () => _showDeleteAccountDialog(context),
+                child: const Text(
+                  "Eliminar Cuenta",
+                  style: TextStyle(
+                    color: Colors.red,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 40),
           ],
         ),

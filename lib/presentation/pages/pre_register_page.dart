@@ -87,12 +87,14 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         if (empty(_apellidoPaternoController)) return 'Ingresa tu apellido paterno';
         if (empty(_apellidoMaternoController)) return 'Ingresa tu apellido materno';
         if (empty(_fechaNacimientoController)) return 'Selecciona tu fecha de nacimiento';
+        return null;
       case 2:
         if (empty(_telefonoController))       return 'Ingresa tu teléfono';
         if (empty(_correoController))         return 'Ingresa tu correo electrónico';
         if (empty(_ingresoMensualController)) return 'Ingresa tu ingreso neto aproximado';
         if (empty(_distritoController))       return 'Ingresa tu distrito de residencia';
         if (empty(_direccionController))      return 'Ingresa tu dirección exacta';
+        return null;
       case 3:
         if (empty(_emergenciaNombreController))    return 'Ingresa el nombre del contacto de emergencia';
         if (empty(_emergenciaTelefonoController))  return 'Ingresa el teléfono del contacto de emergencia';
@@ -103,6 +105,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
           if (_docSustento == null) return 'Adjunta el sustento de ingresos';
         }
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
+        return null;
     }
     return null;
   }
@@ -170,7 +173,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         });
       }
     } finally {
-      setState(() => _isPickingFile = false);
+      if (mounted) setState(() => _isPickingFile = false);
     }
   }
 
@@ -179,13 +182,32 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     setState(() => _isPickingFile = true);
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      // iOS doesn't handle FileType.custom with extensions well for photo library items
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: Platform.isIOS ? FileType.any : FileType.custom,
+        allowedExtensions: Platform.isIOS ? null : ['jpg', 'jpeg', 'png', 'pdf'],
       );
-      if (result != null) {
+      if (result != null && result.files.single.path != null) {
+        final path = result.files.single.path!;
+        // On iOS, HEIC/HEIF photos are valid; files without a recognizable
+        // extension (iCloud temp paths) are allowed through — the OS picker
+        // already restricts what is selectable with FileType.any.
+        final dotIndex = path.lastIndexOf('.');
+        final ext = dotIndex >= 0 ? path.substring(dotIndex + 1).toLowerCase() : null;
+        const allowed = ['jpg', 'jpeg', 'png', 'pdf', 'heic', 'heif'];
+        if (ext != null && !allowed.contains(ext)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Solo se permiten archivos JPG, PNG, PDF o HEIC'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
-          File file = File(result.files.single.path!);
+          final file = File(path);
           if (type == 'sustento') _docSustento = file;
           if (type == 'recibo') _docRecibo = file;
           if (type == 'boletas') _docBoletas = file;
@@ -193,7 +215,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         });
       }
     } finally {
-      setState(() => _isPickingFile = false);
+      if (mounted) setState(() => _isPickingFile = false);
     }
   }
 
