@@ -1,3 +1,75 @@
+class TallerUbicacion {
+  final int id;
+  final int tallerId;
+  final String? ubigeo;
+  final String? departamentoNombre;
+  final String? provinciaNombre;
+  final String? distritoNombre;
+  final String? direccion;
+  final String? googleMapsUrl;
+  final bool esPrincipal;
+
+  TallerUbicacion({
+    required this.id,
+    required this.tallerId,
+    this.ubigeo,
+    this.departamentoNombre,
+    this.provinciaNombre,
+    this.distritoNombre,
+    this.direccion,
+    this.googleMapsUrl,
+    this.esPrincipal = false,
+  });
+
+  factory TallerUbicacion.fromJson(Map<String, dynamic> json) {
+    return TallerUbicacion(
+      id: json['id'] ?? 0,
+      tallerId: json['taller_id'] ?? 0,
+      ubigeo: json['ubigeo'] as String?,
+      departamentoNombre: json['departamento_nombre'] as String?,
+      provinciaNombre: json['provincia_nombre'] as String?,
+      distritoNombre: json['distrito_nombre'] as String?,
+      direccion: json['direccion'] as String?,
+      googleMapsUrl: json['google_maps_url'] as String?,
+      esPrincipal: json['es_principal'] == true,
+    );
+  }
+}
+
+class TallerGrupo {
+  final String nombre;
+  final int total;
+  final List<TallerModel> talleres;
+
+  TallerGrupo({required this.nombre, required this.total, required this.talleres});
+
+  factory TallerGrupo.fromJson(Map<String, dynamic> json) {
+    return TallerGrupo(
+      nombre: json['nombre'] as String? ?? 'Sin ubicación',
+      total: json['total'] as int? ?? 0,
+      talleres: (json['talleres'] as List? ?? [])
+          .map((t) => TallerModel.fromJson(t as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class TalleresAgrupadosResponse {
+  final int total;
+  final List<TallerGrupo> grupos;
+
+  TalleresAgrupadosResponse({required this.total, required this.grupos});
+
+  factory TalleresAgrupadosResponse.fromJson(Map<String, dynamic> json) {
+    return TalleresAgrupadosResponse(
+      total: json['total'] as int? ?? 0,
+      grupos: (json['grupos'] as List? ?? [])
+          .map((g) => TallerGrupo.fromJson(g as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
 class TallerModel {
   final int id;
   final String razonSocial;
@@ -17,6 +89,7 @@ class TallerModel {
   final Map<String, dynamic>? horarioAtencion;
   final double promedioCalificacion;
   final int totalCalificaciones;
+  final List<TallerUbicacion> ubicaciones;
 
   TallerModel({
     required this.id,
@@ -36,6 +109,7 @@ class TallerModel {
     this.horarioAtencion,
     this.promedioCalificacion = 0.0,
     this.totalCalificaciones = 0,
+    this.ubicaciones = const [],
   });
 
   factory TallerModel.fromJson(Map<String, dynamic> json) {
@@ -59,6 +133,9 @@ class TallerModel {
           : null,
       promedioCalificacion: _parseDouble(json['promedio_calificacion']),
       totalCalificaciones: json['total_calificaciones'] is int ? json['total_calificaciones'] : 0,
+      ubicaciones: (json['ubicaciones'] as List? ?? [])
+          .map((u) => TallerUbicacion.fromJson(u as Map<String, dynamic>))
+          .toList(),
     );
   }
 

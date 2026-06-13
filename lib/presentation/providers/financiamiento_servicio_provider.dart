@@ -51,6 +51,9 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   String? _talleresError;
   String? get talleresError => _talleresError;
 
+  List<TallerGrupo> _grupos = [];
+  List<TallerGrupo> get grupos => _grupos;
+
   String _tallerSearchQuery = '';
   String _beneficioSearchQuery = '';
 
@@ -122,6 +125,42 @@ class FinanciamientoServicioProvider with ChangeNotifier {
 
     _talleresLoading = false;
     notifyListeners();
+  }
+
+  Future<void> loadTalleresAgrupados() async {
+    _talleresLoading = true;
+    _talleresError = null;
+    notifyListeners();
+
+    final result = await beneficiosRepository.getTalleresAgrupados(audiencia: _audiencia);
+
+    result.fold(
+      (failure) => _talleresError = failure.message,
+      (response) {
+        _grupos = response.grupos;
+        // También llenamos _talleres como lista plana para el buscador
+        _talleres = response.grupos.expand((g) => g.talleres).toList();
+      },
+    );
+
+    _talleresLoading = false;
+    notifyListeners();
+  }
+
+  /// Filtra grupos por búsqueda, devolviendo solo los grupos que tienen coincidencias.
+  List<TallerGrupo> get filteredGrupos {
+    if (_tallerSearchQuery.isEmpty) return _grupos;
+    return _grupos
+        .map((g) {
+          final matches = g.talleres.where((t) =>
+            t.nombreComercial.toLowerCase().contains(_tallerSearchQuery.toLowerCase()) ||
+            (t.direccion?.toLowerCase().contains(_tallerSearchQuery.toLowerCase()) ?? false),
+          ).toList();
+          if (matches.isEmpty) return null;
+          return TallerGrupo(nombre: g.nombre, total: matches.length, talleres: matches);
+        })
+        .whereType<TallerGrupo>()
+        .toList();
   }
 
   void selectService(BeneficioServicioEntity service) {

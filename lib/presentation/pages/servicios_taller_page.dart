@@ -23,13 +23,10 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanciamientoServicioProvider>();
       final authProvider = context.read<AuthProvider>();
-      
-      // Configurar audiencia según tipo de usuario
       if (authProvider.currentUser != null) {
         provider.setAudiencia(authProvider.currentUser!.tipo);
       }
-      
-      provider.loadTalleres();
+      provider.loadTalleresAgrupados();
       provider.setTallerSearchQuery('');
     });
   }
@@ -94,7 +91,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: () => provider.loadTalleres(),
+                                onPressed: () => provider.loadTalleresAgrupados(),
                                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black87),
                                 child: const Text('Reintentar'),
                               ),
@@ -103,7 +100,8 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                         );
                       }
 
-                      final talleres = provider.filteredTalleres;
+                      final grupos = provider.filteredGrupos;
+                      final totalTalleres = grupos.fold(0, (sum, g) => sum + g.total);
 
                       return Column(
                         children: [
@@ -121,24 +119,18 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                             },
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Mostrando ${talleres.length} talleres',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade700,
-                                  ),
+                                  'Mostrando $totalTalleres talleres',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 8),
                           Expanded(
-                            child: talleres.isEmpty
+                            child: grupos.isEmpty
                                 ? Center(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -153,24 +145,54 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                                     ),
                                   )
                                 : RefreshIndicator(
-                                    onRefresh: () => provider.loadTalleres(),
+                                    onRefresh: () => provider.loadTalleresAgrupados(),
                                     child: ListView.builder(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                                      itemCount: talleres.length,
-                                      itemBuilder: (context, index) {
-                                        final taller = talleres[index];
-                                        return TallerCard(
-                                          taller: taller,
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => ServiciosTallerDetallePage(
-                                                  taller: taller,
-                                                ),
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                      itemCount: grupos.length,
+                                      itemBuilder: (context, gi) {
+                                        final grupo = grupos[gi];
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Encabezado de ciudad/grupo
+                                            Padding(
+                                              padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.location_city, size: 18, color: Colors.black54),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      grupo.nombre,
+                                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey.shade200,
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                    child: Text(
+                                                      '${grupo.total}',
+                                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            );
-                                          },
+                                            ),
+                                            ...grupo.talleres.map((taller) => TallerCard(
+                                              taller: taller,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => ServiciosTallerDetallePage(taller: taller),
+                                                  ),
+                                                );
+                                              },
+                                            )),
+                                          ],
                                         );
                                       },
                                     ),

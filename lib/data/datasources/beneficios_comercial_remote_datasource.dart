@@ -9,6 +9,7 @@ abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia});
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
+  Future<TalleresAgrupadosResponse> getTalleresAgrupados({String? audiencia});
   Future<Map<String, dynamic>> calificarTaller({required int tallerId, required int clienteConductorId, required int puntuacion, String? comentario, int? financiamientoId});
 }
 
@@ -109,6 +110,34 @@ class BeneficiosComercialRemoteDataSourceImpl
       }
     } catch (e) {
       throw Exception('Error al obtener talleres: $e');
+    }
+  }
+
+  @override
+  Future<TalleresAgrupadosResponse> getTalleresAgrupados({String? audiencia}) async {
+    try {
+      final queryParams = <String, String>{'agrupar': 'true'};
+      if (audiencia != null) queryParams['audiencia'] = audiencia;
+
+      final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.talleresListEndpoint}')
+          .replace(queryParameters: queryParams);
+
+      final response = await client.get(uri, headers: ApiConstants.defaultHeaders);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          return TalleresAgrupadosResponse.fromJson(
+            jsonResponse['data'] as Map<String, dynamic>,
+          );
+        } else {
+          throw Exception(jsonResponse['message'] ?? 'Error desconocido');
+        }
+      } else {
+        throw Exception('Error HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener talleres agrupados: $e');
     }
   }
 
