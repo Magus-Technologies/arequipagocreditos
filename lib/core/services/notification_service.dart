@@ -64,10 +64,15 @@ class NotificationService {
       );
 
       // 1. Suscribirse a un tema global para anuncios generales
-      await _fcm.subscribeToTopic('all_users');
+      _fcm.subscribeToTopic('all_users').catchError((e) {
+        log("⚠️ subscribeToTopic all_users: $e");
+      });
 
-      // Obtener el token del dispositivo
-      String? token = await _fcm.getToken();
+      // Obtener el token del dispositivo (con timeout para evitar ANR si GMS no responde)
+      String? token = await _fcm.getToken().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => null,
+      );
       if (token != null) {
         log("📱 FCM Token: $token");
         // Sincronizar con el backend y temas específicos
@@ -292,11 +297,15 @@ class NotificationService {
 
       // 2. Suscribirse a temas por tipo de usuario para envíos masivos segmentados
       if (tipoUsuario == 1) {
-        await _fcm.subscribeToTopic('conductores');
-        await _fcm.unsubscribeFromTopic('clientes');
+        _fcm.subscribeToTopic('conductores').catchError((e) {
+          log("⚠️ subscribeToTopic conductores: $e");
+        });
+        _fcm.unsubscribeFromTopic('clientes').catchError((e) {});
       } else if (tipoUsuario == 2) {
-        await _fcm.subscribeToTopic('clientes');
-        await _fcm.unsubscribeFromTopic('conductores');
+        _fcm.subscribeToTopic('clientes').catchError((e) {
+          log("⚠️ subscribeToTopic clientes: $e");
+        });
+        _fcm.unsubscribeFromTopic('conductores').catchError((e) {});
       }
 
       // 3. Enviar token al backend

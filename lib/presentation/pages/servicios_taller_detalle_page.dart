@@ -410,8 +410,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
               if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 _HeaderActionButton(
-                  icon: Icons.map_outlined,
-                  color: Colors.white,
+                  icon: const Icon(Icons.map_outlined, color: Colors.white, size: 20),
                   backgroundColor: const Color(0xFF4285F4),
                   onTap: () => launchUrl(Uri.parse(taller.googleMapsUrl!)),
                 ),
@@ -419,8 +418,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
               if (taller.whatsappUrl != null && taller.whatsappUrl!.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 _HeaderActionButton(
-                  icon: FontAwesomeIcons.whatsapp,
-                  color: Colors.white,
+                  icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.white, size: 20),
                   backgroundColor: const Color(0xFF25D366),
                   onTap: () => launchUrl(Uri.parse(taller.whatsappUrl!)),
                 ),
@@ -620,14 +618,12 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
 }
 
 class _HeaderActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
+  final Widget icon;
   final Color backgroundColor;
   final VoidCallback onTap;
 
   const _HeaderActionButton({
     required this.icon,
-    required this.color,
     required this.backgroundColor,
     required this.onTap,
   });
@@ -647,7 +643,7 @@ class _HeaderActionButton extends StatelessWidget {
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: color, size: 20),
+        icon: icon,
         onPressed: onTap,
       ),
     );

@@ -33,7 +33,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (value.length < 6) {
       return 'La contraseña debe tener al menos 6 caracteres';
     }
-    if (!RegExp(r'^(?=.*[a-zA-Z])(?=.*\d)').hasMatch(value)) {
+    final hasLetter = value.split('').any((c) {
+      final code = c.codeUnitAt(0);
+      return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+    });
+    final hasDigit = value.split('').any((c) {
+      final code = c.codeUnitAt(0);
+      return code >= 48 && code <= 57;
+    });
+    if (!hasLetter || !hasDigit) {
       return 'La contraseña debe contener letras y números';
     }
     return null;

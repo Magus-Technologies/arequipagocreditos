@@ -126,7 +126,6 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     final String modoCalculo = servicio.modoCalculo;
 
     final double? tope = detalle?.montoProducto;
-    final bool tieneTope = tope != null && tope > 0;
 
     double precio;
     if (modoCalculo == 'fijo' && servicio.precioServicio <= 0) {

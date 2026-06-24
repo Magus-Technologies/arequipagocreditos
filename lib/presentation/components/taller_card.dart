@@ -132,7 +132,7 @@ class TallerCard extends StatelessWidget {
                         const Spacer(),
                         if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty)
                           _ActionButton(
-                            icon: Icons.map,
+                            icon: const Icon(Icons.map, size: 14, color: Color(0xFF4285F4)),
                             label: 'Mapa',
                             color: const Color(0xFF4285F4),
                             onTap: () => launchUrl(Uri.parse(taller.googleMapsUrl!)),
@@ -140,7 +140,7 @@ class TallerCard extends StatelessWidget {
                         if (taller.whatsappUrl != null && taller.whatsappUrl!.isNotEmpty) ...[
                           const SizedBox(width: 6),
                           _ActionButton(
-                            icon: FontAwesomeIcons.whatsapp,
+                            icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: Color(0xFF25D366)),
                             label: 'Chat',
                             color: const Color(0xFF25D366),
                             onTap: () => launchUrl(Uri.parse(taller.whatsappUrl!)),
@@ -175,7 +175,7 @@ class TallerCard extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -203,11 +203,7 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 14,
-              color: color,
-            ),
+            icon,
             const SizedBox(width: 4),
             Text(
               label,

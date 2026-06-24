@@ -248,7 +248,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 if (value == null || value.trim().isEmpty) {
                   return 'El DNI es requerido';
                 }
-                if (!RegExp(r'^\d+$').hasMatch(value)) {
+                if (int.tryParse(value) == null) {
                   return 'El DNI solo debe contener números';
                 }
                 return null;

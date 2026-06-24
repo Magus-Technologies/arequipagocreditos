@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     if (value == null || value.isEmpty) {
       return 'Ingrese su DNI';
     }
-    if (!RegExp(r'^\d+$').hasMatch(value)) {
+    if (int.tryParse(value) == null) {
       return 'El DNI solo debe contener números';
     }
     return null;

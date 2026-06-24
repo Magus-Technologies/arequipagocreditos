@@ -1,13 +1,17 @@
+// ignore_for_file: deprecated_member_use
+
 import '../constants/app_constants.dart';
 
 class Validators {
+  static final _emailRegex = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
+  static final _digitsOnlyRegex = RegExp(r'^\d+$');
+
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'El email es requerido';
     }
     
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) {
+    if (!_emailRegex.hasMatch(value)) {
       return 'Ingresa un email válido';
     }
     
@@ -35,7 +39,7 @@ class Validators {
       return 'El DNI es requerido';
     }
 
-    if (!RegExp(r'^\d+$').hasMatch(value)) {
+    if (!_digitsOnlyRegex.hasMatch(value)) {
       return 'El DNI solo debe contener números';
     }
     
@@ -47,16 +51,16 @@ class Validators {
       return 'El teléfono es requerido';
     }
     
-    if (value.length != 9) {
-      return 'El teléfono debe tener 9 dígitos';
-    }
-    
-    if (!RegExp(r'^\d+$').hasMatch(value)) {
+    if (!_digitsOnlyRegex.hasMatch(value)) {
       return 'El teléfono solo debe contener números';
     }
-    
+
     if (!value.startsWith('9')) {
       return 'El teléfono debe empezar con 9';
+    }
+
+    if (value.length != 9) {
+      return 'El teléfono debe tener 9 dígitos';
     }
     
     return null;
