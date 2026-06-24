@@ -760,9 +760,13 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     String? firmaBase64;
     String? nroDocumento;
     if (contratoDisponible) {
+      final rawUrl = contrato!.url!;
+      final pdfUrl = rawUrl.contains('?')
+          ? '$rawUrl&beneficio_id=${servicio.id}'
+          : '$rawUrl?beneficio_id=${servicio.id}';
       firmaBase64 = await _capturarFirmaConPdf(
         titulo: servicio.nombre,
-        pdfUrl: contrato!.url!,
+        pdfUrl: pdfUrl,
       );
       if (firmaBase64 == null || !mounted) return; // usuario canceló
       nroDocumento = auth.currentUser?.nroDocumento;
