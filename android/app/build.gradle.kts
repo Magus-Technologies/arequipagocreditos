@@ -18,7 +18,7 @@ plugins {
 android {
     namespace = "com.arequipago.arequipagocreditos"
     compileSdk = 36
-    ndkVersion = "29.0.13599879"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -45,10 +45,12 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String?
+            if (keystoreProperties.containsKey("storeFile")) {
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
         }
     }
 
