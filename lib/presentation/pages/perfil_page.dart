@@ -122,7 +122,6 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
             ),
             child: SafeArea(
-              bottom: false,
               child: Column(
                 children: [
                   // Header moderno

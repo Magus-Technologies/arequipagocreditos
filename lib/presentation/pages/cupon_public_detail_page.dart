@@ -32,7 +32,6 @@ class CuponPublicDetailPage extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               // Banner con overlay y badge

@@ -167,7 +167,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
         backgroundColor: AppTheme.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +232,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             const SizedBox(height: 20),
           ],
         ),
-      ),
+      )),
     );
   }
 

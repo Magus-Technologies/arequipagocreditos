@@ -666,7 +666,9 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       color: Colors.white,
-      child: Row(
+      child: SafeArea(
+        top: false,
+        child: Row(
         children: [
           Expanded(
             child: SizedBox(
@@ -703,6 +705,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

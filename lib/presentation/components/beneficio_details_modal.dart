@@ -33,7 +33,7 @@ class BeneficioDetailsModal extends StatelessWidget {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).viewPadding.bottom),
           child: SingleChildScrollView(
             controller: scrollController,
             child: Column(

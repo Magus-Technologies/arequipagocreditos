@@ -81,7 +81,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
       builder: (sheetCtx) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 24,
             left: 24,
             right: 24,
             top: 24,
@@ -224,7 +224,6 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               _buildHeader(),

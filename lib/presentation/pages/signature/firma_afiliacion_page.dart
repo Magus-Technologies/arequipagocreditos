@@ -70,7 +70,7 @@ class _FirmaAfiliacionPageState extends State<FirmaAfiliacionPage> {
         elevation: 0,
         automaticallyImplyLeading: false, // No volver atrás, es obligatorio
       ),
-      body: Stack(
+      body: SafeArea(child: Stack(
         children: [
           Column(
             children: [
@@ -118,7 +118,7 @@ class _FirmaAfiliacionPageState extends State<FirmaAfiliacionPage> {
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
-      ),
+      )),
     );
   }
 

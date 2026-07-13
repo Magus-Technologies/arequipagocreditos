@@ -80,7 +80,6 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
               ),
             ),
             child: SafeArea(
-              bottom: false,
               child: Column(
                 children: [
                   BeneficiosHeader(beneficiosFiltrados: beneficiosFiltrados, isNav: widget.isNav),

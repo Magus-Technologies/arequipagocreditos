@@ -107,7 +107,7 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
             onPressed: () => Navigator.pop(context),
           ) : null,
         ),
-        body: Column(
+        body: SafeArea(child: Column(
           children: [
             const SizedBox(height: 10),
             Expanded(
@@ -266,7 +266,7 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }

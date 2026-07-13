@@ -59,7 +59,6 @@ class _FinanciamientoDetallePageState extends State<FinanciamientoDetallePage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               // Header moderno

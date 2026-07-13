@@ -48,7 +48,7 @@ class _SignatureCanvasPageState extends State<SignatureCanvasPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
+      body: SafeArea(child: Column(
         children: [
           const SizedBox(height: 10),
           Expanded(
@@ -150,7 +150,7 @@ class _SignatureCanvasPageState extends State<SignatureCanvasPage> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

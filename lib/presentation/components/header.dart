@@ -355,7 +355,7 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                                 ),
                               )
                             : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.of(context).padding.bottom),
                                 itemCount: notifs.length,
                                 itemBuilder: (context, index) {
                                   final notification = notifs[index];

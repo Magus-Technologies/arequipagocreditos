@@ -43,7 +43,6 @@ class _CuponesPublicPageState extends State<CuponesPublicPage> {
               ),
             ),
             child: SafeArea(
-              bottom: false,
               child: Column(
                 children: [
                   const SizedBox(height: 12),

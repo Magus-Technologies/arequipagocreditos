@@ -66,7 +66,6 @@ class _PuntuacionPageState extends State<PuntuacionPage>
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               // Header moderno

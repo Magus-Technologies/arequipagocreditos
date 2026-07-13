@@ -43,7 +43,6 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               _buildHeader(),

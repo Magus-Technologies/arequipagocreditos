@@ -53,7 +53,6 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               _buildHeader(),

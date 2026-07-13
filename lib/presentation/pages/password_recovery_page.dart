@@ -110,7 +110,6 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: SingleChildScrollView(
             child: SizedBox(
               height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,

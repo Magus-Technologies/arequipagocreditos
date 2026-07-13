@@ -183,7 +183,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: SingleChildScrollView(
             child: SizedBox(
               height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,

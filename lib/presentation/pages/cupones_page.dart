@@ -138,7 +138,6 @@ class _CuponesPageState extends State<CuponesPage> {
               ),
             ),
             child: SafeArea(
-              bottom: false,
               child: Column(
                 children: [
                   _buildHeader(cuponesFiltrados),

@@ -44,7 +44,6 @@ class _HistorialCompletoPageState extends State<HistorialCompletoPage> {
           ),
         ),
         child: SafeArea(
-          bottom: false,
           child: Column(
             children: [
               // Header
