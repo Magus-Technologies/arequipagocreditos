@@ -14,5 +14,6 @@ abstract class AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> uploadProfilePicture(File imageFile);
   Future<Either<Failure, Map<String, dynamic>>> updateVehicleData(Map<String, dynamic> data);
   Future<Either<Failure, Map<String, dynamic>>> preRegister(Map<String, dynamic> data, Map<String, File> files);
+  Future<Either<Failure, Map<String, dynamic>>> conductorPreRegister(Map<String, dynamic> data, Map<String, File> files);
   Future<Either<Failure, Map<String, dynamic>>> deleteAccount();
 }

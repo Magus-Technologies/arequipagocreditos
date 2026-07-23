@@ -166,6 +166,29 @@ class PreRegisterUseCase {
   }
 }
 
+class ConductorPreRegisterUseCase {
+  final AuthRepository repository;
+
+  ConductorPreRegisterUseCase(this.repository);
+
+  Future<Either<Failure, Map<String, dynamic>>> call(
+    Map<String, dynamic> data,
+    Map<String, File> files,
+  ) async {
+    if (data['nro_documento'] == null || data['nro_documento'].toString().isEmpty) {
+      return Either.left(const ValidationFailure('El número de documento es requerido'));
+    }
+    if (data['telefono'] == null || data['telefono'].toString().isEmpty) {
+      return Either.left(const ValidationFailure('El teléfono es requerido para contactarte'));
+    }
+    if (files.isEmpty) {
+      return Either.left(const ValidationFailure('Se requieren los documentos adjuntos'));
+    }
+
+    return await repository.conductorPreRegister(data, files);
+  }
+}
+
 class DeleteAccountUseCase {
   final AuthRepository repository;
 

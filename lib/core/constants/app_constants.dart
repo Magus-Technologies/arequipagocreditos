@@ -9,6 +9,7 @@ class AppConstants {
   static const String languageStorageKey = 'language';
   static const String contratoAfiliacionUrlKey = 'contrato_afiliacion_url_v1';
   static const String afiliacionFirmadaKey = 'afiliacion_firmada_v1';
+  static const String conductorPreRegistroIdKey = 'conductor_preregistro_id';
   
   // Pagination
   static const int defaultPageSize = 20;

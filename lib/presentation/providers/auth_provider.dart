@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   final UpdateVehicleDataUseCase _updateVehicleDataUseCase;
   final RefreshUserDataUseCase _refreshUserDataUseCase;
   final PreRegisterUseCase _preRegisterUseCase;
+  final ConductorPreRegisterUseCase _conductorPreRegisterUseCase;
   final DeleteAccountUseCase _deleteAccountUseCase;
   
   AuthProvider({
@@ -32,6 +33,7 @@ class AuthProvider extends ChangeNotifier {
     required UpdateVehicleDataUseCase updateVehicleDataUseCase,
     required RefreshUserDataUseCase refreshUserDataUseCase,
     required PreRegisterUseCase preRegisterUseCase,
+    required ConductorPreRegisterUseCase conductorPreRegisterUseCase,
     required DeleteAccountUseCase deleteAccountUseCase,
   })  : _loginUseCase = loginUseCase,
         _logoutUseCase = logoutUseCase,
@@ -41,6 +43,7 @@ class AuthProvider extends ChangeNotifier {
         _updateVehicleDataUseCase = updateVehicleDataUseCase,
         _refreshUserDataUseCase = refreshUserDataUseCase,
         _preRegisterUseCase = preRegisterUseCase,
+        _conductorPreRegisterUseCase = conductorPreRegisterUseCase,
         _deleteAccountUseCase = deleteAccountUseCase;
 
   static const _secureStorage = FlutterSecureStorage(
@@ -371,6 +374,28 @@ class AuthProvider extends ChangeNotifier {
     _setStatus(AuthStatus.loading);
 
     final result = await _preRegisterUseCase(data, files);
+
+    return result.fold(
+      (failure) {
+        _errorMessage = _mapFailureToMessage(failure);
+        _setStatus(AuthStatus.unauthenticated);
+        return null;
+      },
+      (response) {
+        _errorMessage = null;
+        _setStatus(AuthStatus.unauthenticated);
+        return response;
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>?> conductorPreRegister(
+    Map<String, dynamic> data,
+    Map<String, File> files,
+  ) async {
+    _setStatus(AuthStatus.loading);
+
+    final result = await _conductorPreRegisterUseCase(data, files);
 
     return result.fold(
       (failure) {

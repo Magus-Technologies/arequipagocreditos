@@ -12,6 +12,7 @@ import 'data/datasources/financiamiento_remote_datasource.dart';
 import 'data/datasources/puntuacion_remote_datasource.dart';
 import 'data/datasources/beneficios_comercial_remote_datasource.dart';
 import 'data/datasources/signature_remote_datasource.dart';
+import 'data/datasources/catalogos_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/cupones_public_repository_impl.dart';
@@ -19,6 +20,7 @@ import 'data/repositories/financiamiento_repository_impl.dart';
 import 'data/repositories/puntuacion_repository_impl.dart';
 import 'data/repositories/beneficios_comercial_repository_impl.dart';
 import 'data/repositories/signature_repository_impl.dart';
+import 'data/repositories/catalogos_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
@@ -28,6 +30,7 @@ import 'domain/repositories/financiamiento_repository.dart';
 import 'domain/repositories/puntuacion_repository.dart';
 import 'domain/repositories/beneficios_comercial_repository.dart';
 import 'domain/repositories/signature_repository.dart';
+import 'domain/repositories/catalogos_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/get_public_cupones_usecase.dart';
@@ -51,6 +54,7 @@ import 'presentation/providers/beneficios_provider.dart';
 import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/signature_provider.dart';
 import 'presentation/providers/financiamiento_servicio_provider.dart';
+import 'presentation/providers/catalogos_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -67,6 +71,7 @@ class DependencyInjection {
             updateVehicleDataUseCase: _getUpdateVehicleDataUseCase(),
             refreshUserDataUseCase: refreshUserDataUseCase(),
             preRegisterUseCase: _getPreRegisterUseCase(),
+            conductorPreRegisterUseCase: _getConductorPreRegisterUseCase(),
             deleteAccountUseCase: _getDeleteAccountUseCase(),
           ),
     ),
@@ -136,6 +141,11 @@ class DependencyInjection {
         beneficiosRepository: _beneficiosComercialRepository,
       ),
     ),
+    ChangeNotifierProvider<CatalogosProvider>(
+      create: (context) => CatalogosProvider(
+        catalogosRepository: _catalogosRepository,
+      ),
+    ),
   ];
 
   // Repositories
@@ -171,6 +181,9 @@ class DependencyInjection {
   static SignatureRepository get _signatureRepository =>
       SignatureRepositoryImpl(remoteDataSource: _signatureRemoteDataSource);
 
+  static CatalogosRepository get _catalogosRepository =>
+      CatalogosRepositoryImpl(remoteDataSource: _catalogosRemoteDataSource);
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -198,6 +211,9 @@ class DependencyInjection {
   static SignatureRemoteDataSource get _signatureRemoteDataSource =>
       SignatureRemoteDataSourceImpl(client: _httpClient);
 
+  static CatalogosRemoteDataSource get _catalogosRemoteDataSource =>
+      CatalogosRemoteDataSourceImpl(client: _httpClient);
+
   // Network
   static http.Client get _httpClient => http.Client();
 
@@ -221,6 +237,8 @@ class DependencyInjection {
       UpdateVehicleDataUseCase(_authRepository);
   static PreRegisterUseCase _getPreRegisterUseCase() =>
       PreRegisterUseCase(_authRepository);
+  static ConductorPreRegisterUseCase _getConductorPreRegisterUseCase() =>
+      ConductorPreRegisterUseCase(_authRepository);
   static DeleteAccountUseCase _getDeleteAccountUseCase() =>
       DeleteAccountUseCase(_authRepository);
 

@@ -20,6 +20,7 @@ abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> uploadProfilePicture(File imageFile);
   Future<Map<String, dynamic>> updateVehicleData(Map<String, dynamic> data);
   Future<Map<String, dynamic>> preRegister(Map<String, dynamic> data, Map<String, File> files);
+  Future<Map<String, dynamic>> conductorPreRegister(Map<String, dynamic> data, Map<String, File> files);
   Future<Map<String, dynamic>> deleteAccount();
 }
 
@@ -273,6 +274,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return jsonDecode(response.body);
     } catch (e) {
       throw ServerException('Error al realizar pre-registro: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> conductorPreRegister(Map<String, dynamic> data, Map<String, File> files) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conductorPreRegistroEndpoint}');
+      final request = http.MultipartRequest('POST', url);
+      data.forEach((key, value) => request.fields[key] = value.toString());
+      for (var entry in files.entries) {
+        request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value.path));
+      }
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
+    } catch (e) {
+      throw ServerException('Error al realizar pre-registro de conductor: $e');
     }
   }
 

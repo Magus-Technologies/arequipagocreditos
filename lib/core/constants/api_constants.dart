@@ -25,6 +25,12 @@ class ApiConstants {
   static const String updateDatosUsuarioEndpoint = '/app/update-datos-usuario';
   static const String perfilPasajeroEndpoint = '/app/pasajeros/{id}';
   static const String preRegistroEndpoint = '/app/pasajeros/pre-registro';
+  static const String conductorPreRegistroEndpoint = '/app/conductores/pre-registro';
+  static const String conductorEstadoEndpoint = '/app/conductores/{id}/estado';
+  static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';
+  static const String ubigeoProvinciasEndpoint = '/ubicaciones/provincias/{codigo}';
+  static const String ubigeoDistritosEndpoint = '/ubicaciones/distritos/{codigo}';
+  static const String plataformasEndpoint = '/app/plataformas';
   static const String deleteAccountEndpoint = '/app/conductor/eliminar-cuenta';
   static const String pagarCuotaEndpoint = '/app/pagar-cuota';
   static const String reporteCuotaEndpoint = '/app/reporte-cuota/{id}';
