@@ -260,38 +260,63 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  @override
-  Future<Map<String, dynamic>> preRegister(Map<String, dynamic> data, Map<String, File> files) async {
+  Future<Map<String, dynamic>> _sendPreRegistroMultipart(
+    String endpoint,
+    Map<String, dynamic> data,
+    Map<String, File> files,
+    String errorLabel,
+  ) async {
     try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.preRegistroEndpoint}');
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
       final request = http.MultipartRequest('POST', url);
       data.forEach((key, value) => request.fields[key] = value.toString());
       for (var entry in files.entries) {
         request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value.path));
       }
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 120));
       final response = await http.Response.fromStream(streamedResponse);
-      return jsonDecode(response.body);
+
+      Map<String, dynamic>? body;
+      try {
+        body = jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 429) {
+        throw const ValidationException('Demasiados intentos. Espera unos minutos e inténtalo de nuevo.');
+      }
+      if (response.statusCode == 422) {
+        throw ValidationException(body?['message']?.toString() ?? 'Datos inválidos');
+      }
+      if (body == null) {
+        throw ServerException('Error del servidor (HTTP ${response.statusCode}). Intenta nuevamente.');
+      }
+      return body;
     } catch (e) {
-      throw ServerException('Error al realizar pre-registro: $e');
+      if (e is AppException) rethrow;
+      throw ServerException('Error al realizar $errorLabel: $e');
     }
   }
 
   @override
-  Future<Map<String, dynamic>> conductorPreRegister(Map<String, dynamic> data, Map<String, File> files) async {
-    try {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conductorPreRegistroEndpoint}');
-      final request = http.MultipartRequest('POST', url);
-      data.forEach((key, value) => request.fields[key] = value.toString());
-      for (var entry in files.entries) {
-        request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value.path));
-      }
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      return jsonDecode(response.body);
-    } catch (e) {
-      throw ServerException('Error al realizar pre-registro de conductor: $e');
-    }
+  Future<Map<String, dynamic>> preRegister(Map<String, dynamic> data, Map<String, File> files) {
+    return _sendPreRegistroMultipart(
+      ApiConstants.preRegistroEndpoint,
+      data,
+      files,
+      'pre-registro',
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> conductorPreRegister(Map<String, dynamic> data, Map<String, File> files) {
+    return _sendPreRegistroMultipart(
+      ApiConstants.conductorPreRegistroEndpoint,
+      data,
+      files,
+      'pre-registro de conductor',
+    );
   }
 
   @override

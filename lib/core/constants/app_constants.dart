@@ -27,6 +27,7 @@ class AppConstants {
   
   // File Upload
   static const int maxImageSizeInBytes = 5 * 1024 * 1024; // 5MB
+  static const int maxPhotoSizeInBytes = 4 * 1024 * 1024; // 4MB
   static const List<String> allowedImageExtensions = ['jpg', 'jpeg', 'png'];
   
   // Puntaje Scale

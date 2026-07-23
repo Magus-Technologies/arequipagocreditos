@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/constants/app_constants.dart';
 import '../../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
@@ -95,6 +96,8 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         if (empty(_distritoController))       return 'Ingresa tu distrito de residencia';
         if (empty(_direccionController))      return 'Ingresa tu dirección exacta';
         if (empty(_googleMapsUrlController))  return 'Ingresa el link de Google Maps de tu dirección';
+        final mapsError = _validateGoogleMapsUrl();
+        if (mapsError != null) return mapsError;
         return null;
       case 3:
         if (empty(_emergenciaNombreController))    return 'Ingresa el nombre del contacto de emergencia';
@@ -107,6 +110,24 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         }
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
         return null;
+    }
+    return null;
+  }
+
+  String? _validateGoogleMapsUrl() {
+    final raw = _googleMapsUrlController.text.trim();
+    if (raw.isEmpty) return null;
+
+    final match = RegExp(r'https?://\S+').firstMatch(raw);
+    if (match != null && match.group(0) != raw) {
+      _googleMapsUrlController.text = match.group(0)!;
+    }
+
+    final uri = Uri.tryParse(_googleMapsUrlController.text.trim());
+    if (uri == null ||
+        !(uri.scheme == 'http' || uri.scheme == 'https') ||
+        uri.host.isEmpty) {
+      return 'El link de Google Maps no es válido. Abre Maps, comparte tu ubicación y pega el enlace.';
     }
     return null;
   }
@@ -167,10 +188,26 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     setState(() => _isPickingFile = true);
 
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1600,
+      );
       if (image != null) {
+        final file = File(image.path);
+        if (file.lengthSync() > AppConstants.maxPhotoSizeInBytes) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El archivo supera el tamaño máximo de 4 MB. Elige uno más liviano.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
-          if (type == 'perfil') _fotoPerfil = File(image.path);
+          if (type == 'perfil') _fotoPerfil = file;
         });
       }
     } finally {
@@ -207,8 +244,19 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
           }
           return;
         }
+        final file = File(path);
+        if (file.lengthSync() > AppConstants.maxImageSizeInBytes) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El archivo supera el tamaño máximo de 5 MB. Elige uno más liviano.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
-          final file = File(path);
           if (type == 'sustento') _docSustento = file;
           if (type == 'recibo') _docRecibo = file;
           if (type == 'boletas') _docBoletas = file;

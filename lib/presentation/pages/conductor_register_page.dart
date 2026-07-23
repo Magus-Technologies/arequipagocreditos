@@ -138,6 +138,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         if (_provinciaCodigo == null)    return 'Selecciona tu provincia';
         if (_distritoCodigo == null)     return 'Selecciona tu distrito';
         if (empty(_direccionController)) return 'Ingresa tu dirección exacta';
+        final mapsError = _validateGoogleMapsUrl();
+        if (mapsError != null) return mapsError;
         return null;
       case 4:
         if (!empty(_placaController)) {
@@ -161,6 +163,24 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         if (_modalidadPago == null)       return 'Selecciona la modalidad de pago de inscripción';
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
         return null;
+    }
+    return null;
+  }
+
+  String? _validateGoogleMapsUrl() {
+    final raw = _googleMapsUrlController.text.trim();
+    if (raw.isEmpty) return null;
+
+    final match = RegExp(r'https?://\S+').firstMatch(raw);
+    if (match != null && match.group(0) != raw) {
+      _googleMapsUrlController.text = match.group(0)!;
+    }
+
+    final uri = Uri.tryParse(_googleMapsUrlController.text.trim());
+    if (uri == null ||
+        !(uri.scheme == 'http' || uri.scheme == 'https') ||
+        uri.host.isEmpty) {
+      return 'El link de Google Maps no es válido. Abre Maps, comparte tu ubicación y pega el enlace.';
     }
     return null;
   }
@@ -222,10 +242,26 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     setState(() => _isPickingFile = true);
 
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1600,
+      );
       if (image != null) {
+        final file = File(image.path);
+        if (file.lengthSync() > AppConstants.maxPhotoSizeInBytes) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El archivo supera el tamaño máximo de 4 MB. Elige uno más liviano.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
-          if (type == 'perfil') _fotoPerfil = File(image.path);
+          if (type == 'perfil') _fotoPerfil = file;
         });
       }
     } finally {
@@ -258,8 +294,19 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
           }
           return;
         }
+        final file = File(path);
+        if (file.lengthSync() > AppConstants.maxImageSizeInBytes) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El archivo supera el tamaño máximo de 5 MB. Elige uno más liviano.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
         setState(() {
-          final file = File(path);
           if (type == 'dni_anverso') _docIdentidadAnverso = file;
           if (type == 'dni_reverso') _docIdentidadReverso = file;
           if (type == 'licencia_anverso') _licenciaAnverso = file;
