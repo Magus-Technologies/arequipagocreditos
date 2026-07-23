@@ -1,4 +1,4 @@
-import 'package:arequipagocreditos/presentation/pages/auth_bottom_nav.dart';
+import 'package:arequipagocreditos/presentation/pages/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -389,7 +389,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const AuthBottomNav(),
+                        builder: (context) => const WelcomePage(),
                       ),
                       (route) => false,
                     );
@@ -546,7 +546,7 @@ class _PerfilPageState extends State<PerfilPage> {
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const AuthBottomNav()),
+      MaterialPageRoute(builder: (context) => const WelcomePage()),
       (route) => false,
     );
   }
