@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/api_constants.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../data/models/taller_model.dart';
 import '../providers/financiamiento_servicio_provider.dart';
@@ -403,11 +404,39 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  taller.nombreComercial,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: InkWell(
+                  onTap: () => _showTallerInfoModal(taller),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    children: [
+                      _buildTallerLogo(taller, size: 40, radius: 10, iconSize: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              taller.nombreComercial,
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.info_outline, size: 12, color: Colors.black45),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Ver más',
+                                  style: TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty) ...[
@@ -478,6 +507,165 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
             const SizedBox(height: 10),
             _buildHorarioSection(taller.horarioAtencion!),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTallerLogo(TallerModel taller, {required double size, required double radius, required double iconSize}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha((0.4 * 255).toInt()),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: taller.logo != null && taller.logo!.isNotEmpty
+          ? Image.network(
+              '${ApiConstants.imagenesBaseUrl}/${taller.logo!}',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  Icon(Icons.home_repair_service, color: const Color(0xFF3B82F6), size: iconSize),
+            )
+          : Icon(Icons.home_repair_service, color: const Color(0xFF3B82F6), size: iconSize),
+    );
+  }
+
+  void _showTallerInfoModal(TallerModel taller) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).viewPadding.bottom),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(child: _buildTallerLogo(taller, size: 80, radius: 16, iconSize: 40)),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      taller.nombreComercial,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (_localTotal > 0) ...[
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, size: 18, color: Color(0xFFE65100)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_localPromedio.toStringAsFixed(1)} ($_localTotal calificaciones)',
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (taller.descripcion != null && taller.descripcion!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Text('Descripción', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(
+                      taller.descripcion!,
+                      style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+                    ),
+                  ],
+                  if (taller.direccion?.isNotEmpty == true ||
+                      taller.telefono?.isNotEmpty == true ||
+                      taller.whatsapp?.isNotEmpty == true ||
+                      taller.email?.isNotEmpty == true) ...[
+                    const SizedBox(height: 20),
+                    const Text('Información', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    if (taller.direccion?.isNotEmpty == true)
+                      _buildTallerInfoRow(Icons.location_on_outlined, 'Dirección', taller.direccion!),
+                    if (taller.telefono?.isNotEmpty == true)
+                      _buildTallerInfoRow(Icons.phone_outlined, 'Teléfono', taller.telefono!),
+                    if (taller.whatsapp?.isNotEmpty == true)
+                      _buildTallerInfoRow(Icons.chat_outlined, 'WhatsApp', taller.whatsapp!),
+                    if (taller.email?.isNotEmpty == true)
+                      _buildTallerInfoRow(Icons.mail_outline, 'Correo', taller.email!),
+                  ],
+                  if (taller.horarioAtencion != null && taller.horarioAtencion!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Text('Horario de atención', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ...taller.horarioAtencion!.entries.map(
+                      (e) => _buildTallerInfoRow(Icons.schedule, e.key, e.value.toString()),
+                    ),
+                  ],
+                  if (taller.notaImportante?.isNotEmpty == true) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline, size: 18, color: Colors.blue.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              taller.notaImportante!,
+                              style: TextStyle(fontSize: 13, color: Colors.blue.shade800),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTallerInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.grey.shade600),
+          const SizedBox(width: 10),
+          Text('$label: ', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(value, style: TextStyle(fontSize: 14, color: Colors.grey.shade800)),
+          ),
         ],
       ),
     );
