@@ -94,6 +94,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         if (empty(_ingresoMensualController)) return 'Ingresa tu ingreso neto aproximado';
         if (empty(_distritoController))       return 'Ingresa tu distrito de residencia';
         if (empty(_direccionController))      return 'Ingresa tu dirección exacta';
+        if (empty(_googleMapsUrlController))  return 'Ingresa el link de Google Maps de tu dirección';
         return null;
       case 3:
         if (empty(_emergenciaNombreController))    return 'Ingresa el nombre del contacto de emergencia';
@@ -328,7 +329,17 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
                 ),
               ),
             ),
-            _buildBottomButtonsFooter(),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: animation,
+                alignment: Alignment.topCenter,
+                child: child,
+              ),
+              child: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? const SizedBox.shrink()
+                  : _buildBottomButtonsFooter(),
+            ),
           ],
         ),
       ),
@@ -361,10 +372,14 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   }
 
   Widget _buildStepperHeader() {
+    final bool keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 10, 40, 30),
+      padding: keyboardOpen
+          ? const EdgeInsets.fromLTRB(40, 0, 40, 12)
+          : const EdgeInsets.fromLTRB(40, 10, 40, 30),
       child: Column(
         children: [
+          if (!keyboardOpen)
           Row(
             children: List.generate(_totalSteps, (index) {
               int stepNum = index + 1;
@@ -404,7 +419,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
               );
             }),
           ),
-          const SizedBox(height: 16),
+          if (!keyboardOpen) const SizedBox(height: 16),
           Text(
             _getStepSubtitle(),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
@@ -487,7 +502,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
               keyboardType: TextInputType.url,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
-                labelText: 'Link Google Maps (Opcional)',
+                labelText: 'Link Google Maps',
                 labelStyle: const TextStyle(color: Colors.black45),
                 prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.black87, size: 22),
                 suffixIcon: IconButton(
