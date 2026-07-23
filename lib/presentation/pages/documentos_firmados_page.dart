@@ -5,8 +5,8 @@ import '../providers/financiamiento_servicio_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/constants/api_constants.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../widgets/image_full_screen_view.dart';
+import 'pdf_viewer_page.dart';
 
 class DocumentosFirmadosPage extends StatefulWidget {
   const DocumentosFirmadosPage({super.key});
@@ -309,6 +309,14 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
     final Color accentColor = isFinanciamiento ? Colors.blue.shade600 : Colors.green.shade600;
     final IconData icon = isFinanciamiento ? Icons.description : Icons.person_add;
 
+    final String? rawPdfUrl = doc.contratoUrl ??
+        (doc.tipo == 'conductor'
+            ? context.read<AuthProvider>().currentUser?.contratoAfiliacionUrl
+            : null);
+    final String? pdfUrl = (rawPdfUrl != null && rawPdfUrl.isNotEmpty)
+        ? ApiConstants.normalizeUrl(rawPdfUrl)
+        : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -336,9 +344,39 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
             ),
             child: Icon(icon, color: accentColor, size: 22),
           ),
-          title: Text(
-            doc.nombreDocumento,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  doc.nombreDocumento,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+              if (pdfUrl != null)
+                Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.picture_as_pdf, size: 14, color: Colors.red.shade600),
+                      const SizedBox(width: 3),
+                      Text(
+                        'PDF',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 2),
@@ -389,11 +427,21 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
                           ),
                         ),
                       ),
-                      if (doc.contratoUrl != null) ...[
+                      if (pdfUrl != null) ...[
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => _openUrl(ApiConstants.normalizeUrl(doc.contratoUrl)),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PdfViewerPage(
+                                    title: doc.nombreDocumento,
+                                    pdfUrl: pdfUrl,
+                                  ),
+                                ),
+                              );
+                            },
                             icon: const Icon(Icons.picture_as_pdf, size: 16),
                             label: const Text('Ver PDF'),
                             style: ElevatedButton.styleFrom(
@@ -439,16 +487,4 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
     );
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo abrir la URL: $url')),
-        );
-      }
-    }
-  }
 }
