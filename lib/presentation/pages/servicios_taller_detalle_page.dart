@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../data/models/taller_model.dart';
 import '../providers/financiamiento_servicio_provider.dart';
 import '../providers/auth_provider.dart';
@@ -337,7 +338,7 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
                                         final servicio = servicios[index];
                                         return BeneficioServicioCard(
                                           servicio: servicio,
-                                          onTap: () {
+                                          onTap: () async {
                                             final alertas = servicio.clienteAlertas;
                                             if (alertas != null && !alertas.puedeSolicitar) {
                                               ScaffoldMessenger.of(context).showSnackBar(
@@ -350,6 +351,9 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
                                               );
                                               return;
                                             }
+                                            final puedeContinuar =
+                                                await ContratoPendienteGate.ensureSinContratoPendiente(context);
+                                            if (!puedeContinuar || !context.mounted) return;
                                             provider.selectService(servicio);
                                             Navigator.push(
                                               context,

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../components/components.dart';
 import '../components/main_modules.dart';
 import '../../theme/app_theme.dart';
+import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
 
@@ -16,6 +17,16 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ContratoPendienteGate.checkOnDashboard(context);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
