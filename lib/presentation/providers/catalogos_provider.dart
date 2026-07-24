@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../data/models/catalogo_models.dart';
 import '../../data/models/conductor_estado_model.dart';
+import '../../data/models/izipay_models.dart';
 import '../../domain/repositories/catalogos_repository.dart';
 
 class CatalogosProvider extends ChangeNotifier {
@@ -103,6 +105,32 @@ class CatalogosProvider extends ChangeNotifier {
     return result.fold(
       (failure) => throw Exception(failure.message),
       (estado) => estado,
+    );
+  }
+
+  Future<IzipayInfoModel> fetchIzipayInfo(int clienteId) async {
+    final result = await catalogosRepository.getIzipayInfo(clienteId);
+    return result.fold(
+      (failure) => throw Exception(failure.message),
+      (info) => info,
+    );
+  }
+
+  Future<Map<String, dynamic>> subirCapturaIzipay({
+    required int clienteConductorId,
+    required String nroDocumento,
+    required File captura,
+    String? numeroOperacion,
+  }) async {
+    final result = await catalogosRepository.subirCapturaIzipay(
+      clienteConductorId: clienteConductorId,
+      nroDocumento: nroDocumento,
+      captura: captura,
+      numeroOperacion: numeroOperacion,
+    );
+    return result.fold(
+      (failure) => throw Exception(failure.message),
+      (response) => response,
     );
   }
 

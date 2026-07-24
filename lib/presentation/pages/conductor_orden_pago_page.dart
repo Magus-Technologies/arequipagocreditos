@@ -174,6 +174,36 @@ class ConductorOrdenPagoPage extends StatelessWidget {
             ),
           ),
         ],
+        if (pago?.tipoPago == 'contado' && pago?.capturaIzipay != null) ...[
+          const SizedBox(height: 16),
+          _buildCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Captura IziPay',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    _buildCapturaBadge(pago!.capturaIzipay!),
+                  ],
+                ),
+                if (pago.capturaIzipay!.estado == 'rechazado' &&
+                    (pago.capturaIzipay!.motivoRechazo?.isNotEmpty ?? false))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Motivo: ${pago.capturaIzipay!.motivoRechazo}',
+                      style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -222,36 +252,98 @@ class ConductorOrdenPagoPage extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cuota ${cuota.numero} — S/ ${cuota.monto.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cuota ${cuota.numero} — S/ ${cuota.monto.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    if (cuota.fechaVencimiento != null)
+                      Text(
+                        'Vence: ${cuota.fechaVencimiento}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                  ],
                 ),
-                if (cuota.fechaVencimiento != null)
-                  Text(
-                    'Vence: ${cuota.fechaVencimiento}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  cuota.estado,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: fg),
+                ),
+              ),
+            ],
+          ),
+          if (cuota.capturaIzipay != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.qr_code_2, size: 14, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(
+                  'IziPay:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(width: 6),
+                _buildCapturaBadge(cuota.capturaIzipay!),
               ],
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              cuota.estado,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: fg),
-            ),
-          ),
+            if (cuota.capturaIzipay!.estado == 'rechazado' &&
+                (cuota.capturaIzipay!.motivoRechazo?.isNotEmpty ?? false))
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Motivo: ${cuota.capturaIzipay!.motivoRechazo}',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+                ),
+              ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildCapturaBadge(CapturaIzipayModel captura) {
+    final Color bg;
+    final Color fg;
+    final String texto;
+    switch (captura.estado) {
+      case 'aprobado':
+        bg = Colors.green.shade50;
+        fg = Colors.green.shade800;
+        texto = 'Aprobada';
+        break;
+      case 'rechazado':
+        bg = Colors.red.shade50;
+        fg = Colors.red.shade700;
+        texto = 'Rechazada';
+        break;
+      default:
+        bg = Colors.orange.shade50;
+        fg = Colors.orange.shade800;
+        texto = 'En validación';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: fg),
       ),
     );
   }

@@ -27,6 +27,8 @@ class ApiConstants {
   static const String preRegistroEndpoint = '/app/pasajeros/pre-registro';
   static const String conductorPreRegistroEndpoint = '/app/conductores/pre-registro';
   static const String conductorEstadoEndpoint = '/app/conductores/{id}/estado';
+  static const String izipayInfoEndpoint = '/app/inscripcion/izipay-info/{id}';
+  static const String izipayCapturaEndpoint = '/app/inscripcion/izipay-captura';
   static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';
   static const String ubigeoProvinciasEndpoint = '/ubicaciones/provincias/{codigo}';
   static const String ubigeoDistritosEndpoint = '/ubicaciones/distritos/{codigo}';

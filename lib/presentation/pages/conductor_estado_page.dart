@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../data/models/conductor_estado_model.dart';
 import '../../theme/app_theme.dart';
 import '../providers/catalogos_provider.dart';
+import 'conductor_izipay_page.dart';
 import 'conductor_orden_pago_page.dart';
 
 class ConductorEstadoPage extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
       subtitulo: 'Paga de forma rápida y segura escaneando el código QR con IziPay.',
       logoAsset: 'images/logo_izipay.webp',
       esSvg: false,
-      disponible: false,
+      disponible: true,
     ),
   ];
 
@@ -414,7 +415,9 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ConductorOrdenPagoPage(estado: estado),
+            builder: (context) => metodo.id == 'izipay_qr'
+                ? ConductorIzipayPage(estado: estado)
+                : ConductorOrdenPagoPage(estado: estado),
           ),
         );
       },
