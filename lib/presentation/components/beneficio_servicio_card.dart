@@ -103,31 +103,51 @@ class BeneficioServicioCard extends StatelessWidget {
         const SizedBox(width: 16),
         // Información del servicio
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                servicio.nombre,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+          child: GestureDetector(
+            onTap: () => _showDetailsModal(context),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  servicio.nombre,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                servicio.descripcion,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  height: 1.3,
+                const SizedBox(height: 8),
+                Text(
+                  servicio.descripcion,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    height: 1.3,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.info_outline, size: 12, color: Colors.black45),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ver más',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -264,7 +284,7 @@ class BeneficioServicioCard extends StatelessWidget {
 
   void _showImageFullScreen(BuildContext context) {
     if (servicio.imagen == null || servicio.imagen!.isEmpty) return;
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ImageFullScreenView(
@@ -272,6 +292,203 @@ class BeneficioServicioCard extends StatelessWidget {
           heroTag: 'servicio_image_${servicio.id}',
           title: servicio.nombre,
         ),
+      ),
+    );
+  }
+
+  double _calcularTotal() {
+    return (servicio.cuotaMensual * servicio.cantidadCuotas) +
+        servicio.cuotaInicial;
+  }
+
+  void _showDetailsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              20 + MediaQuery.of(context).viewPadding.bottom,
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    servicio.nombre,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (servicio.imagen != null && servicio.imagen!.isNotEmpty) ...[
+                    GestureDetector(
+                      onTap: () => _showImageFullScreen(context),
+                      child: Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[200],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              Image.network(
+                                '${ApiConstants.imagenesBaseUrl}/${servicio.imagen!}',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Icon(
+                                      Icons.home_repair_service,
+                                      color: AppTheme.primary,
+                                      size: 48,
+                                    ),
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black
+                                        .withAlpha((0.5 * 255).toInt()),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.fullscreen,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  const Text(
+                    'Descripción',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    servicio.descripcion,
+                    style: const TextStyle(fontSize: 16, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Detalles del Financiamiento',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDetailRow(
+                    'Cuota Inicial:',
+                    '${servicio.moneda} ${servicio.cuotaInicial.toStringAsFixed(2)}',
+                  ),
+                  _buildDetailRow(
+                    'Cantidad de Cuotas:',
+                    '${servicio.cantidadCuotas}',
+                  ),
+                  _buildDetailRow(
+                    'Cuota ${_formatFrequency(servicio.frecuenciaPago)}:',
+                    '${servicio.moneda} ${servicio.cuotaMensual.toStringAsFixed(2)}',
+                  ),
+                  _buildDetailRow(
+                    'Total del Plan:',
+                    '${servicio.moneda} ${_calcularTotal().toStringAsFixed(2)}',
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: servicio.disponible
+                          ? () {
+                              Navigator.pop(sheetContext);
+                              onTap();
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: servicio.disponible
+                            ? AppTheme.btnColor
+                            : Colors.grey,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: servicio.disponible
+                          ? const Icon(Icons.shopping_cart_outlined, size: 20)
+                          : null,
+                      label: Text(
+                        servicio.disponible ? 'ADQUIRIR' : 'No Disponible',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.btnColor,
+            ),
+          ),
+        ],
       ),
     );
   }
