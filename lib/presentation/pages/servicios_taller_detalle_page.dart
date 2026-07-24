@@ -617,9 +617,18 @@ class _ServiciosTallerDetallePageState extends State<ServiciosTallerDetallePage>
                     const SizedBox(height: 20),
                     const Text('Horario de atención', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    ...taller.horarioAtencion!.entries.map(
-                      (e) => _buildTallerInfoRow(Icons.schedule, e.key, e.value.toString()),
-                    ),
+                    ..._diasOrden.map((dia) {
+                      final diaData = taller.horarioAtencion![dia] as Map<String, dynamic>?;
+                      if (diaData == null) return const SizedBox.shrink();
+                      final cerrado = diaData['cerrado'] == true;
+                      return _buildTallerInfoRow(
+                        Icons.schedule,
+                        _diasLabels[dia] ?? dia,
+                        cerrado
+                            ? 'Cerrado'
+                            : '${diaData['apertura'] ?? ''} – ${diaData['cierre'] ?? ''}',
+                      );
+                    }),
                   ],
                   if (taller.notaImportante?.isNotEmpty == true) ...[
                     const SizedBox(height: 16),
