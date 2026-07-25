@@ -323,7 +323,7 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                                     await notifProvider.markAllAsRead();
                                     setModalState(() => isMarkingAll = false);
                                   },
-                                  child: const Text('Limpiar todo'),
+                                  child: const Text('Marcar todo como leído'),
                                 ),
                       ],
                     ),
