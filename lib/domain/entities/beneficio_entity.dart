@@ -47,6 +47,8 @@ class BeneficioComercialEntity {
   final String nombre;
   final int planFinanciamientoId;
   final int? categoria;
+  /// Categoria heredada del grupo de financiamiento (la que ve y filtra el cliente).
+  final String? categoriaNombre;
   final String descripcion;
   final double cuotaInicial;
   final int cantidadCuotas;
@@ -65,6 +67,7 @@ class BeneficioComercialEntity {
     required this.nombre,
     required this.planFinanciamientoId,
     this.categoria,
+    this.categoriaNombre,
     required this.descripcion,
     required this.cuotaInicial,
     required this.cantidadCuotas,

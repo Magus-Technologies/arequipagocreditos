@@ -18,12 +18,24 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _filtroCategoria = 'Todos';
-  final List<String> _categorias = [
-    'Todos',
-    'Vehículos',
-    'Celulares',
-    'Otros',
-  ];
+
+  /// Categorias reales presentes en los beneficios cargados. Se arman solas,
+  /// asi que si el negocio crea una categoria nueva aparece sin publicar app.
+  List<String> _categoriasDisponibles(List<BeneficioComercialEntity> beneficios) {
+    final nombres = beneficios
+        .map((b) => b.categoriaNombre)
+        .whereType<String>()
+        .where((n) => n.trim().isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final haySinCategoria = beneficios.any(
+      (b) => b.categoriaNombre == null || b.categoriaNombre!.trim().isEmpty,
+    );
+
+    return ['Todos', ...nombres, if (haySinCategoria) 'Otros'];
+  }
 
   @override
   void initState() {
@@ -55,8 +67,14 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
     if (categoria == 'Todos') {
       return beneficios;
     }
-    // Aquí puedes implementar la lógica de filtrado específica según tus categorías
-    return beneficios;
+
+    if (categoria == 'Otros') {
+      return beneficios
+          .where((b) => b.categoriaNombre == null || b.categoriaNombre!.trim().isEmpty)
+          .toList();
+    }
+
+    return beneficios.where((b) => b.categoriaNombre == categoria).toList();
   }
 
   @override
@@ -64,7 +82,9 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
     return Consumer<BeneficiosProvider>(
       builder: (context, provider, child) {
         final beneficios = provider.searchBeneficios(_searchQuery);
-        final beneficiosFiltrados = _filtrarBeneficiosPorCategoria(beneficios, _filtroCategoria);
+        final categorias = _categoriasDisponibles(beneficios);
+        final filtroActivo = categorias.contains(_filtroCategoria) ? _filtroCategoria : 'Todos';
+        final beneficiosFiltrados = _filtrarBeneficiosPorCategoria(beneficios, filtroActivo);
         
         return Scaffold(
           backgroundColor: Colors.white,
@@ -111,8 +131,8 @@ class _BeneficiosPageState extends State<BeneficiosPage> {
                             },
                           ),
                           BeneficiosCategoryFilter(
-                            filtroCategoria: _filtroCategoria,
-                            categorias: _categorias,
+                            filtroCategoria: filtroActivo,
+                            categorias: categorias,
                             onCategoryChanged: (categoria) {
                               setState(() {
                                 _filtroCategoria = categoria;
