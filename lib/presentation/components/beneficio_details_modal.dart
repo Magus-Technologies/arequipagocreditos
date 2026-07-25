@@ -40,6 +40,10 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
   bool _cargandoDetalle = true;
   bool _procesando = false;
 
+  /// Motivo por el que el cliente no puede solicitar. Se muestra DENTRO del
+  /// modal: un SnackBar quedaria tapado por el propio modal.
+  String? _motivoBloqueo;
+
   BeneficioComercialEntity get beneficio => widget.beneficio;
 
   @override
@@ -63,7 +67,41 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
       _cargandoDetalle = false;
       final variantes = detalle?.variantesDisponibles ?? const <VarianteEntity>[];
       if (variantes.length == 1) _varianteElegida = variantes.first;
+
+      // Si el backend ya dijo que no puede solicitar, se muestra el motivo
+      // apenas se abre el modal en vez de esperar a que toque el boton.
+      final alertas = detalle?.clienteAlertas;
+      if (alertas != null && !alertas.puedeSolicitar) {
+        _motivoBloqueo = alertas.motivoPrincipal ??
+            'No puedes adquirir este beneficio en este momento.';
+      }
     });
+  }
+
+  Widget _buildMotivoBloqueo(String motivo) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 20, color: Colors.red.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              motivo,
+              style: TextStyle(fontSize: 13, color: Colors.red.shade900, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// El beneficio se puede solicitar dentro de la app solo si tiene el
@@ -389,11 +427,14 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
     if (!_solicitudEnAppDisponible) return _buildWhatsappButton(context);
 
     final bool faltaVariante = _variantes.isNotEmpty && _varianteElegida == null;
-    final bool habilitado = beneficio.disponible && !faltaVariante && !_procesando;
+    final bool bloqueado = _motivoBloqueo != null;
+    final bool habilitado =
+        beneficio.disponible && !faltaVariante && !bloqueado && !_procesando;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_motivoBloqueo != null) _buildMotivoBloqueo(_motivoBloqueo!),
         if (faltaVariante)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -437,14 +478,10 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
 
     final alertas = detalle.clienteAlertas;
     if (alertas != null && !alertas.puedeSolicitar) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(alertas.motivoPrincipal ?? 'No puedes adquirir este beneficio en este momento.'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      setState(() {
+        _motivoBloqueo = alertas.motivoPrincipal ??
+            'No puedes adquirir este beneficio en este momento.';
+      });
       return;
     }
 
