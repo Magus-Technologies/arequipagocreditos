@@ -39,6 +39,65 @@ class ClienteAlertasModel extends ClienteAlertasEntity {
   }
 }
 
+class VarianteModel extends VarianteEntity {
+  const VarianteModel({
+    required super.varianteId,
+    required super.nombre,
+    super.familia,
+    super.certificado,
+    super.montoTotal,
+    super.montoCuota,
+    super.cantidadCuotas,
+    super.cuotaInicial,
+    super.porcentajeInicial,
+    super.montoInscripcion,
+    super.tasaInteres,
+    super.frecuenciaPagoId,
+    super.monedaId,
+    super.monedaSimbolo,
+    super.monedaInicialId,
+    super.monedaInicialSimbolo,
+  });
+
+  factory VarianteModel.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value.toString()) ?? 0.0;
+    }
+
+    int toInt(dynamic value, [int fallback = 0]) {
+      if (value == null) return fallback;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value.toString()) ?? fallback;
+    }
+
+    return VarianteModel(
+      varianteId: toInt(json['variante_id']),
+      nombre: json['nombre']?.toString() ?? '',
+      familia: json['familia']?.toString(),
+      certificado: toDouble(json['certificado']),
+      montoTotal: toDouble(json['monto_total']),
+      montoCuota: toDouble(json['monto_cuota']),
+      cantidadCuotas: toInt(json['cantidad_cuotas']),
+      cuotaInicial: toDouble(json['cuota_inicial']),
+      porcentajeInicial: json['porcentaje_inicial'] != null
+          ? toDouble(json['porcentaje_inicial'])
+          : null,
+      montoInscripcion: toDouble(json['monto_inscripcion']),
+      tasaInteres: toDouble(json['tasa_interes']),
+      frecuenciaPagoId: json['frecuencia_pago_id'] != null
+          ? toInt(json['frecuencia_pago_id'])
+          : null,
+      monedaId: toInt(json['moneda_id'], 1),
+      monedaSimbolo: json['moneda_simbolo']?.toString() ?? 'S/.',
+      monedaInicialId: toInt(json['moneda_inicial_id'], 1),
+      monedaInicialSimbolo: json['moneda_inicial_simbolo']?.toString() ?? 'S/.',
+    );
+  }
+}
+
 class BeneficioServicioModel extends BeneficioServicioEntity {
   BeneficioServicioModel({
     required super.id,
@@ -67,6 +126,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.visiblePara,
     super.clienteAlertas,
     super.notaImportante,
+    super.variantesDisponibles,
   });
 
   factory BeneficioServicioModel.fromJson(Map<String, dynamic> json) {
@@ -127,7 +187,16 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
           ? ClienteAlertasModel.fromJson(json['cliente_alertas'] as Map<String, dynamic>)
           : null,
       notaImportante: json['nota_importante']?.toString(),
+      variantesDisponibles: _parseVariantes(json['variantes_disponibles']),
     );
+  }
+
+  static List<VarianteEntity> _parseVariantes(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((e) => VarianteModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   static List<String>? _parseVisiblePara(dynamic value) {

@@ -36,6 +36,14 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   BeneficioServicioEntity? _selectedService;
   BeneficioServicioEntity? get selectedService => _selectedService;
 
+  VarianteEntity? _selectedVariante;
+  VarianteEntity? get selectedVariante => _selectedVariante;
+
+  /// true cuando lo seleccionado es un beneficio comercial (no un servicio de
+  /// taller). Los beneficios solo se adquieren financiados.
+  bool _esBeneficioComercial = false;
+  bool get esBeneficioComercial => _esBeneficioComercial;
+
   TallerModel? _selectedTaller;
   TallerModel? get selectedTaller => _selectedTaller;
 
@@ -165,7 +173,40 @@ class FinanciamientoServicioProvider with ChangeNotifier {
 
   void selectService(BeneficioServicioEntity service) {
     _selectedService = service;
+    _selectedVariante = null;
+    _esBeneficioComercial = false;
     notifyListeners();
+  }
+
+  /// Selecciona un beneficio comercial (no viene de un taller) junto con la
+  /// variante elegida por el cliente, si el beneficio ofrece variantes.
+  void selectBeneficioComercial(
+    BeneficioServicioEntity beneficio, {
+    VarianteEntity? variante,
+  }) {
+    _selectedService = beneficio;
+    _selectedVariante = variante;
+    _selectedTaller = null;
+    _esBeneficioComercial = true;
+    notifyListeners();
+  }
+
+  Future<BeneficioServicioEntity?> loadBeneficioDetalle({
+    required int beneficioId,
+    int? clienteConductorId,
+  }) async {
+    final result = await beneficiosRepository.getBeneficioDetalle(
+      beneficioId: beneficioId,
+      clienteConductorId: clienteConductorId,
+    );
+
+    return result.fold(
+      (failure) {
+        _error = failure.message;
+        return null;
+      },
+      (beneficio) => beneficio,
+    );
   }
 
   void setSelectedTaller(TallerModel taller) {
@@ -240,6 +281,11 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     // Contrato/firma
     String? firmaBase64,
     String? nroDocumento,
+    // Variante elegida por el cliente (beneficios con variantes).
+    // El backend deriva de ella todos los importes; lo que se envie aca es
+    // solo referencial.
+    int? varianteId,
+    int? monedaId,
   }) async {
     _isLoading = true;
     _error = null;
@@ -252,8 +298,10 @@ class FinanciamientoServicioProvider with ChangeNotifier {
       'monto_total': montoTotal,
       'cuota_inicial': cuotaInicial,
       'metodo_pago_inicial': metodoPago,
-      'moneda_id': 1,
+      'moneda_id': monedaId ?? 1,
     };
+
+    if (varianteId != null) data['variante_id'] = varianteId;
 
     if (modalidadPago != null) data['modalidad_pago'] = modalidadPago;
 

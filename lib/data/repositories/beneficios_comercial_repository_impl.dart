@@ -32,6 +32,19 @@ class BeneficiosComercialRepositoryImpl implements BeneficiosComercialRepository
   }
 
   @override
+  Future<Either<Failure, BeneficioServicioEntity>> getBeneficioDetalle({required int beneficioId, int? clienteConductorId}) async {
+    try {
+      final beneficio = await remoteDataSource.getBeneficioDetalle(
+        beneficioId: beneficioId,
+        clienteConductorId: clienteConductorId,
+      );
+      return Either.right(beneficio);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<TallerModel>>> getTalleres() async {
     try {
       final talleres = await remoteDataSource.getTalleres();

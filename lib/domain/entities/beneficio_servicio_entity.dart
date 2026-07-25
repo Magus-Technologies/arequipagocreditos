@@ -28,6 +28,46 @@ class ClienteAlertasEntity {
   });
 }
 
+/// Variante seleccionable de un beneficio (ej. certificado 13k / 15k / 17k).
+/// Trae su propio set financiero completo, calculado en el backend.
+class VarianteEntity {
+  final int varianteId;
+  final String nombre;
+  final String? familia;
+  final double certificado;
+  final double montoTotal;
+  final double montoCuota;
+  final int cantidadCuotas;
+  final double cuotaInicial;
+  final double? porcentajeInicial;
+  final double montoInscripcion;
+  final double tasaInteres;
+  final int? frecuenciaPagoId;
+  final int monedaId;
+  final String monedaSimbolo;
+  final int monedaInicialId;
+  final String monedaInicialSimbolo;
+
+  const VarianteEntity({
+    required this.varianteId,
+    required this.nombre,
+    this.familia,
+    this.certificado = 0.0,
+    this.montoTotal = 0.0,
+    this.montoCuota = 0.0,
+    this.cantidadCuotas = 0,
+    this.cuotaInicial = 0.0,
+    this.porcentajeInicial,
+    this.montoInscripcion = 0.0,
+    this.tasaInteres = 0.0,
+    this.frecuenciaPagoId,
+    this.monedaId = 1,
+    this.monedaSimbolo = 'S/.',
+    this.monedaInicialId = 1,
+    this.monedaInicialSimbolo = 'S/.',
+  });
+}
+
 class BeneficioServicioEntity {
   final int id;
   final String nombre;
@@ -56,6 +96,7 @@ class BeneficioServicioEntity {
   final List<String>? visiblePara;
   final ClienteAlertasEntity? clienteAlertas;
   final String? notaImportante;
+  final List<VarianteEntity> variantesDisponibles;
 
   BeneficioServicioEntity({
     required this.id,
@@ -84,6 +125,7 @@ class BeneficioServicioEntity {
     this.visiblePara,
     this.clienteAlertas,
     this.notaImportante,
+    this.variantesDisponibles = const [],
   });
 
   /// Retorna true si este servicio es visible para la audiencia dada.

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/financiamiento_servicio_provider.dart';
 import '../providers/auth_provider.dart';
+import '../../domain/entities/beneficio_servicio_entity.dart';
 import '../../theme/app_theme.dart';
 import 'signature/firma_documento_page.dart';
 import 'financiamiento_detalle_page.dart';
@@ -140,7 +141,16 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     double montoAFinanciar = 0;
     double montoCuota = 0;
 
-    if (modoCalculo == 'fijo' && detalle != null) {
+    // Con variante elegida, los importes salen de la variante (el backend los
+    // vuelve a derivar al crear el financiamiento).
+    final variante = provider.selectedVariante;
+    if (variante != null) {
+      precio = variante.montoTotal;
+      cuotaInicial = variante.cuotaInicial;
+      montoAFinanciar = variante.montoTotal - variante.cuotaInicial;
+      montoCuota = variante.montoCuota;
+      _selectedCuotas = variante.cantidadCuotas;
+    } else if (modoCalculo == 'fijo' && detalle != null) {
       cuotaInicial = servicio.cuotaInicial;
       montoAFinanciar = precio - cuotaInicial;
       montoCuota = servicio.cuotaMensual;
@@ -188,13 +198,17 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             ),
             const SizedBox(height: 12),
 
-            if (servicio.tipoPago == 3) ...[
+            // Los beneficios comerciales solo se adquieren financiados, asi que
+            // no se muestra el selector contado/financiado.
+            if (servicio.tipoPago == 3 && !provider.esBeneficioComercial) ...[
               _buildPaymentTypeSelector(precio),
               const SizedBox(height: 24),
             ],
 
             if (_isFinanciado) ...[
-              if (modoCalculo == 'fijo' && detalle != null) ...[
+              if (variante != null) ...[
+                _buildVarianteResumen(variante, context),
+              ] else if (modoCalculo == 'fijo' && detalle != null) ...[
                 _buildPlanFijoSummary(cuotaInicial, montoCuota, detalle),
               ] else if (modoCalculo != 'fijo' && detalle != null) ...[
                 _buildFinancingOptions(detalle, montoCuota, provider, precio, cuotaInicial),
@@ -378,6 +392,67 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Resumen de la variante elegida. Los importes vienen calculados del backend,
+  /// asi que aca solo se muestran (no se recalculan).
+  Widget _buildVarianteResumen(VarianteEntity variante, BuildContext context) {
+    Widget fila(String label, String valor, {bool destacado = false}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(
+              valor,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: destacado ? Colors.blue : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  variante.nombre,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                child: const Text('Cambiar'),
+              ),
+            ],
+          ),
+          const Divider(height: 16),
+          fila('Inicial:', '${variante.monedaInicialSimbolo} ${variante.cuotaInicial.toStringAsFixed(2)}'),
+          fila(
+            '${variante.cantidadCuotas} cuotas:',
+            '${variante.monedaSimbolo} ${variante.montoCuota.toStringAsFixed(2)} c/u',
+            destacado: true,
+          ),
+          if (variante.montoInscripcion > 0)
+            fila('Inscripción:', '${variante.monedaInicialSimbolo} ${variante.montoInscripcion.toStringAsFixed(2)}'),
+          fila('Total:', '${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}'),
         ],
       ),
     );
@@ -759,10 +834,16 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     String? firmaBase64;
     String? nroDocumento;
     if (contratoDisponible) {
-      final rawUrl = contrato!.url!;
-      final pdfUrl = rawUrl.contains('?')
-          ? '$rawUrl&beneficio_id=${servicio.id}'
-          : '$rawUrl?beneficio_id=${servicio.id}';
+      // Se agregan beneficio_id y, si hay variante elegida, variante_id, para
+      // que el PDF que se firma sea el de la variante correcta.
+      final variante = provider.selectedVariante;
+      final pdfUrl = Uri.parse(contrato!.url!).replace(
+        queryParameters: {
+          ...Uri.parse(contrato.url!).queryParameters,
+          'beneficio_id': '${servicio.id}',
+          if (variante != null) 'variante_id': '${variante.varianteId}',
+        },
+      ).toString();
       firmaBase64 = await _capturarFirmaConPdf(
         titulo: servicio.nombre,
         pdfUrl: pdfUrl,
@@ -802,7 +883,12 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     String? firmaBase64, [
     String? nroDocumento,
   ]) async {
-    final bool esFinanciado = _isFinanciado || servicio.modoCalculo == 'fijo';
+    final variante = provider.selectedVariante;
+    // Con variante, o si es un beneficio comercial, siempre es financiado.
+    final bool esFinanciado = variante != null ||
+        provider.esBeneficioComercial ||
+        _isFinanciado ||
+        servicio.modoCalculo == 'fijo';
     final String? modalidadPago =
         servicio.tipoPago == 3 ? (esFinanciado ? 'financiado' : 'contado') : null;
 
@@ -815,9 +901,13 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       metodoPago: _metodoPago,
       numeroOperacion: _metodoPago == 'CAJA_AREQUIPA' ? '' : _operacionController.text,
       modalidadPago: modalidadPago,
+      varianteId: variante?.varianteId,
+      monedaId: variante?.monedaId,
       montoCuota: esFinanciado ? montoCuota : 0,
       cantidadCuotas: esFinanciado ? _selectedCuotas : 0,
-      frecuenciaPagoId: esFinanciado ? _selectedFrecuenciaPagoId : 1,
+      frecuenciaPagoId: esFinanciado
+          ? (variante?.frecuenciaPagoId ?? _selectedFrecuenciaPagoId)
+          : 1,
       fechaInicio: esFinanciado
           ? DateFormat('yyyy-MM-dd').format(DateTime.now().add(const Duration(days: 7)))
           : null,

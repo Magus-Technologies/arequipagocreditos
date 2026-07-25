@@ -8,6 +8,7 @@ import '../models/taller_model.dart';
 abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia});
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId});
+  Future<BeneficioServicioModel> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
   Future<TalleresAgrupadosResponse> getTalleresAgrupados({String? audiencia});
   Future<Map<String, dynamic>> calificarTaller({required int tallerId, required int clienteConductorId, required int puntuacion, String? comentario, int? financiamientoId});
@@ -85,6 +86,38 @@ class BeneficiosComercialRemoteDataSourceImpl
       }
     } catch (e) {
       throw Exception('Error al obtener servicios del taller: $e');
+    }
+  }
+
+  /// Detalle de un beneficio con el mismo shape que un servicio de taller:
+  /// incluye detalle_financiamiento, variantes_disponibles y, si se envia
+  /// clienteConductorId, las alertas de elegibilidad de ese cliente.
+  @override
+  Future<BeneficioServicioModel> getBeneficioDetalle({
+    required int beneficioId,
+    int? clienteConductorId,
+  }) async {
+    try {
+      String url = '${ApiConstants.baseUrl}${ApiConstants.beneficiosEndpoint}/$beneficioId';
+      if (clienteConductorId != null) {
+        url += '?cliente_conductor_id=$clienteConductorId';
+      }
+
+      final response = await client
+          .get(Uri.parse(url), headers: ApiConstants.defaultHeaders)
+          .timeout(ApiConstants.receiveTimeout);
+
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+      if (response.statusCode == 200 && jsonResponse['success'] == true && jsonResponse['data'] != null) {
+        return BeneficioServicioModel.fromJson(
+          Map<String, dynamic>.from(jsonResponse['data'] as Map),
+        );
+      }
+
+      throw Exception(jsonResponse['message'] ?? 'No se pudo obtener el beneficio');
+    } catch (e) {
+      throw Exception('Error al obtener el detalle del beneficio: $e');
     }
   }
 
