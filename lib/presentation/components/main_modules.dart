@@ -138,6 +138,33 @@ class MainModules extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Mis Órdenes de Pago — los códigos para pagar en Caja Arequipa
+              Expanded(
+                child: SizedBox(
+                  height: 160,
+                  child: ModuleCard(
+                    icon: Icons.receipt_long,
+                    title: 'Órdenes de Pago',
+                    backgroundColor: const Color(0xFF7C3AED),
+                    iconColor: Colors.white,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OrdenesPagoPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(child: SizedBox(height: 160)),
+            ],
+          ),
           const SizedBox(height: 20),
           // Indicador de "Próximamente más servicios"
           Container(

@@ -798,9 +798,9 @@ class _PrivacyTermsCheckboxState extends State<PrivacyTermsCheckbox> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF176).withValues(alpha: 0.15),
+        color: AppTheme.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFFFDD835).withValues(alpha: 0.4)),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

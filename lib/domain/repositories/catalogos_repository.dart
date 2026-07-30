@@ -12,6 +12,7 @@ abstract class CatalogosRepository {
   Future<Either<Failure, List<PlataformaItemModel>>> getPlataformas();
   Future<Either<Failure, ConductorEstadoModel>> getConductorEstado(int conductorId);
   Future<Either<Failure, IzipayInfoModel>> getIzipayInfo(int clienteId);
+  Future<Either<Failure, ConductorEstadoModel>> generarOrdenCajaArequipa(int clienteId);
   Future<Either<Failure, Map<String, dynamic>>> subirCapturaIzipay({
     required int clienteConductorId,
     required String nroDocumento,

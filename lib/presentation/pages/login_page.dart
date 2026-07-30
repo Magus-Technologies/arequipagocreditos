@@ -1,5 +1,6 @@
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -162,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 8),
-                            Image.asset('images/logo.png', height: 150),
+                            SvgPicture.asset('images/credigo_logo.svg', height: 110),
                             const SizedBox(height: 40),
                             TextFormField(
                               controller: _dniController,

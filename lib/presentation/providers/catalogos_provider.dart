@@ -108,6 +108,16 @@ class CatalogosProvider extends ChangeNotifier {
     );
   }
 
+  /// Emite el codigo de Caja Arequipa. Se llama cuando la persona elige ese
+  /// metodo, no antes: el codigo vence a las 24h.
+  Future<ConductorEstadoModel> generarOrdenCajaArequipa(int clienteId) async {
+    final result = await catalogosRepository.generarOrdenCajaArequipa(clienteId);
+    return result.fold(
+      (failure) => throw Exception(failure.message),
+      (estado) => estado,
+    );
+  }
+
   Future<IzipayInfoModel> fetchIzipayInfo(int clienteId) async {
     final result = await catalogosRepository.getIzipayInfo(clienteId);
     return result.fold(

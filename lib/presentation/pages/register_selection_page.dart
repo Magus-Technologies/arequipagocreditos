@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
 import 'conductor_register_page.dart';
 import 'pre_register_page.dart';
@@ -9,7 +10,7 @@ class RegisterSelectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: AppTheme.brandYellow,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -31,7 +32,7 @@ class RegisterSelectionPage extends StatelessWidget {
                 child: Center(
                   child: Hero(
                     tag: 'credigo-logo',
-                    child: Image.asset('images/logo.png', height: 150),
+                    child: SvgPicture.asset('images/credigo_inicio.svg', height: 190),
                   ),
                 ),
               ),

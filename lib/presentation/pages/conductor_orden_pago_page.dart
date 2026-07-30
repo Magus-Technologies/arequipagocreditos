@@ -12,7 +12,7 @@ class ConductorOrdenPagoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: AppTheme.brandYellow,
       body: SafeArea(
         child: Column(
           children: [

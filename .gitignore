@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+.atl
+# Firma de release de Android (NUNCA versionar: contienen la clave y las contrasenas)
+*.jks
+*.keystore
+android/key.properties
+android/app/key.properties

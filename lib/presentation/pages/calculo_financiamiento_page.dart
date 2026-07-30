@@ -172,10 +172,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       appBar: AppBar(
         title: const Text(
           'Cálculo de Pago',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppTheme.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+        // Negro sobre el amarillo de marca: en blanco el texto no se lee.
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SafeArea(child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

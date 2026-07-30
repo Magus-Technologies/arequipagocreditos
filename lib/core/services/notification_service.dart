@@ -7,6 +7,7 @@ import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/data/models/notification_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
+import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:arequipagocreditos/presentation/pages/financiamiento_detalle_page.dart';
@@ -255,7 +256,7 @@ class NotificationService {
           importance: _channel.importance,
           priority: Priority.high,
           icon: iconName,
-          color: const Color(0xFFFEEC38),
+          color: AppTheme.primary,
           styleInformation: styleInformation,
         ),
         iOS: const DarwinNotificationDetails(

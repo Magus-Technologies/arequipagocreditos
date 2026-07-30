@@ -302,7 +302,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
               onPressed: _isLoading ? null : _validateDni,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: Colors.black87,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

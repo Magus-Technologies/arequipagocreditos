@@ -14,6 +14,7 @@ abstract class CatalogosRemoteDataSource {
   Future<List<PlataformaItemModel>> getPlataformas();
   Future<ConductorEstadoModel> getConductorEstado(int conductorId);
   Future<IzipayInfoModel> getIzipayInfo(int clienteId);
+  Future<ConductorEstadoModel> generarOrdenCajaArequipa(int clienteId);
   Future<Map<String, dynamic>> subirCapturaIzipay({
     required int clienteConductorId,
     required String nroDocumento,
@@ -96,6 +97,38 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
     } catch (e) {
       throw Exception('Error al consultar el estado: $e');
     }
+  }
+
+  @override
+  Future<ConductorEstadoModel> generarOrdenCajaArequipa(int clienteId) async {
+    final endpoint = ApiConstants.ordenCajaInscripcionEndpoint
+        .replaceAll('{id}', clienteId.toString());
+
+    final response = await client
+        .post(
+          Uri.parse('${ApiConstants.baseUrl}$endpoint'),
+          headers: ApiConstants.defaultHeaders,
+        )
+        .timeout(ApiConstants.connectionTimeout);
+
+    Map<String, dynamic>? body;
+    try {
+      body = json.decode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      body = null;
+    }
+
+    if (response.statusCode == 200 &&
+        body?['success'] == true &&
+        body?['data'] != null) {
+      return ConductorEstadoModel.fromJson(body!['data'] as Map<String, dynamic>);
+    }
+
+    // El backend explica el motivo (codigo vencido, plan inexistente): se
+    // propaga tal cual para mostrarselo a la persona.
+    throw Exception(
+      body?['message'] ?? 'No pudimos generar tu codigo de pago.',
+    );
   }
 
   @override

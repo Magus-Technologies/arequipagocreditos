@@ -25,7 +25,7 @@ class _AuthBottomNavState extends State<AuthBottomNav> {
     final int safeIndex = (_currentIndex >= 0 && _currentIndex < _pages.length) ? _currentIndex : 0;
 
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: AppTheme.brandYellow,
       body: IndexedStack(
         index: safeIndex,
         children: _pages,

@@ -144,7 +144,7 @@ class _ConductorIzipayPageState extends State<ConductorIzipayPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: AppTheme.brandYellow,
       body: SafeArea(
         child: Column(
           children: [

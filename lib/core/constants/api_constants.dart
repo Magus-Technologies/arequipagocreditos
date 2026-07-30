@@ -28,6 +28,7 @@ class ApiConstants {
   static const String conductorPreRegistroEndpoint = '/app/conductores/pre-registro';
   static const String conductorEstadoEndpoint = '/app/conductores/{id}/estado';
   static const String izipayInfoEndpoint = '/app/inscripcion/izipay-info/{id}';
+  static const String ordenCajaInscripcionEndpoint = '/app/inscripcion/orden-caja/{id}';
   static const String izipayCapturaEndpoint = '/app/inscripcion/izipay-captura';
   static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';
   static const String ubigeoProvinciasEndpoint = '/ubicaciones/provincias/{codigo}';
@@ -41,6 +42,7 @@ class ApiConstants {
   static const String cuotasEndpoint = '/app/financiamientos/{id}';
   static const String beneficiosEndpoint = '/app/promociones/beneficios';
   static const String appVersionEndpoint = '/app/version';
+  static const String ordenesPagoEndpoint = '/app/clientes/{clienteId}/ordenes-pago';
   static const String talleresListEndpoint = '/app/talleres-list';
   static const String talleresListServiciosEndpoint = '/app/talleres-list/servicios';
   static const String talleresCalificarEndpoint = '/app/talleres-list/{id}/calificar';

@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primary = Color.fromRGBO(254, 236, 56, 1);
+  /// Amarillo corporativo (#F6D511). Es el amarillo del logo: cualquier
+  /// superficie de marca del app sale de acá.
+  ///
+  /// No confundir con los amarillos semanticos (`Colors.amber` para estados
+  /// pendientes, dorado para estrellas de calificacion): esos comunican otra
+  /// cosa y no siguen a la marca.
+  static const Color primary = Color(0xFFF6D511);
+
+  /// Alias historico de [primary]. Se mantiene para no romper las pantallas
+  /// que ya lo referencian; ambos son el mismo color.
+  static const Color brandYellow = primary;
   static const Color btnColor = Color.fromRGBO(122, 161, 140, 1);
   static const Color secondary = Color.fromARGB(255, 0, 0, 0);
   static const Color title = Color.fromARGB(255, 0, 148, 94);

@@ -64,6 +64,16 @@ class CatalogosRepositoryImpl implements CatalogosRepository {
   }
 
   @override
+  Future<Either<Failure, ConductorEstadoModel>> generarOrdenCajaArequipa(int clienteId) async {
+    try {
+      final result = await remoteDataSource.generarOrdenCajaArequipa(clienteId);
+      return Either.right(result);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, IzipayInfoModel>> getIzipayInfo(int clienteId) async {
     try {
       final result = await remoteDataSource.getIzipayInfo(clienteId);

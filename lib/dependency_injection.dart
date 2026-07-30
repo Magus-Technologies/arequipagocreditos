@@ -13,6 +13,7 @@ import 'data/datasources/puntuacion_remote_datasource.dart';
 import 'data/datasources/beneficios_comercial_remote_datasource.dart';
 import 'data/datasources/signature_remote_datasource.dart';
 import 'data/datasources/catalogos_remote_datasource.dart';
+import 'data/datasources/ordenes_pago_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/cupones_public_repository_impl.dart';
@@ -21,6 +22,7 @@ import 'data/repositories/puntuacion_repository_impl.dart';
 import 'data/repositories/beneficios_comercial_repository_impl.dart';
 import 'data/repositories/signature_repository_impl.dart';
 import 'data/repositories/catalogos_repository_impl.dart';
+import 'data/repositories/ordenes_pago_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
@@ -31,6 +33,7 @@ import 'domain/repositories/puntuacion_repository.dart';
 import 'domain/repositories/beneficios_comercial_repository.dart';
 import 'domain/repositories/signature_repository.dart';
 import 'domain/repositories/catalogos_repository.dart';
+import 'domain/repositories/ordenes_pago_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/get_public_cupones_usecase.dart';
@@ -42,6 +45,7 @@ import 'domain/usecases/signature_usecases.dart';
 import 'domain/usecases/create_financiamiento_usecase.dart';
 import 'domain/usecases/get_beneficios_servicios_usecase.dart';
 import 'domain/usecases/get_documentos_firmados_usecase.dart';
+import 'domain/usecases/get_ordenes_pago_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
@@ -55,6 +59,7 @@ import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/signature_provider.dart';
 import 'presentation/providers/financiamiento_servicio_provider.dart';
 import 'presentation/providers/catalogos_provider.dart';
+import 'presentation/providers/ordenes_pago_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -146,6 +151,11 @@ class DependencyInjection {
         catalogosRepository: _catalogosRepository,
       ),
     ),
+    ChangeNotifierProvider<OrdenesPagoProvider>(
+      create: (context) => OrdenesPagoProvider(
+        getOrdenesPagoUseCase: _getGetOrdenesPagoUseCase(),
+      ),
+    ),
   ];
 
   // Repositories
@@ -184,6 +194,9 @@ class DependencyInjection {
   static CatalogosRepository get _catalogosRepository =>
       CatalogosRepositoryImpl(remoteDataSource: _catalogosRemoteDataSource);
 
+  static OrdenesPagoRepository get _ordenesPagoRepository =>
+      OrdenesPagoRepositoryImpl(remoteDataSource: _ordenesPagoRemoteDataSource);
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -213,6 +226,9 @@ class DependencyInjection {
 
   static CatalogosRemoteDataSource get _catalogosRemoteDataSource =>
       CatalogosRemoteDataSourceImpl(client: _httpClient);
+
+  static OrdenesPagoRemoteDataSource get _ordenesPagoRemoteDataSource =>
+      OrdenesPagoRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();
@@ -294,4 +310,8 @@ class DependencyInjection {
 
   static GetDocumentosFirmadosUseCase _getGetDocumentosFirmadosUseCase() =>
       GetDocumentosFirmadosUseCase(_financiamientoRepository);
+
+  // Use Cases - Órdenes de pago
+  static GetOrdenesPagoUseCase _getGetOrdenesPagoUseCase() =>
+      GetOrdenesPagoUseCase(_ordenesPagoRepository);
 }

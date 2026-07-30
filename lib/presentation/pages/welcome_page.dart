@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../theme/app_theme.dart';
@@ -17,7 +18,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: AppTheme.brandYellow,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -27,7 +28,7 @@ class WelcomePage extends StatelessWidget {
                 child: Center(
                   child: Hero(
                     tag: 'credigo-logo',
-                    child: Image.asset('images/logo.png', height: 150),
+                    child: SvgPicture.asset('images/credigo_inicio.svg', height: 190),
                   ),
                 ),
               ),
