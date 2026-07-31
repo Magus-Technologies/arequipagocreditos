@@ -142,9 +142,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Consulta si hay credenciales guardadas para el login biométrico.
+  ///
+  /// Nunca propaga el error: el keystore de Android puede fallar o quedar
+  /// corrupto, y eso no debe impedir que la persona entre al app. Si no se
+  /// puede leer, simplemente se asume que no hay biometría configurada.
   Future<void> loadBiometricCredentialsStatus() async {
-    final dni = await _secureStorage.read(key: _biometricDniKey);
-    _hasBiometricCredentials = dni != null;
+    try {
+      final dni = await _secureStorage
+          .read(key: _biometricDniKey)
+          .timeout(const Duration(seconds: 5));
+      _hasBiometricCredentials = dni != null;
+    } catch (_) {
+      _hasBiometricCredentials = false;
+    }
     notifyListeners();
   }
 
@@ -221,23 +232,31 @@ class AuthProvider extends ChangeNotifier {
       }
     }
 
-    final result = await _getLoggedUserUseCase();
+    // El estado SIEMPRE tiene que terminar resuelto. Antes el callback de
+    // `fold` era async y `fold` no lo espera: si algo fallaba adentro, el
+    // status quedaba en `loading` y el splash se congelaba en "Validando
+    // sesión..." sin manera de salir.
+    try {
+      final result = await _getLoggedUserUseCase();
 
-    result.fold(
-      (failure) {
+      final conductor = result.fold(
+        (failure) => null,
+        (conductor) => conductor,
+      );
+
+      if (conductor == null) {
         _currentUser = null;
         _setStatus(AuthStatus.unauthenticated);
-      },
-      (conductor) async {
-        if (conductor != null) {
-          _currentUser = conductor;
-          await loadBiometricCredentialsStatus();
-          _setStatus(AuthStatus.authenticated);
-        } else {
-          _setStatus(AuthStatus.unauthenticated);
-        }
-      },
-    );
+        return;
+      }
+
+      _currentUser = conductor;
+      await loadBiometricCredentialsStatus();
+      _setStatus(AuthStatus.authenticated);
+    } catch (_) {
+      _currentUser = null;
+      _setStatus(AuthStatus.unauthenticated);
+    }
   }
 
   Future<void> persistSessionPause() async {
