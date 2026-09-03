@@ -71,7 +71,10 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   File? _licenciaAnverso;
   File? _licenciaReverso;
   File? _fotoPerfil;
-  String? _modalidadPago;
+  // El pago de inscripción solo se registra al contado (ver
+  // "Modalidad de pago de inscripción" más abajo) — no se ofrece la opción
+  // de financiarlo, por eso queda fijo en 'contado' en vez de null.
+  String? _modalidadPago = 'contado';
   bool _aceptaTerminos = false;
 
   final ImagePicker _picker = ImagePicker();
@@ -750,13 +753,6 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
               'Al contado',
               'Un solo pago con código en agentes Caja Arequipa',
               Icons.payments_outlined,
-            ),
-            const SizedBox(height: 12),
-            _buildModalidadCard(
-              'financiado',
-              'Financiado',
-              'Paga en cuotas mensuales con el mismo código',
-              Icons.calendar_month_outlined,
             ),
             const SizedBox(height: 20),
             _buildInfoNote('Tu solicitud será revisada. Una vez aprobada, recibirás tu código de pago de Caja Arequipa.'),
