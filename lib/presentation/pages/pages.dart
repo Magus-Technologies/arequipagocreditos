@@ -14,3 +14,7 @@ export 'pre_register_page.dart';
 export 'beneficios_page.dart';
 export 'servicios_taller_detalle_page.dart';
 export 'ordenes_pago_page.dart';
+export 'mi_nivel_page.dart';
+export 'mis_financiamientos_page.dart';
+export 'mas_page.dart';
+export 'main_shell_page.dart';

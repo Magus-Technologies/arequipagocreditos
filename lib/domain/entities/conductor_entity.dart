@@ -4,6 +4,7 @@ class ConductorEntity {
   final String nroDocumento;
   final String telefono;
   final String direccion;
+  final String? departamento;
   final String correo;
   final int flag;
   final int tipo;
@@ -40,6 +41,7 @@ class ConductorEntity {
     required this.nroDocumento,
     required this.telefono,
     required this.direccion,
+    this.departamento,
     required this.correo,
     required this.flag,
     required this.tipo,

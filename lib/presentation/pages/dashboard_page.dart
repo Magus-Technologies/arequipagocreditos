@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../components/components.dart';
 import '../components/main_modules.dart';
 import '../../theme/app_theme.dart';
@@ -42,23 +40,6 @@ class _DashboardPageState extends State<DashboardPage> {
         
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              final uri = Uri.parse(
-                'https://wa.me/51982934377?text=Hola,%20tengo%20una%20consulta',
-              );
-              if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No se pudo abrir WhatsApp')),
-                  );
-                }
-              }
-            },
-            backgroundColor: const Color(0xFF25D366),
-            tooltip: 'Contactar por WhatsApp',
-            child: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.white),
-          ),
           body: SafeArea(
             child: Column(
               children: [
@@ -146,11 +127,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           children: [
                             const SizedBox(height: 10),
-                            // Sección de módulos principales
+                            // Sección de módulos principales (incluye la
+                            // tarjeta "Mis Financiamientos", ahora su propia
+                            // pantalla en vez de vivir inline acá).
                             MainModules(),
-                            // Financiamientos expandible - solo si conductor está cargado
-                            if (conductor != null)
-                              ExpandableFinanciamientos(conductor: conductor),
                             if (conductor == null)
                               Container(
                                 margin: const EdgeInsets.all(24),

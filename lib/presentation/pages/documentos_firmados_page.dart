@@ -9,7 +9,10 @@ import '../widgets/image_full_screen_view.dart';
 import 'pdf_viewer_page.dart';
 
 class DocumentosFirmadosPage extends StatefulWidget {
-  const DocumentosFirmadosPage({super.key});
+  /// false cuando esta pantalla vive como pestaña raíz de [MainShellPage].
+  final bool showBackButton;
+
+  const DocumentosFirmadosPage({super.key, this.showBackButton = true});
 
   @override
   State<DocumentosFirmadosPage> createState() => _DocumentosFirmadosPageState();
@@ -146,16 +149,19 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
         children: [
           Row(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
+              if (widget.showBackButton)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                )
+              else
+                const SizedBox(width: 48),
               const Expanded(
                 child: Text(
                   'Documentos Firmados',

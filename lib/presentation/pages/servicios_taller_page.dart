@@ -8,7 +8,11 @@ import 'servicios_taller_detalle_page.dart';
 import '../components/beneficios_search_bar.dart';
 
 class ServiciosTallerPage extends StatefulWidget {
-  const ServiciosTallerPage({super.key});
+  /// false cuando esta pantalla vive como pestaña raíz de [MainShellPage]
+  /// (ahí no hay una ruta previa que cerrar con la flecha de volver).
+  final bool showBackButton;
+
+  const ServiciosTallerPage({super.key, this.showBackButton = true});
 
   @override
   State<ServiciosTallerPage> createState() => _ServiciosTallerPageState();
@@ -25,6 +29,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
       final authProvider = context.read<AuthProvider>();
       if (authProvider.currentUser != null) {
         provider.setAudiencia(authProvider.currentUser!.tipo);
+        provider.setDepartamentoUsuario(authProvider.currentUser!.departamento);
       }
       provider.loadTalleresAgrupados();
       provider.setTallerSearchQuery('');
@@ -117,6 +122,7 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                               provider.setTallerSearchQuery('');
                             },
                           ),
+                          _buildFiltroTipoVehicular(provider),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                             child: Row(
@@ -210,6 +216,43 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
     );
   }
 
+  static const List<Map<String, String>> _tiposVehicular = [
+    {'value': '', 'label': 'Todos'},
+    {'value': 'vehiculo', 'label': 'Carro'},
+    {'value': 'moto', 'label': 'Moto'},
+    {'value': 'tuktuk', 'label': 'TukTuk'},
+  ];
+
+  Widget _buildFiltroTipoVehicular(FinanciamientoServicioProvider provider) {
+    final actual = provider.tipoVehicularFiltro ?? '';
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        itemCount: _tiposVehicular.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final tipo = _tiposVehicular[index];
+          final seleccionado = actual == tipo['value'];
+          return ChoiceChip(
+            label: Text(tipo['label']!),
+            selected: seleccionado,
+            onSelected: (_) => provider.setTipoVehicularFiltro(tipo['value']),
+            selectedColor: AppTheme.primary,
+            labelStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: seleccionado ? Colors.black87 : Colors.grey.shade700,
+            ),
+            backgroundColor: Colors.grey.shade100,
+            side: BorderSide(color: seleccionado ? AppTheme.primary : Colors.grey.shade300),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -217,21 +260,24 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
         children: [
           Row(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
+              if (widget.showBackButton)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                )
+              else
+                const SizedBox(width: 48),
               const Expanded(
                 child: Text(
-                  'Servicios de Taller',
+                  'Servicios Taller / Repuestos',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
               ),
               const SizedBox(width: 48),
@@ -256,20 +302,25 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
                   child: const Icon(Icons.home_repair_service, color: Colors.black87, size: 24),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Talleres Disponibles',
-                        style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Selecciona un taller para ver sus servicios',
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
-                      ),
-                    ],
+                Expanded(
+                  child: Consumer<FinanciamientoServicioProvider>(
+                    builder: (context, provider, child) {
+                      final ciudad = provider.departamentoUsuario;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ciudad != null && ciudad.isNotEmpty ? 'Talleres en $ciudad' : 'Talleres Disponibles',
+                            style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Selecciona un taller para ver sus servicios',
+                            style: TextStyle(color: Colors.black54, fontSize: 12),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],

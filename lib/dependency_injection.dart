@@ -14,6 +14,7 @@ import 'data/datasources/beneficios_comercial_remote_datasource.dart';
 import 'data/datasources/signature_remote_datasource.dart';
 import 'data/datasources/catalogos_remote_datasource.dart';
 import 'data/datasources/ordenes_pago_remote_datasource.dart';
+import 'data/datasources/nivel_taller_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/cupones_public_repository_impl.dart';
@@ -23,6 +24,7 @@ import 'data/repositories/beneficios_comercial_repository_impl.dart';
 import 'data/repositories/signature_repository_impl.dart';
 import 'data/repositories/catalogos_repository_impl.dart';
 import 'data/repositories/ordenes_pago_repository_impl.dart';
+import 'data/repositories/nivel_taller_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
@@ -34,6 +36,7 @@ import 'domain/repositories/beneficios_comercial_repository.dart';
 import 'domain/repositories/signature_repository.dart';
 import 'domain/repositories/catalogos_repository.dart';
 import 'domain/repositories/ordenes_pago_repository.dart';
+import 'domain/repositories/nivel_taller_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/get_public_cupones_usecase.dart';
@@ -46,6 +49,7 @@ import 'domain/usecases/create_financiamiento_usecase.dart';
 import 'domain/usecases/get_beneficios_servicios_usecase.dart';
 import 'domain/usecases/get_documentos_firmados_usecase.dart';
 import 'domain/usecases/get_ordenes_pago_usecase.dart';
+import 'domain/usecases/get_nivel_taller_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
@@ -60,6 +64,7 @@ import 'presentation/providers/signature_provider.dart';
 import 'presentation/providers/financiamiento_servicio_provider.dart';
 import 'presentation/providers/catalogos_provider.dart';
 import 'presentation/providers/ordenes_pago_provider.dart';
+import 'presentation/providers/nivel_taller_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -156,6 +161,11 @@ class DependencyInjection {
         getOrdenesPagoUseCase: _getGetOrdenesPagoUseCase(),
       ),
     ),
+    ChangeNotifierProvider<NivelTallerProvider>(
+      create: (context) => NivelTallerProvider(
+        getNivelTallerUseCase: _getGetNivelTallerUseCase(),
+      ),
+    ),
   ];
 
   // Repositories
@@ -197,6 +207,9 @@ class DependencyInjection {
   static OrdenesPagoRepository get _ordenesPagoRepository =>
       OrdenesPagoRepositoryImpl(remoteDataSource: _ordenesPagoRemoteDataSource);
 
+  static NivelTallerRepository get _nivelTallerRepository =>
+      NivelTallerRepositoryImpl(remoteDataSource: _nivelTallerRemoteDataSource);
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -229,6 +242,9 @@ class DependencyInjection {
 
   static OrdenesPagoRemoteDataSource get _ordenesPagoRemoteDataSource =>
       OrdenesPagoRemoteDataSourceImpl(client: _httpClient);
+
+  static NivelTallerRemoteDataSource get _nivelTallerRemoteDataSource =>
+      NivelTallerRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();
@@ -314,4 +330,8 @@ class DependencyInjection {
   // Use Cases - Órdenes de pago
   static GetOrdenesPagoUseCase _getGetOrdenesPagoUseCase() =>
       GetOrdenesPagoUseCase(_ordenesPagoRepository);
+
+  // Use Cases - Nivel de talleres
+  static GetNivelTallerUseCase _getGetNivelTallerUseCase() =>
+      GetNivelTallerUseCase(_nivelTallerRepository);
 }

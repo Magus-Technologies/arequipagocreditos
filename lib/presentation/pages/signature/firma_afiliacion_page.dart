@@ -149,7 +149,7 @@ class _FirmaAfiliacionPageState extends State<FirmaAfiliacionPage> {
     if (success && mounted) {
       // Refrescar usuario para actualizar estado de firma
       await authProvider.refreshUserDataFromRemote();
-      // El AppWrapper en main.dart detectará el cambio y mostrará DashboardPage
+      // El AppWrapper en main.dart detectará el cambio y mostrará MainShellPage
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

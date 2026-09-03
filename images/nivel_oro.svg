@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="oro-fill" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFE9A8"/>
+      <stop offset="45%" stop-color="#F6C445"/>
+      <stop offset="100%" stop-color="#C7860A"/>
+    </linearGradient>
+    <linearGradient id="oro-ring" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF3CE"/>
+      <stop offset="100%" stop-color="#A6690A"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M20 34 L11 54 L21 51 L26 60 L33 42 Z" fill="#C7860A"/>
+  <path d="M44 34 L53 54 L43 51 L38 60 L31 42 Z" fill="#C7860A"/>
+
+  <circle cx="32" cy="28" r="22" fill="url(#oro-ring)"/>
+  <circle cx="32" cy="28" r="18.5" fill="url(#oro-fill)" stroke="#8A5A05" stroke-width="1"/>
+
+  <path
+    d="M32 17 L34.9 23.4 L41.8 24.1 L36.6 28.7 L38.2 35.5 L32 31.9 L25.8 35.5 L27.4 28.7 L22.2 24.1 L29.1 23.4 Z"
+    fill="#FFF7E0"
+    stroke="#8A5A05"
+    stroke-width="0.75"
+    stroke-linejoin="round"
+  />
+</svg>

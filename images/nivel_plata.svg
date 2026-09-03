@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="plata-fill" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F4F6F8"/>
+      <stop offset="45%" stop-color="#C6CDD4"/>
+      <stop offset="100%" stop-color="#8B939B"/>
+    </linearGradient>
+    <linearGradient id="plata-ring" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#6E767D"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M20 34 L11 54 L21 51 L26 60 L33 42 Z" fill="#7A828A"/>
+  <path d="M44 34 L53 54 L43 51 L38 60 L31 42 Z" fill="#7A828A"/>
+
+  <circle cx="32" cy="28" r="22" fill="url(#plata-ring)"/>
+  <circle cx="32" cy="28" r="18.5" fill="url(#plata-fill)" stroke="#5B6167" stroke-width="1"/>
+
+  <path
+    d="M32 17 L34.9 23.4 L41.8 24.1 L36.6 28.7 L38.2 35.5 L32 31.9 L25.8 35.5 L27.4 28.7 L22.2 24.1 L29.1 23.4 Z"
+    fill="#FFFFFF"
+    stroke="#5B6167"
+    stroke-width="0.75"
+    stroke-linejoin="round"
+  />
+</svg>

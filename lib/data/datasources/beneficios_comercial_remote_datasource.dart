@@ -10,7 +10,11 @@ abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId});
   Future<BeneficioServicioModel> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
-  Future<TalleresAgrupadosResponse> getTalleresAgrupados({String? audiencia});
+  Future<TalleresAgrupadosResponse> getTalleresAgrupados({
+    String? audiencia,
+    String? departamento,
+    String? tipoVehicular,
+  });
   Future<Map<String, dynamic>> calificarTaller({required int tallerId, required int clienteConductorId, required int puntuacion, String? comentario, int? financiamientoId});
 }
 
@@ -147,10 +151,16 @@ class BeneficiosComercialRemoteDataSourceImpl
   }
 
   @override
-  Future<TalleresAgrupadosResponse> getTalleresAgrupados({String? audiencia}) async {
+  Future<TalleresAgrupadosResponse> getTalleresAgrupados({
+    String? audiencia,
+    String? departamento,
+    String? tipoVehicular,
+  }) async {
     try {
       final queryParams = <String, String>{'agrupar': 'true'};
       if (audiencia != null) queryParams['audiencia'] = audiencia;
+      if (departamento != null && departamento.isNotEmpty) queryParams['departamento'] = departamento;
+      if (tipoVehicular != null && tipoVehicular.isNotEmpty) queryParams['tipo_vehicular'] = tipoVehicular;
 
       final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.talleresListEndpoint}')
           .replace(queryParameters: queryParams);

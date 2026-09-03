@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class ModuleCard extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final Color backgroundColor;
   final Color iconColor;
   final VoidCallback onTap;
@@ -12,6 +13,7 @@ class ModuleCard extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.backgroundColor,
     required this.iconColor,
     required this.onTap,
@@ -20,6 +22,7 @@ class ModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onColor = iconColor;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -29,93 +32,117 @@ class ModuleCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               backgroundColor,
-              backgroundColor.withAlpha((0.8 * 255).toInt()),
+              backgroundColor.withAlpha((0.85 * 255).toInt()),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: backgroundColor.withAlpha((0.4 * 255).toInt()),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-              spreadRadius: 0,
+              color: backgroundColor.withAlpha((0.35 * 255).toInt()),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Stack(
           children: [
-            // Patrón decorativo de fondo
+            // Detalle decorativo sutil, sin competir con el contenido
             Positioned(
-              top: -20,
-              right: -20,
+              top: -18,
+              right: -18,
               child: Container(
-                width: 80,
-                height: 80,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.1 * 255).toInt()),
+                  color: Colors.white.withAlpha((0.08 * 255).toInt()),
                   shape: BoxShape.circle,
                 ),
               ),
             ),
-            Positioned(
-              bottom: -10,
-              left: -10,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.05 * 255).toInt()),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            // Contenido principal
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Icono con contenedor elegante
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                        width: 1,
+                  Row(
+                    children: [
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withAlpha((0.30 * 255).toInt()),
+                                  Colors.white.withAlpha((0.12 * 255).toInt()),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withAlpha((0.35 * 255).toInt()),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(icon, size: 22, color: onColor),
+                          ),
+                          // Puntito decorativo, detalle sutil tipo "highlight"
+                          Positioned(
+                            top: -3,
+                            right: -3,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha((0.55 * 255).toInt()),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 32,
-                      color: iconColor,
-                    ),
+                      const Spacer(),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: onColor.withAlpha((0.7 * 255).toInt()),
+                        size: 22,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  // Título con mejor tipografía
+                  const SizedBox(height: 10),
                   Text(
                     title,
                     style: TextStyle(
-                      color: iconColor,
+                      color: onColor,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      letterSpacing: 0.5,
+                      fontSize: 14,
+                      height: 1.15,
                     ),
-                    textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        color: onColor.withAlpha((0.75 * 255).toInt()),
+                        fontSize: 11,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
             if (badge != null)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: badge!,
-              ),
+              Positioned(top: 8, right: 8, child: badge!),
           ],
         ),
       ),

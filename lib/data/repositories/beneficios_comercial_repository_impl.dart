@@ -55,9 +55,17 @@ class BeneficiosComercialRepositoryImpl implements BeneficiosComercialRepository
   }
 
   @override
-  Future<Either<Failure, TalleresAgrupadosResponse>> getTalleresAgrupados({String? audiencia}) async {
+  Future<Either<Failure, TalleresAgrupadosResponse>> getTalleresAgrupados({
+    String? audiencia,
+    String? departamento,
+    String? tipoVehicular,
+  }) async {
     try {
-      final response = await remoteDataSource.getTalleresAgrupados(audiencia: audiencia);
+      final response = await remoteDataSource.getTalleresAgrupados(
+        audiencia: audiencia,
+        departamento: departamento,
+        tipoVehicular: tipoVehicular,
+      );
       return Either.right(response);
     } on Exception catch (e) {
       return Either.left(ServerFailure(e.toString()));

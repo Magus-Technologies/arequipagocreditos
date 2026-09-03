@@ -29,6 +29,9 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   String? get error => _error;
 
   String? _audiencia;
+  String? _departamentoUsuario;
+  String? _tipoVehicularFiltro;
+  String? get tipoVehicularFiltro => _tipoVehicularFiltro;
 
   List<BeneficioServicioEntity> _beneficios = [];
   List<BeneficioServicioEntity> get beneficios => _beneficios;
@@ -96,6 +99,20 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     _audiencia = AudienciaHelper.fromTipo(tipoUsuario);
   }
 
+  /// Configura la ciudad del usuario actual (de su perfil, `direccionPrincipal`).
+  /// El listado de talleres se filtra automáticamente a esta ciudad — no hay
+  /// selector de ciudad en la UI.
+  void setDepartamentoUsuario(String? departamento) {
+    _departamentoUsuario = departamento;
+  }
+
+  /// Filtro manual por tipo de vehículo ('', 'moto', 'vehiculo', 'tuktuk').
+  /// '' o null = sin filtro (todos). Recarga el listado desde el backend.
+  Future<void> setTipoVehicularFiltro(String? tipoVehicular) async {
+    _tipoVehicularFiltro = (tipoVehicular == null || tipoVehicular.isEmpty) ? null : tipoVehicular;
+    await loadTalleresAgrupados();
+  }
+
   Future<void> loadBeneficiosServicios({int? tallerId, int? clienteConductorId}) async {
     _isLoading = true;
     _error = null;
@@ -135,12 +152,19 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Ciudad por la que se está filtrando el listado (perfil del usuario).
+  String? get departamentoUsuario => _departamentoUsuario;
+
   Future<void> loadTalleresAgrupados() async {
     _talleresLoading = true;
     _talleresError = null;
     notifyListeners();
 
-    final result = await beneficiosRepository.getTalleresAgrupados(audiencia: _audiencia);
+    final result = await beneficiosRepository.getTalleresAgrupados(
+      audiencia: _audiencia,
+      departamento: _departamentoUsuario,
+      tipoVehicular: _tipoVehicularFiltro,
+    );
 
     result.fold(
       (failure) => _talleresError = failure.message,

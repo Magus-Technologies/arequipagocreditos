@@ -270,7 +270,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
               );
             }
 
-            return DashboardPage();
+            return const MainShellPage();
           case AuthStatus.unauthenticated:
           case AuthStatus.error:
             return const WelcomePage();
