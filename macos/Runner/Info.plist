@@ -28,5 +28,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Se requiere acceso a la cámara para tomar fotos de perfil y capturar imágenes de la documentación necesaria para el pre-registro del usuario (DNI, recibos, etc.).</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Se requiere acceso para guardar imágenes capturadas o descargadas relacionadas con tu perfil y documentos en tu fototeca.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se requiere acceso a tu fototeca para que puedas seleccionar y adjuntar tu foto de perfil y los documentos requeridos para tu registro (DNI, boletas de pago, recibos, etc.).</string>
 </dict>
 </plist>
