@@ -158,8 +158,15 @@ class BeneficioCard extends StatelessWidget {
   }
 
   Widget _buildFinancialInfo() {
-    final hasInscripcion = beneficio.pagoInscripcion != null;
-    
+    // Con variantes activas los importes dependen de la que elija el cliente
+    // (diseño: "no debería decir inicial 0, cuotas 0"): se muestra
+    // "Según variante" en lugar de los valores del beneficio.
+    final variantes = beneficio.variantesDisponibles;
+    final bool tieneVariantes = variantes.isNotEmpty;
+    final bool muestraInscripcion = (beneficio.pagoInscripcion ?? 0) > 0 ||
+        variantes.any((v) => v.montoInscripcion > 0);
+    const String segunVariante = 'Según variante';
+
     return Column(
       children: [
         Row(
@@ -167,7 +174,9 @@ class BeneficioCard extends StatelessWidget {
             Expanded(
               child: _buildInfoItem(
                 'Cuota Inicial',
-                '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
+                tieneVariantes
+                    ? segunVariante
+                    : '${beneficio.moneda} ${beneficio.cuotaInicial.toStringAsFixed(2)}',
                 Icons.credit_card,
                 AppTheme.bgContacto,
               ),
@@ -175,7 +184,7 @@ class BeneficioCard extends StatelessWidget {
             Expanded(
               child: _buildInfoItem(
                 'Cuotas',
-                '${beneficio.cantidadCuotas}x',
+                tieneVariantes ? segunVariante : '${beneficio.cantidadCuotas}x',
                 Icons.calendar_month,
                 AppTheme.title,
               ),
@@ -183,18 +192,22 @@ class BeneficioCard extends StatelessWidget {
             Expanded(
               child: _buildInfoItem(
                 _formatFrequency(beneficio.frecuenciaPago),
-                '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
+                tieneVariantes
+                    ? segunVariante
+                    : '${beneficio.moneda} ${beneficio.cuotaMensual.toStringAsFixed(2)}',
                 Icons.schedule,
                 AppTheme.btnColor,
               ),
             ),
           ],
         ),
-        if (hasInscripcion) ...[
+        if (muestraInscripcion) ...[
           const SizedBox(height: 12),
           _buildInfoItem(
             'Pago de Inscripción',
-            '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}',
+            tieneVariantes
+                ? segunVariante
+                : '${beneficio.moneda} ${beneficio.pagoInscripcion!.toStringAsFixed(2)}',
             Icons.app_registration,
             AppTheme.primary,
           ),

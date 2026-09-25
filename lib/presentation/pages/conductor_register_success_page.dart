@@ -40,7 +40,7 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
                   child: Column(
                     children: [
                       SvgPicture.asset(
-                        'images/credigo_logo.svg',
+                        'images/credigo_incio.svg',
                         height: 58 * f,
                       ),
                       SizedBox(height: 5 * f),

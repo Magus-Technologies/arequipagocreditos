@@ -94,8 +94,15 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
       if (_pausedAt != null) {
         final elapsed = DateTime.now().difference(_pausedAt!);
         _pausedAt = null;
+        final auth = context.read<AuthProvider>();
         if (elapsed.inMinutes >= AuthProvider.sessionTimeoutMinutes) {
-          context.read<AuthProvider>().logout(clearBiometric: false);
+          auth.logout(clearBiometric: false);
+        } else if (elapsed.inSeconds >= AuthProvider.lockAfterSeconds &&
+            auth.isAuthenticated &&
+            auth.hasUsableAccessMethod) {
+          // Volvió del segundo plano tras un rato: pedir PIN/biometría
+          // (estilo Yape). Salidas cortas no molestan.
+          auth.lock();
         }
       }
     }
@@ -110,6 +117,12 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
           case AuthStatus.loading:
             return SplashPage();
           case AuthStatus.authenticated:
+            // Bloqueo de acceso (estilo Yape): se pide PIN/biometría al abrir
+            // el app o al volver de un segundo plano largo, aunque la sesión
+            // siga válida.
+            if (authProvider.isLocked) {
+              return const IngresarPinPage();
+            }
             // Ofrecer configuración biométrica tras login manual con credenciales disponibles
             if (authProvider.needsBiometricSetupOffer) {
               WidgetsBinding.instance.addPostFrameCallback((_) async {

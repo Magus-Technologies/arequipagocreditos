@@ -113,12 +113,14 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     await loadTalleresAgrupados();
   }
 
-  Future<void> loadBeneficiosServicios({int? tallerId, int? clienteConductorId}) async {
+  /// TK-0314: sirve para talleres y para comercios afiliados; el backend
+  /// devuelve el mismo contrato en los dos casos.
+  Future<void> loadBeneficiosServicios({int? tallerId, int? comercioId, int? clienteConductorId}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId, audiencia: _audiencia, clienteConductorId: clienteConductorId);
+    final result = await getBeneficiosServiciosUseCase(tallerId: tallerId, comercioId: comercioId, audiencia: _audiencia, clienteConductorId: clienteConductorId);
     
     result.fold(
       (failure) => _error = failure.message,
@@ -310,6 +312,8 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     // solo referencial.
     int? varianteId,
     int? monedaId,
+    // Color elegido por el cliente (beneficios con colores disponibles).
+    String? color,
   }) async {
     _isLoading = true;
     _error = null;
@@ -326,6 +330,8 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     };
 
     if (varianteId != null) data['variante_id'] = varianteId;
+
+    if (color != null && color.isNotEmpty) data['color'] = color;
 
     if (modalidadPago != null) data['modalidad_pago'] = modalidadPago;
 

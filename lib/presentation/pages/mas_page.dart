@@ -1,4 +1,5 @@
 import 'package:arequipagocreditos/core/utils/model_adapters.dart';
+import 'package:arequipagocreditos/presentation/pages/configuracion_acceso_page.dart';
 import 'package:arequipagocreditos/presentation/pages/cupones_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mi_nivel_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mis_financiamientos_page.dart';
@@ -53,6 +54,12 @@ class MasPage extends StatelessWidget {
         title: 'Mi Perfil',
         color: const Color(0xFF10B981),
         page: const PerfilPage(),
+      ),
+      _MasItem(
+        icon: Icons.lock_outline_rounded,
+        title: 'Configuración de acceso',
+        color: const Color(0xFF3B82F6),
+        page: const ConfiguracionAccesoPage(),
       ),
     ];
 

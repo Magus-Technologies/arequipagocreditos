@@ -7,7 +7,9 @@ import '../models/taller_model.dart';
 
 abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia});
-  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId});
+  /// Servicios de un taller o de un comercio afiliado (TK-0314). Los dos
+  /// endpoints del backend devuelven el mismo contrato: `data.servicios`.
+  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId});
   Future<BeneficioServicioModel> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
   Future<TalleresAgrupadosResponse> getTalleresAgrupados({
@@ -59,10 +61,14 @@ class BeneficiosComercialRemoteDataSourceImpl
   }
 
   @override
-  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId}) async {
+  Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId}) async {
     try {
-      if (tallerId == null) return [];
-      String url = '${ApiConstants.baseUrl}${ApiConstants.talleresListServiciosEndpoint}/$tallerId';
+      if (tallerId == null && comercioId == null) return [];
+
+      // Mismo parseo para los dos: el backend comparte el contrato.
+      String url = comercioId != null
+          ? '${ApiConstants.baseUrl}${ApiConstants.comerciosListEndpoint}/$comercioId'
+          : '${ApiConstants.baseUrl}${ApiConstants.talleresListServiciosEndpoint}/$tallerId';
       final queryParams = <String>[];
       if (audiencia != null) queryParams.add('audiencia=$audiencia');
       if (clienteConductorId != null) queryParams.add('cliente_conductor_id=$clienteConductorId');
@@ -89,7 +95,7 @@ class BeneficiosComercialRemoteDataSourceImpl
         throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Error al obtener servicios del taller: $e');
+      throw Exception('Error al obtener los servicios: $e');
     }
   }
 

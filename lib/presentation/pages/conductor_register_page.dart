@@ -172,7 +172,9 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
 
   String? _validateGoogleMapsUrl() {
     final raw = _googleMapsUrlController.text.trim();
-    if (raw.isEmpty) return null;
+    // OBLIGATORIO (igual que el pre-registro de pasajero y que la web):
+    // sin ubicación no se puede registrar.
+    if (raw.isEmpty) return 'Ingresa el link de Google Maps de tu dirección';
 
     final match = RegExp(r'https?://\S+').firstMatch(raw);
     if (match != null && match.group(0) != raw) {
@@ -348,8 +350,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       'provincia': _provinciaNombre,
       'distrito': _distritoNombre,
       'direccion_detallada': _direccionController.text.trim(),
-      if (_googleMapsUrlController.text.trim().isNotEmpty)
-        'google_maps_url': _googleMapsUrlController.text.trim(),
+      'google_maps_url': _googleMapsUrlController.text.trim(),
       'modalidad_pago_inscripcion': _modalidadPago,
       if (vehiculo.isNotEmpty) 'vehiculo': jsonEncode(vehiculo),
     };
@@ -701,7 +702,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             const SizedBox(height: 20),
             _buildModernTextField(
               _googleMapsUrlController,
-              'Link Google Maps (Opcional)',
+              'Link Google Maps',
               Icons.location_on_outlined,
               keyboardType: TextInputType.url,
               helperText: 'Abre Maps, busca tu dirección, comparte y pega el enlace aquí',

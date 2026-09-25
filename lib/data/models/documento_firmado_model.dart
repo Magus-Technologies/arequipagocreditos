@@ -57,7 +57,8 @@ class DocumentoFirmadoModel extends DocumentoFirmadoEntity {
     required super.cargo,
     required super.firmaUrl,
     super.contratoUrl,
-    required super.firmadoAt,
+    super.firmado,
+    super.firmadoAt,
     required super.origen,
   });
 
@@ -85,7 +86,9 @@ class DocumentoFirmadoModel extends DocumentoFirmadoEntity {
       cargo: json['cargo'] ?? '',
       firmaUrl: json['firma_url'] ?? '',
       contratoUrl: json['contrato_url'],
-      firmadoAt: DateTime.tryParse(json['firmado_at'] ?? '') ?? DateTime.now(),
+      // Documentos de afiliación no mandan el flag: siempre están firmados.
+      firmado: json['firmado'] ?? true,
+      firmadoAt: DateTime.tryParse(json['firmado_at'] ?? ''),
       origen: json['origen'] ?? '',
     );
   }

@@ -27,16 +27,7 @@ class _PerfilPageState extends State<PerfilPage> {
     });
   }
 
-  Future<void> _changeProfilePicture(bool fotoPerfilCambiada) async {
-    if (fotoPerfilCambiada) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Ya has cambiado tu foto de perfil anteriormente"),
-        ),
-      );
-      return;
-    }
-
+  Future<void> _changeProfilePicture() async {
     try {
       showModalBottomSheet(
         context: context,
@@ -169,10 +160,7 @@ class _PerfilPageState extends State<PerfilPage> {
                         ProfileAvatar(
                           conductor: conductor,
                           isUploadingImage: _isUploadingImage,
-                          onChangeProfilePicture:
-                              () => _changeProfilePicture(
-                                conductor?.fotoPerfilCambiada ?? false,
-                              ),
+                          onChangeProfilePicture: _changeProfilePicture,
                         ),
                         const SizedBox(height: 16),
                         // Nombre y DNI en el header
@@ -419,6 +407,7 @@ class _PerfilPageState extends State<PerfilPage> {
   }
 
   Widget _buildProfileStatusCard(conductor) {
+    final fotoPersonalizada = conductor?.fotoPerfilCambiada == true;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -450,7 +439,7 @@ class _PerfilPageState extends State<PerfilPage> {
             ],
           ),
           const SizedBox(height: 16),
-          if (conductor?.fotoPerfilCambiada == true)
+          if (fotoPersonalizada)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -522,7 +511,7 @@ class _PerfilPageState extends State<PerfilPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Toca el ícono de cámara en tu avatar (solo una vez)',
+                          'Toca el ícono de cámara en tu avatar o usa el botón de abajo',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue.shade600,
@@ -534,6 +523,21 @@ class _PerfilPageState extends State<PerfilPage> {
                 ],
               ),
             ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isUploadingImage ? null : _changeProfilePicture,
+              icon: const Icon(Icons.camera_alt_outlined, size: 18),
+              label: Text(fotoPersonalizada ? 'Cambiar foto de perfil' : 'Editar foto de perfil'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primary,
+                side: BorderSide(color: AppTheme.primary.withAlpha((0.4 * 255).toInt())),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
         ],
       ),
     );

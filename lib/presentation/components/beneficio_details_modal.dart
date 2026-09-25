@@ -116,6 +116,64 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
   List<VarianteEntity> get _variantes =>
       _detalle?.variantesDisponibles ?? const <VarianteEntity>[];
 
+  /// Producto real vinculado al beneficio (ficha técnica + stock del modelo).
+  ProductoBeneficioEntity? get _producto => _detalle?.producto;
+
+  /// Stock del modelo en la ciudad del cliente, con acceso a la ficha técnica.
+  /// Es informativo: si no hay stock igual se puede solicitar (el asesor asigna
+  /// la unidad al entregar).
+  Widget _buildStockInfo(ProductoBeneficioEntity producto) {
+    final bool hayStock = producto.stockDisponible > 0;
+    final String urlFicha = producto.fichaTecnicaUrl ?? '';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: hayStock ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: hayStock ? Colors.green.shade200 : Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hayStock ? Icons.inventory_2_outlined : Icons.remove_shopping_cart_outlined,
+            size: 20,
+            color: hayStock ? Colors.green.shade800 : Colors.red.shade700,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              hayStock
+                  ? 'Stock: ${producto.stockDisponible} unidad${producto.stockDisponible == 1 ? '' : 'es'}'
+                  : 'Sin stock',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: hayStock ? Colors.green.shade900 : Colors.red.shade900,
+              ),
+            ),
+          ),
+          if (urlFicha.isNotEmpty)
+            TextButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse(urlFicha),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.description_outlined, size: 16),
+              label: const Text('Ficha técnica', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -145,6 +203,10 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                 const SizedBox(height: 20),
                 _buildDescription(),
                 const SizedBox(height: 20),
+                if (_producto != null) ...[
+                  _buildStockInfo(_producto!),
+                  const SizedBox(height: 20),
+                ],
                 if (_variantes.isNotEmpty) ...[
                   _buildVarianteSelector(),
                   const SizedBox(height: 20),
@@ -307,6 +369,27 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
           ),
           child: Row(
             children: [
+              // Foto del modelo (diseño: "Elige tu opción" con la imagen).
+              if (variante.imagen != null && variante.imagen!.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    variante.imagen!.startsWith('http')
+                        ? variante.imagen!
+                        : '${ApiConstants.imagenesBaseUrl}/${variante.imagen!}',
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(
+                      width: 64,
+                      height: 64,
+                      color: Colors.grey.shade100,
+                      child: Icon(Icons.smartphone, color: Colors.grey.shade400, size: 28),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,6 +411,53 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                         color: AppTheme.btnColor,
                       ),
                     ),
+                    // Características del modelo (pantalla, RAM, ROM, cámara, red).
+                    if (variante.caracteristicas.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: variante.caracteristicas.entries
+                            .take(5)
+                            .map((e) => Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: Text(
+                                    _textoCaracteristica(e.key, e.value),
+                                    style: TextStyle(fontSize: 10, color: Colors.grey.shade800),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                    // TK-0337 (diseño pág. 26): stock por modelo de la variante.
+                    if (variante.stockDisponible != null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: (variante.stockDisponible! > 0 ? Colors.green : Colors.red).shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: (variante.stockDisponible! > 0 ? Colors.green : Colors.red).shade200,
+                          ),
+                        ),
+                        child: Text(
+                          variante.stockDisponible! > 0
+                              ? 'Stock: ${variante.stockDisponible} unidad${variante.stockDisponible == 1 ? '' : 'es'}'
+                              : 'Sin stock',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: (variante.stockDisponible! > 0 ? Colors.green : Colors.red).shade800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -342,9 +472,32 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
     );
   }
 
+  /// Texto legible de una característica del modelo ("RAM 8 GB", "Red 5G"…).
+  String _textoCaracteristica(String clave, String valor) {
+    switch (clave) {
+      case 'ram_gb':
+        return 'RAM $valor GB';
+      case 'almacenamiento_gb':
+        return 'ROM $valor GB';
+      case 'camara_mp':
+        return 'Cámara $valor MP';
+      case 'pantalla':
+        return 'Pantalla $valor';
+      case 'red':
+        return 'Red $valor';
+      default:
+        return valor.trim().isEmpty ? clave : valor;
+    }
+  }
+
   Widget _buildFinancialDetails() {
     final v = _varianteElegida;
     final String moneda = v?.monedaSimbolo ?? beneficio.moneda;
+
+    // TK-0337 (diseño): con variantes disponibles y ninguna elegida NO se
+    // muestran ceros — cada plan tiene sus propios montos.
+    final bool faltaElegir = v == null && _variantes.isNotEmpty;
+    final String pendiente = '—';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,15 +509,19 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
         const SizedBox(height: 12),
         _buildDetailRow(
           'Cuota Inicial:',
-          '$moneda ${(v?.cuotaInicial ?? beneficio.cuotaInicial).toStringAsFixed(2)}',
+          faltaElegir
+              ? pendiente
+              : '$moneda ${(v?.cuotaInicial ?? beneficio.cuotaInicial).toStringAsFixed(2)}',
         ),
         _buildDetailRow(
           'Cantidad de Cuotas:',
-          '${v?.cantidadCuotas ?? beneficio.cantidadCuotas}',
+          faltaElegir ? pendiente : '${v?.cantidadCuotas ?? beneficio.cantidadCuotas}',
         ),
         _buildDetailRow(
           'Cuota ${beneficio.frecuenciaPago}:',
-          '$moneda ${(v?.montoCuota ?? beneficio.cuotaMensual).toStringAsFixed(2)}',
+          faltaElegir
+              ? pendiente
+              : '$moneda ${(v?.montoCuota ?? beneficio.cuotaMensual).toStringAsFixed(2)}',
         ),
         if (v != null && v.montoInscripcion > 0)
           _buildDetailRow(
@@ -378,7 +535,9 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
           ),
         _buildDetailRow(
           'Total del Plan:',
-          '$moneda ${(v?.montoTotal ?? _calculateTotal()).toStringAsFixed(2)}',
+          faltaElegir
+              ? pendiente
+              : '$moneda ${(v?.montoTotal ?? _calculateTotal()).toStringAsFixed(2)}',
         ),
       ],
     );

@@ -1,8 +1,8 @@
-import 'package:arequipagocreditos/core/utils/model_adapters.dart';
 import 'package:arequipagocreditos/presentation/components/components.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
+import 'package:arequipagocreditos/presentation/pages/comercios_go_page.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +19,11 @@ class MainModules extends StatelessWidget {
     final conductorEntity = authProvider.currentUser;
     final tipo = conductorEntity?.tipo ?? 0;
     final esPasajero = tipo == 4;
-    final conductor = conductorEntity != null
-        ? ModelAdapters.conductorEntityToModel(conductorEntity)
-        : null;
 
+    // Orden fijado por el mockup de "Pantalla de inicio": Beneficios,
+    // Cupones, Servicios Taller, Comercios GO, Órdenes de Pago, Mis
+    // Documentos. Mi Nivel se mudó arriba (junto a Créditos/Puntaje en el
+    // Header) y Mis Financiamientos ya vive en "Más".
     final modulos = <_ModuloConfig>[
       _ModuloConfig(
         icon: Icons.workspace_premium,
@@ -50,12 +51,12 @@ class MainModules extends StatelessWidget {
           page: const ServiciosTallerPage(),
         ),
       _ModuloConfig(
-        icon: Icons.fact_check,
-        title: 'Mis Documentos',
-        subtitle: 'Contratos y archivos',
-        backgroundColor: const Color(0xFF10B981),
+        icon: Icons.storefront,
+        title: 'Comercios GO',
+        subtitle: 'Descuentos cerca de ti',
+        backgroundColor: const Color(0xFFC2410C),
         iconColor: Colors.white,
-        page: const DocumentosFirmadosPage(),
+        page: const ComerciosGoPage(),
       ),
       _ModuloConfig(
         icon: Icons.qr_code_2,
@@ -66,22 +67,13 @@ class MainModules extends StatelessWidget {
         page: const OrdenesPagoPage(),
       ),
       _ModuloConfig(
-        icon: Icons.emoji_events,
-        title: 'Mi Nivel',
-        subtitle: 'Bronce, Plata y Oro',
-        backgroundColor: const Color(0xFFB45309),
+        icon: Icons.fact_check,
+        title: 'Mis Documentos',
+        subtitle: 'Contratos y archivos',
+        backgroundColor: const Color(0xFF10B981),
         iconColor: Colors.white,
-        page: const MiNivelPage(),
+        page: const DocumentosFirmadosPage(),
       ),
-      if (conductor != null)
-        _ModuloConfig(
-          icon: Icons.account_balance_wallet,
-          title: 'Mis Financiamientos',
-          subtitle: 'Tus créditos activos',
-          backgroundColor: const Color(0xFF6366F1),
-          iconColor: Colors.white,
-          page: MisFinanciamientosPage(conductor: conductor),
-        ),
     ];
 
     return Padding(

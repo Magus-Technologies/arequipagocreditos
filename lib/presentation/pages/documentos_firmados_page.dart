@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../core/constants/api_constants.dart';
 import '../widgets/image_full_screen_view.dart';
 import 'pdf_viewer_page.dart';
+import 'signature/firma_documento_page.dart';
 
 class DocumentosFirmadosPage extends StatefulWidget {
   /// false cuando esta pantalla vive como pestaña raíz de [MainShellPage].
@@ -310,6 +311,46 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
     );
   }
 
+  /// Firma el contrato de financiamiento pendiente desde Mis Documentos.
+  /// Usa el mismo flujo del app (canvas + POST /app/firmar/contrato/{id}).
+  Future<void> _firmarContrato(dynamic doc) async {
+    final String? pdfUrl = doc.contratoUrl;
+    final int? financiamientoId = doc.financiamientoId;
+
+    if (pdfUrl == null || pdfUrl.isEmpty || financiamientoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir el contrato para firmar. Intenta más tarde.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FirmaDocumentoPage(
+          title: doc.nombreDocumento,
+          pdfUrl: pdfUrl,
+          tipo: 'contrato',
+          id: financiamientoId,
+          onSigned: _recargarDocumentos,
+        ),
+      ),
+    );
+
+    if (mounted) _recargarDocumentos();
+  }
+
+  /// Refresca la lista después de firmar (el documento cambia de "pendiente" a firmado).
+  void _recargarDocumentos() {
+    if (!mounted) return;
+    final conductorId = context.read<AuthProvider>().currentUser?.idConductor ?? 0;
+    context.read<FinanciamientoServicioProvider>().loadDocumentosFirmados(conductorId);
+  }
+
   Widget _buildDocumentCard(dynamic doc) {
     final bool isFinanciamiento = doc.tipo == 'financiamiento';
     final Color accentColor = isFinanciamiento ? Colors.blue.shade600 : Colors.green.shade600;
@@ -336,9 +377,20 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
+      // ExpansionTile pinta su ListTile (y el ripple del tap) sobre el
+      // Material ancestro mas cercano. El Container de arriba solo aplica
+      // un BoxDecoration (no es Material), asi que sin este Material
+      // intermedio el splash queda invisible — Flutter lo advierte en
+      // consola con "ListTile background color or ink splashes may be
+      // invisible". type: transparency para no tapar el fondo blanco ya
+      // pintado por el Container.
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           childrenPadding: EdgeInsets.zero,
           leading: Container(
@@ -387,8 +439,14 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
-              'Firmado el: ${DateFormat('dd/MM/yyyy HH:mm').format(doc.firmadoAt)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              doc.firmado
+                  ? 'Firmado el: ${DateFormat('dd/MM/yyyy HH:mm').format(doc.firmadoAt!)}'
+                  : 'Pendiente de firma',
+              style: TextStyle(
+                fontSize: 12,
+                color: doc.firmado ? Colors.grey.shade500 : Colors.orange.shade800,
+                fontWeight: doc.firmado ? FontWeight.normal : FontWeight.w600,
+              ),
             ),
           ),
           children: [
@@ -408,31 +466,47 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final url = ApiConstants.normalizeUrl(doc.firmaUrl);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ImageFullScreenView(
-                                  imageUrl: url,
-                                  heroTag: 'firma_${doc.id}_${doc.tipo}',
-                                  title: 'Firma de ${doc.nombreFirmante}',
+                      if (doc.firmado)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              final url = ApiConstants.normalizeUrl(doc.firmaUrl);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ImageFullScreenView(
+                                    imageUrl: url,
+                                    heroTag: 'firma_${doc.id}_${doc.tipo}',
+                                    title: 'Firma de ${doc.nombreFirmante}',
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.image, size: 16),
-                          label: const Text('Ver Firma'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                              );
+                            },
+                            icon: const Icon(Icons.image, size: 16),
+                            label: const Text('Ver Firma'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black87,
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        )
+                      else
+                        // Contrato pendiente: se firma desde acá mismo.
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _firmarContrato(doc),
+                            icon: const Icon(Icons.draw_outlined, size: 16),
+                            label: const Text('Firmar'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
                           ),
                         ),
-                      ),
                       if (pdfUrl != null) ...[
                         const SizedBox(width: 10),
                         Expanded(
@@ -449,7 +523,7 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
                               );
                             },
                             icon: const Icon(Icons.picture_as_pdf, size: 16),
-                            label: const Text('Ver PDF'),
+                            label: const Text('Descargar PDF'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary,
                               foregroundColor: Colors.black87,
@@ -465,6 +539,7 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

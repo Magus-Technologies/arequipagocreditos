@@ -1,13 +1,14 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
-import 'package:arequipagocreditos/presentation/components/component_quick_stat.dart';
 import 'package:arequipagocreditos/presentation/components/header_icon.dart';
-import 'package:arequipagocreditos/presentation/pages/cupones_page.dart';
+import 'package:arequipagocreditos/presentation/pages/mi_nivel_page.dart';
+import 'package:arequipagocreditos/presentation/pages/mis_financiamientos_page.dart';
 import 'package:arequipagocreditos/presentation/pages/perfil_page.dart';
 import 'package:arequipagocreditos/presentation/pages/puntuacion_page.dart';
 import 'package:arequipagocreditos/presentation/pages/notification_detail_page.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/presentation/providers/resumen_crediticio_provider.dart';
+import 'package:arequipagocreditos/presentation/providers/nivel_taller_provider.dart';
 import 'package:arequipagocreditos/presentation/providers/notification_provider.dart';
 import 'package:arequipagocreditos/data/models/notification_model.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +39,9 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
         widget.conductor.idConductor,
         widget.conductor.tipo,
       );
+
+      Provider.of<NivelTallerProvider>(context, listen: false)
+          .cargarNivel(widget.conductor.idConductor);
 
       final notifProvider = Provider.of<NotificationProvider>(
         context,
@@ -183,71 +187,79 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 20),
+          // Fila compacta: Créditos activos / Mi Nivel / Puntaje crediticio,
+          // todas visibles a la vez (antes era un carrusel con Cupones, que
+          // quedaba escondido salvo que la persona deslizara).
           Consumer<ResumenCrediticioProvider>(
             builder: (context, resumenProvider, _) {
-              if (resumenProvider.loading) {
-                return const SizedBox(
-                  height: 90,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (resumenProvider.error != null) {
-                return SizedBox(
-                  height: 90,
-                  child: Center(
-                    child: const Text('Error al cargar datos'),
-                  ), // Puedes personalizar el error
-                );
-              }
               final resumen = resumenProvider.resumen;
               return SizedBox(
-                height: 90,
-                child: PageView(
-                  padEnds: false,
-                  controller: PageController(viewportFraction: 0.8),
+                height: 80,
+                child: Row(
                   children: [
-                    ComponentQuickStat(
-                      emoji: '💳',
-                      label: 'Créditos Activos',
-                      value:
-                          resumen != null
-                              ? resumen.creditosActivos.toString()
-                              : '-',
-                      primaryColor: const Color(0xFF1F2937),
-                      secondaryColor: const Color(0xFF374151),
+                    Expanded(
+                      child: _CompactStat(
+                        icon: const Icon(Icons.credit_card_rounded, color: Color(0xFFF7D046), size: 15),
+                        label: 'Créditos activos',
+                        value: resumenProvider.loading
+                            ? '-'
+                            : (resumen != null ? resumen.creditosActivos.toString() : '-'),
+                        primaryColor: const Color(0xFF1B2A4A),
+                        secondaryColor: const Color(0xFF2C4470),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => MisFinanciamientosPage(conductor: widget.conductor)),
+                          );
+                        },
+                      ),
                     ),
-                    ComponentQuickStat(
-                      emoji: '⭐',
-                      label: 'Puntaje Crediticio',
-                      value: resumen != null ? resumen.puntaje.toString() : '-',
-                      primaryColor: AppTheme.primary,
-                      secondaryColor: const Color(0xFFF59E0B),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PuntuacionPage(),
-                          ),
-                        );
-                      },
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Consumer<NivelTallerProvider>(
+                        builder: (context, nivelProvider, _) {
+                          final nivel = nivelProvider.nivel;
+                          final colors = _coloresParaNivel(nivel?.nivelActual);
+                          return _CompactStat(
+                            icon: Icon(
+                              Icons.emoji_events_rounded,
+                              color: colors.$3 == Colors.white ? Colors.white : const Color(0xFFFFE082),
+                              size: 15,
+                            ),
+                            label: 'Mi nivel',
+                            value: nivelProvider.isLoading
+                                ? '-'
+                                : (nivel?.tieneNivel == true ? _capitalizar(nivel!.nivelActual!) : 'Sin nivel'),
+                            primaryColor: colors.$1,
+                            secondaryColor: colors.$2,
+                            contentColor: colors.$3,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MiNivelPage()),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                    ComponentQuickStat(
-                      emoji: '🎁',
-                      label: 'Cupones Disponibles',
-                      value:
-                          resumen != null
-                              ? resumen.cuponesDisponibles.toString()
-                              : '-',
-                      primaryColor: const Color(0xFF4B5563),
-                      secondaryColor: const Color(0xFF6B7280),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CuponesPage(),
-                          ),
-                        );
-                      },
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _CompactStat(
+                        icon: const Icon(Icons.star_rounded, color: Colors.white, size: 17),
+                        label: 'Puntaje crediticio',
+                        value: resumenProvider.loading
+                            ? '-'
+                            : (resumen != null ? resumen.puntaje.toString() : '-'),
+                        primaryColor: const Color(0xFFF7A81B),
+                        secondaryColor: const Color(0xFFEF7F1A),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PuntuacionPage()),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -310,21 +322,72 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                             color: Colors.black87,
                           ),
                         ),
-                        if (notifications.any((n) => !n.isRead))
-                          isMarkingAll
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : TextButton(
-                                  onPressed: () async {
-                                    setModalState(() => isMarkingAll = true);
-                                    await notifProvider.markAllAsRead();
-                                    setModalState(() => isMarkingAll = false);
-                                  },
-                                  child: const Text('Marcar todo como leído'),
+                        // Acciones del panel. Se leen del provider (no de la
+                        // lista recibida) para que se actualicen al borrar.
+                        Consumer<NotificationProvider>(
+                          builder: (context, provider, _) {
+                            if (isMarkingAll) {
+                              return const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              );
+                            }
+
+                            final lista = provider.notifications;
+                            final hayNoLeidas = lista.any((n) => !n.isRead);
+                            final hayLeidas = lista.any((n) => n.isRead);
+
+                            if (lista.isEmpty) return const SizedBox.shrink();
+
+                            return PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, color: Colors.black54),
+                              tooltip: 'Opciones',
+                              onSelected: (opcion) async {
+                                if (opcion == 'marcar') {
+                                  setModalState(() => isMarkingAll = true);
+                                  await notifProvider.markAllAsRead();
+                                  setModalState(() => isMarkingAll = false);
+                                  return;
+                                }
+
+                                final todas = opcion == 'borrar_todas';
+                                final confirmado = await _confirmarBorrado(context, todas: todas);
+                                if (!confirmado) return;
+
+                                setModalState(() => isMarkingAll = true);
+                                await notifProvider.deleteAllNotifications(todas: todas);
+                                setModalState(() => isMarkingAll = false);
+                              },
+                              itemBuilder: (context) => [
+                                if (hayNoLeidas)
+                                  const PopupMenuItem(
+                                    value: 'marcar',
+                                    child: _OpcionMenu(
+                                      icono: Icons.done_all,
+                                      texto: 'Marcar todo como leído',
+                                    ),
+                                  ),
+                                if (hayLeidas)
+                                  const PopupMenuItem(
+                                    value: 'borrar_leidas',
+                                    child: _OpcionMenu(
+                                      icono: Icons.delete_sweep_outlined,
+                                      texto: 'Borrar las leídas',
+                                    ),
+                                  ),
+                                const PopupMenuItem(
+                                  value: 'borrar_todas',
+                                  child: _OpcionMenu(
+                                    icono: Icons.delete_outline,
+                                    texto: 'Borrar todas',
+                                    color: Colors.red,
+                                  ),
                                 ),
+                              ],
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -404,23 +467,21 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                                           if (!isRead) {
                                             await provider.markAsRead(notification.id);
                                           }
-                                          // Si tiene contenido rico, navegar al detalle
-                                          final hasRichContent = notification.data.hasImage ||
-                                              notification.data.hasFile ||
-                                              notification.data.hasLink;
+                                          // Siempre se abre el detalle: en la lista el
+                                          // mensaje se corta a 2 lineas, asi que el
+                                          // usuario necesita verlo completo aunque la
+                                          // notificacion no traiga imagen ni adjunto.
                                           // ignore: use_build_context_synchronously
                                           if (context.mounted) {
                                             Navigator.pop(context);
-                                            if (hasRichContent) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => NotificationDetailPage(
-                                                    notification: notification,
-                                                  ),
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => NotificationDetailPage(
+                                                  notification: notification,
                                                 ),
-                                              );
-                                            }
+                                              ),
+                                            );
                                           }
                                         },
                                       ),
@@ -438,6 +499,202 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
           },
         );
       },
+    );
+  }
+}
+
+String _capitalizar(String texto) => texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
+
+/// Opcion del menu de acciones del panel de notificaciones.
+class _OpcionMenu extends StatelessWidget {
+  final IconData icono;
+  final String texto;
+  final Color? color;
+
+  const _OpcionMenu({required this.icono, required this.texto, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icono, size: 20, color: color ?? Colors.black54),
+        const SizedBox(width: 12),
+        Text(texto, style: TextStyle(fontSize: 14, color: color ?? Colors.black87)),
+      ],
+    );
+  }
+}
+
+/// Confirma el borrado. Borrar TODAS incluye las no leidas, asi que se avisa.
+Future<bool> _confirmarBorrado(BuildContext context, {required bool todas}) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(todas ? '¿Borrar todas?' : '¿Borrar las leídas?'),
+      content: Text(
+        todas
+            ? 'Se eliminarán todas tus notificaciones, incluidas las que todavía no leíste. No se puede deshacer.'
+            : 'Se eliminarán las notificaciones que ya leíste. Las no leídas se mantienen.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text('Borrar'),
+        ),
+      ],
+    ),
+  );
+
+  return confirmado ?? false;
+}
+
+/// (primario, secundario, color de contenido) para el degradado de la tarjeta
+/// "Mi Nivel" segun el nivel actual. Oro va en dorado con texto oscuro (como
+/// el diseño de gerencia); Bronce/Plata mantienen sus tonos con texto blanco.
+(Color, Color, Color) _coloresParaNivel(String? nivel) {
+  switch (nivel) {
+    case 'oro':
+      return (const Color(0xFFF7B500), const Color(0xFFEFA200), const Color(0xFF3A2700));
+    case 'plata':
+      return (const Color(0xFF9CA3AF), const Color(0xFF6B7280), Colors.white);
+    case 'bronce':
+      return (const Color(0xFFB45309), const Color(0xFF92400E), Colors.white);
+    default:
+      return (const Color(0xFF9CA3AF), const Color(0xFF6B7280), Colors.white);
+  }
+}
+
+/// Tarjeta compacta para la fila de estadisticas del header (Creditos / Mi
+/// Nivel / Puntaje): icono en circulo a la izquierda, titulo + valor a la
+/// derecha y chevron en la esquina — diseño pedido por gerencia.
+///
+/// Ojo con el ancho: entran 3 por fila en un celular (~104dp), asi que el
+/// icono es chico (27) y el titulo 2 lineas de 8.5 — si se agrandan, el texto
+/// se corta (pasó con la primera version).
+class _CompactStat extends StatelessWidget {
+  final Widget icon;
+  final String label;
+  final String value;
+  final Color primaryColor;
+  final Color secondaryColor;
+
+  /// Color del texto, circulo del icono y chevron: blanco por defecto; oscuro
+  /// en tarjetas claras (ej. nivel Oro).
+  final Color contentColor;
+  final VoidCallback? onTap;
+
+  const _CompactStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.primaryColor,
+    required this.secondaryColor,
+    this.contentColor = Colors.white,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [primaryColor, secondaryColor],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withAlpha((0.28 * 255).toInt()),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Chevron en la esquina (como las cards de Servicios), sin robar
+              // ancho al titulo.
+              Positioned(
+                top: 7,
+                right: 7,
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 13,
+                  color: contentColor.withAlpha((0.55 * 255).toInt()),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                child: Row(
+                  children: [
+                    // Icono en circulo con aro translucido
+                    Container(
+                      width: 26,
+                      height: 26,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: contentColor.withAlpha((0.14 * 255).toInt()),
+                        border: Border.all(
+                          color: contentColor.withAlpha((0.45 * 255).toInt()),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: icon,
+                    ),
+                    const SizedBox(width: 5),
+                    // Titulo (arriba) + valor (abajo)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            label.toUpperCase(),
+                            style: TextStyle(
+                              color: contentColor,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                              height: 1.12,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: contentColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

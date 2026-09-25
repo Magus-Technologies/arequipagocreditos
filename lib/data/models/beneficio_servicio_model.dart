@@ -57,6 +57,10 @@ class VarianteModel extends VarianteEntity {
     super.monedaSimbolo,
     super.monedaInicialId,
     super.monedaInicialSimbolo,
+    super.stockDisponible,
+    super.imagen,
+    super.caracteristicas,
+    super.coloresDisponibles,
   });
 
   factory VarianteModel.fromJson(Map<String, dynamic> json) {
@@ -94,6 +98,20 @@ class VarianteModel extends VarianteEntity {
       monedaSimbolo: json['moneda_simbolo']?.toString() ?? 'S/.',
       monedaInicialId: toInt(json['moneda_inicial_id'], 1),
       monedaInicialSimbolo: json['moneda_inicial_simbolo']?.toString() ?? 'S/.',
+      stockDisponible: json['stock_disponible'] != null
+          ? toInt(json['stock_disponible'])
+          : null,
+      imagen: json['imagen']?.toString(),
+      caracteristicas: json['caracteristicas'] is List
+          ? {
+              for (final c in (json['caracteristicas'] as List).whereType<Map>())
+                if ((c['nombre']?.toString() ?? '').isNotEmpty)
+                  c['nombre'].toString(): (c['valor']?.toString() ?? ''),
+            }
+          : const {},
+      coloresDisponibles: json['colores_disponibles'] is List
+          ? (json['colores_disponibles'] as List).map((e) => e.toString()).toList()
+          : const [],
     );
   }
 }
@@ -127,6 +145,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.clienteAlertas,
     super.notaImportante,
     super.variantesDisponibles,
+    super.producto,
   });
 
   factory BeneficioServicioModel.fromJson(Map<String, dynamic> json) {
@@ -188,6 +207,9 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
           : null,
       notaImportante: json['nota_importante']?.toString(),
       variantesDisponibles: _parseVariantes(json['variantes_disponibles']),
+      producto: json['producto'] is Map<String, dynamic>
+          ? ProductoBeneficioModel.fromJson(json['producto'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -315,6 +337,37 @@ class DetalleFinanciamientoModel extends DetalleFinanciamientoEntity {
       contrato: json['contrato'] is Map<String, dynamic>
           ? ContratoDetalleModel.fromJson(json['contrato'] as Map<String, dynamic>)
           : null,
+    );
+  }
+}
+
+/// Producto real vinculado al beneficio (TK-0306 / TK-0337): ficha técnica,
+/// colores y stock del modelo en la ciudad del cliente.
+class ProductoBeneficioModel extends ProductoBeneficioEntity {
+  const ProductoBeneficioModel({
+    required super.id,
+    required super.nombre,
+    super.fichaTecnicaUrl,
+    super.coloresDisponibles,
+    super.stockDisponible,
+    super.disponible,
+  });
+
+  factory ProductoBeneficioModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      return int.tryParse(value?.toString() ?? '') ?? 0;
+    }
+
+    return ProductoBeneficioModel(
+      id: parseInt(json['id']),
+      nombre: json['nombre']?.toString() ?? '',
+      fichaTecnicaUrl: json['ficha_tecnica_url']?.toString(),
+      coloresDisponibles: json['colores_disponibles'] is List
+          ? (json['colores_disponibles'] as List).map((e) => e.toString()).toList()
+          : const [],
+      stockDisponible: parseInt(json['stock_disponible']),
+      disponible: json['disponible'] == true,
     );
   }
 }

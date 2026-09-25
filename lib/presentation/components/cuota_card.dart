@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:arequipagocreditos/data/models/cuota_financiamiento_model.dart';
+import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,7 +24,7 @@ class _CuotaCardState extends State<CuotaCard> {
 
   Future<void> _fetchPdf() async {
     final response = await http.post(
-      Uri.parse('https://arequipago-ventas.pe/downloadReportFinance'),
+      Uri.parse('${ApiConstants.baseDomain}/downloadReportFinance'),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',

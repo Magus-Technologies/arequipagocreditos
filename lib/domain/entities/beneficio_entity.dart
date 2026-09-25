@@ -1,3 +1,5 @@
+import 'beneficio_servicio_entity.dart';
+
 class BeneficioEntity {
   final String titulo;
   final String descripcion;
@@ -61,6 +63,9 @@ class BeneficioComercialEntity {
   final String moneda;
   final String frecuenciaPago;
   final List<String>? visiblePara;
+  /// Variantes activas del grupo (ej. certificado 13k/15k/17k). Cuando hay,
+  /// los importes del beneficio dependen de la variante que elija el cliente.
+  final List<VarianteEntity> variantesDisponibles;
 
   BeneficioComercialEntity({
     required this.id,
@@ -80,6 +85,7 @@ class BeneficioComercialEntity {
     required this.moneda,
     required this.frecuenciaPago,
     this.visiblePara,
+    this.variantesDisponibles = const [],
   });
 
   /// Retorna true si este beneficio es visible para la audiencia dada.

@@ -15,6 +15,7 @@ import 'data/datasources/signature_remote_datasource.dart';
 import 'data/datasources/catalogos_remote_datasource.dart';
 import 'data/datasources/ordenes_pago_remote_datasource.dart';
 import 'data/datasources/nivel_taller_remote_datasource.dart';
+import 'data/datasources/comercio_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/cupones_public_repository_impl.dart';
@@ -25,6 +26,7 @@ import 'data/repositories/signature_repository_impl.dart';
 import 'data/repositories/catalogos_repository_impl.dart';
 import 'data/repositories/ordenes_pago_repository_impl.dart';
 import 'data/repositories/nivel_taller_repository_impl.dart';
+import 'data/repositories/comercio_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
@@ -37,6 +39,7 @@ import 'domain/repositories/signature_repository.dart';
 import 'domain/repositories/catalogos_repository.dart';
 import 'domain/repositories/ordenes_pago_repository.dart';
 import 'domain/repositories/nivel_taller_repository.dart';
+import 'domain/repositories/comercio_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/get_public_cupones_usecase.dart';
@@ -50,6 +53,7 @@ import 'domain/usecases/get_beneficios_servicios_usecase.dart';
 import 'domain/usecases/get_documentos_firmados_usecase.dart';
 import 'domain/usecases/get_ordenes_pago_usecase.dart';
 import 'domain/usecases/get_nivel_taller_usecase.dart';
+import 'domain/usecases/get_comercios_usecase.dart';
 
 // Presentation Layer
 import 'presentation/providers/auth_provider.dart';
@@ -65,6 +69,7 @@ import 'presentation/providers/financiamiento_servicio_provider.dart';
 import 'presentation/providers/catalogos_provider.dart';
 import 'presentation/providers/ordenes_pago_provider.dart';
 import 'presentation/providers/nivel_taller_provider.dart';
+import 'presentation/providers/comercios_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -166,6 +171,12 @@ class DependencyInjection {
         getNivelTallerUseCase: _getGetNivelTallerUseCase(),
       ),
     ),
+    ChangeNotifierProvider<ComerciosProvider>(
+      create: (context) => ComerciosProvider(
+        getComerciosUseCase: _getGetComerciosUseCase(),
+        getComercioCategoriasUseCase: _getGetComercioCategoriasUseCase(),
+      ),
+    ),
   ];
 
   // Repositories
@@ -210,6 +221,9 @@ class DependencyInjection {
   static NivelTallerRepository get _nivelTallerRepository =>
       NivelTallerRepositoryImpl(remoteDataSource: _nivelTallerRemoteDataSource);
 
+  static ComercioRepository get _comercioRepository =>
+      ComercioRepositoryImpl(remoteDataSource: _comercioRemoteDataSource);
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -245,6 +259,9 @@ class DependencyInjection {
 
   static NivelTallerRemoteDataSource get _nivelTallerRemoteDataSource =>
       NivelTallerRemoteDataSourceImpl(client: _httpClient);
+
+  static ComercioRemoteDataSource get _comercioRemoteDataSource =>
+      ComercioRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();
@@ -334,4 +351,10 @@ class DependencyInjection {
   // Use Cases - Nivel de talleres
   static GetNivelTallerUseCase _getGetNivelTallerUseCase() =>
       GetNivelTallerUseCase(_nivelTallerRepository);
+
+  static GetComerciosUseCase _getGetComerciosUseCase() =>
+      GetComerciosUseCase(_comercioRepository);
+
+  static GetComercioCategoriasUseCase _getGetComercioCategoriasUseCase() =>
+      GetComercioCategoriasUseCase(_comercioRepository);
 }

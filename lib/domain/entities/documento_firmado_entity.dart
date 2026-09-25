@@ -33,7 +33,9 @@ class DocumentoFirmadoEntity {
   final String cargo;
   final String firmaUrl;
   final String? contratoUrl;
-  final DateTime firmadoAt;
+  /// true = ya firmado; false = pendiente de firma (se puede firmar desde el app).
+  final bool firmado;
+  final DateTime? firmadoAt;
   final String origen;
 
   DocumentoFirmadoEntity({
@@ -51,7 +53,8 @@ class DocumentoFirmadoEntity {
     required this.cargo,
     required this.firmaUrl,
     this.contratoUrl,
-    required this.firmadoAt,
+    this.firmado = true,
+    this.firmadoAt,
     required this.origen,
   });
 }

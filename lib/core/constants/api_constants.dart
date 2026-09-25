@@ -2,14 +2,23 @@ class ApiConstants {
   // Base URLs
   static const String baseUrlLocal =
       "http://192.168.100.50/arequipago-api/public/api";
-  static const String baseUrlProduction =
-      "https://arequipago-ventas.pe/api";
-  static const String storageUrl =
-      "https://arequipago-ventas.pe/storage";
+
+  /// Dominio raíz del backend. ÚNICO lugar donde se define el host: el resto
+  /// de las URLs (api, storage, políticas) se derivan de acá.
+  /// Se puede sobreescribir al compilar sin tocar código:
+  ///   flutter build apk --dart-define=API_DOMAIN=https://otro-dominio.pe
+  /// http://credigo.test/ local
+  static const String baseDomain = String.fromEnvironment(
+    'API_DOMAIN',
+    defaultValue: 'https://arequipago-ventas.pe',
+  );
+
+  static const String baseUrlProduction = "$baseDomain/api";
+  static const String storageUrl = "$baseDomain/storage";
 
 
-  static const String imagenesBaseUrl = "https://arequipago-ventas.pe/storage";
-  static const String politicaPrivacidadUrl = "https://arequipago-ventas.pe/politica-privacidad";
+  static const String imagenesBaseUrl = storageUrl;
+  static const String politicaPrivacidadUrl = "$baseDomain/politica-privacidad";
 
 
   // Environment
@@ -47,6 +56,8 @@ class ApiConstants {
   static const String talleresListServiciosEndpoint = '/app/talleres-list/servicios';
   static const String talleresCalificarEndpoint = '/app/talleres-list/{id}/calificar';
   static const String miNivelTallerEndpoint = '/app/talleres/mi-nivel/{clienteConductorId}';
+  static const String comerciosListEndpoint = '/app/comercios-list';
+  static const String comerciosCategoriasEndpoint = '/app/comercios-list/categorias';
 
   static const String cuponesEndpoint = '/app/promociones/cupones/listar';
   static const String firmarEndpoint = '/app/firmar/{tipo}/{id}';
@@ -59,6 +70,8 @@ class ApiConstants {
   static const String markAsReadEndpoint = '/notifications/{notificationId}/{id}/{tipo}/read';
   static const String readAllNotificationsEndpoint = '/notifications/read-all/{id}/{tipo}';
   static const String deleteNotificationEndpoint = '/notifications/{notificationId}/{id}/{tipo}';
+  /// Borra las notificaciones ya leidas; con ?todas=1 borra tambien las no leidas.
+  static const String deleteAllNotificationsEndpoint = '/notifications/delete-all/{id}/{tipo}';
   
   // New endpoints for financing flow
   static const String createFinanciamientoEndpoint = '/app/financiamientos';

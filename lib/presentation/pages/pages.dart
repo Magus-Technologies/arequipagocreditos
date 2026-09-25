@@ -18,3 +18,6 @@ export 'mi_nivel_page.dart';
 export 'mis_financiamientos_page.dart';
 export 'mas_page.dart';
 export 'main_shell_page.dart';
+export 'configuracion_acceso_page.dart';
+export 'crear_pin_page.dart';
+export 'ingresar_pin_page.dart';

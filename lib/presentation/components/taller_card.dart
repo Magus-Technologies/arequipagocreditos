@@ -100,19 +100,32 @@ class TallerCard extends StatelessWidget {
                         children: [
                           Icon(Icons.phone_android, size: 13, color: const Color(0xFF25D366)),
                           const SizedBox(width: 3),
-                          Text(
-                            taller.whatsapp!,
-                            style: const TextStyle(
-                              fontSize: 12, 
-                              color: Color(0xFF25D366),
-                              fontWeight: FontWeight.w600,
+                          // Sin Flexible, un número largo desbordaba la fila.
+                          Flexible(
+                            child: Text(
+                              taller.whatsapp!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF25D366),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ],
                     const SizedBox(height: 8),
-                    Row(
+                    // Wrap y no Row: en pantallas angostas esta fila se pasaba de
+                    // ancho (en debug salían las franjas amarillas, en release el
+                    // botón de WhatsApp quedaba recortado sin aviso). Ahora los
+                    // botones bajan a una segunda línea en vez de desbordarse.
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -122,6 +135,8 @@ class TallerCard extends StatelessWidget {
                           ),
                           child: Text(
                             '${taller.serviciosCount} servicios',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -129,23 +144,28 @@ class TallerCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty)
-                          _ActionButton(
-                            icon: const Icon(Icons.map, size: 14, color: Color(0xFF4285F4)),
-                            label: 'Mapa',
-                            color: const Color(0xFF4285F4),
-                            onTap: () => launchUrl(Uri.parse(taller.googleMapsUrl!)),
-                          ),
-                        if (taller.whatsappUrl != null && taller.whatsappUrl!.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          _ActionButton(
-                            icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: Color(0xFF25D366)),
-                            label: 'Chat',
-                            color: const Color(0xFF25D366),
-                            onTap: () => launchUrl(Uri.parse(taller.whatsappUrl!)),
-                          ),
-                        ],
+                        // También Wrap: los dos botones juntos necesitan 168 px y
+                        // en un teléfono de 320 solo hay 166.
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            if (taller.googleMapsUrl != null && taller.googleMapsUrl!.isNotEmpty)
+                              _ActionButton(
+                                icon: const Icon(Icons.map, size: 14, color: Color(0xFF4285F4)),
+                                label: 'Mapa',
+                                color: const Color(0xFF4285F4),
+                                onTap: () => launchUrl(Uri.parse(taller.googleMapsUrl!)),
+                              ),
+                            if (taller.whatsappUrl != null && taller.whatsappUrl!.isNotEmpty)
+                              _ActionButton(
+                                icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: Color(0xFF25D366)),
+                                label: 'Chat',
+                                color: const Color(0xFF25D366),
+                                onTap: () => launchUrl(Uri.parse(taller.whatsappUrl!)),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ],

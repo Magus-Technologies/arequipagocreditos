@@ -108,81 +108,41 @@ class ProfileAvatar extends StatelessWidget {
           ),
         ),
 
-        // Botón de cámara (si no ha cambiado la foto)
-        if (conductor?.fotoPerfilCambiada != true)
-          Positioned(
-            bottom: 2,
-            right: 2,
+        // Botón de cámara: siempre disponible, el usuario puede cambiar su
+        // foto las veces que quiera (antes se ocultaba tras el primer cambio).
+        // Tamaño fijo con InkWell (no IconButton): Material 3 le impone a
+        // IconButton un área táctil mínima de 48x48 aunque se le pase
+        // `constraints: BoxConstraints()`, por eso antes se veía gigante
+        // tapando media foto.
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: isUploadingImage ? null : onChangeProfilePicture,
             child: Container(
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Container(
-                margin: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
-                ),
-                child: isUploadingImage
-                    ? Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : IconButton(
-                        icon: const Icon(
-                          Icons.camera_alt,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                        padding: const EdgeInsets.all(6),
-                        constraints: const BoxConstraints(),
-                        onPressed: onChangeProfilePicture,
-                      ),
-              ),
-            ),
-          ),
-
-        // Indicador de foto cambiada
-        if (conductor?.fotoPerfilCambiada == true)
-          Positioned(
-            bottom: 2,
-            right: 2,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.green,
+                color: Colors.blue,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
+                    color: Colors.black.withAlpha((0.15 * 255).toInt()),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.check,
-                size: 16,
-                color: Colors.white,
-              ),
+              child: isUploadingImage
+                  ? const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.camera_alt, size: 14, color: Colors.white),
             ),
           ),
+        ),
       ],
     );
   }

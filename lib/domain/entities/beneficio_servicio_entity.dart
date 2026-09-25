@@ -47,6 +47,15 @@ class VarianteEntity {
   final String monedaSimbolo;
   final int monedaInicialId;
   final String monedaInicialSimbolo;
+  /// Stock del modelo de esta variante (matcheado por nombre contra el
+  /// producto). Null = no hay producto que matchee (no se muestra stock).
+  final int? stockDisponible;
+  /// Foto del modelo (ruta relativa del almacén; null si no tiene).
+  final String? imagen;
+  /// Características del modelo para mostrar (pantalla, RAM, ROM, cámara, red).
+  final Map<String, String> caracteristicas;
+  /// Colores disponibles del modelo (de sus unidades).
+  final List<String> coloresDisponibles;
 
   const VarianteEntity({
     required this.varianteId,
@@ -65,6 +74,10 @@ class VarianteEntity {
     this.monedaSimbolo = 'S/.',
     this.monedaInicialId = 1,
     this.monedaInicialSimbolo = 'S/.',
+    this.stockDisponible,
+    this.imagen,
+    this.caracteristicas = const {},
+    this.coloresDisponibles = const [],
   });
 }
 
@@ -98,6 +111,10 @@ class BeneficioServicioEntity {
   final String? notaImportante;
   final List<VarianteEntity> variantesDisponibles;
 
+  /// Producto real vinculado (ficha técnica, colores y stock del modelo en la
+  /// ciudad del cliente). Null si el beneficio no tiene producto vinculado.
+  final ProductoBeneficioEntity? producto;
+
   BeneficioServicioEntity({
     required this.id,
     required this.nombre,
@@ -126,6 +143,7 @@ class BeneficioServicioEntity {
     this.clienteAlertas,
     this.notaImportante,
     this.variantesDisponibles = const [],
+    this.producto,
   });
 
   /// Retorna true si este servicio es visible para la audiencia dada.
@@ -133,6 +151,27 @@ class BeneficioServicioEntity {
     if (visiblePara == null) return true;
     return visiblePara!.contains(audiencia);
   }
+}
+
+/// Producto real vinculado al servicio/beneficio (TK-0306 / TK-0337).
+/// `stockDisponible` = unidades del modelo disponibles en los almacenes de la
+/// ciudad del cliente; `disponible` = false cuando no hay stock ("Sin stock").
+class ProductoBeneficioEntity {
+  final int id;
+  final String nombre;
+  final String? fichaTecnicaUrl;
+  final List<String> coloresDisponibles;
+  final int stockDisponible;
+  final bool disponible;
+
+  const ProductoBeneficioEntity({
+    required this.id,
+    required this.nombre,
+    this.fichaTecnicaUrl,
+    this.coloresDisponibles = const [],
+    this.stockDisponible = 0,
+    this.disponible = false,
+  });
 }
 
 class ContratoDetalleEntity {

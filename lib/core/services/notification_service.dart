@@ -105,7 +105,7 @@ class NotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         log('🖱️ onMessageOpenedApp FIRED - title: ${message.notification?.title}');
         log('🖱️ onMessageOpenedApp data: ${message.data}');
-        handleNotificationTap(message.data);
+        handleNotificationTap(_datosConTexto(message));
       });
 
       // Manejar el caso cuando la app se abre desde una notificación estando TERMINADA
@@ -116,64 +116,85 @@ class NotificationService {
         );
         // Guardamos los datos para que AppWrapper los procese una vez
         // que el usuario esté autenticado y el árbol de widgets listo.
-        pendingNotificationData = initialMessage.data;
+        pendingNotificationData = _datosConTexto(initialMessage);
       }
     } catch (e) {
       log('❌ Error al inicializar FCM: $e');
     }
   }
 
+  /// Junta el `data` del push con el título y cuerpo del mensaje, para que el
+  /// detalle tenga qué mostrar aunque el `data` venga sin texto (ej. cumpleaños).
+  Map<String, dynamic> _datosConTexto(RemoteMessage message) {
+    final datos = Map<String, dynamic>.from(message.data);
+
+    if ((datos['title'] ?? '').toString().isEmpty) {
+      datos['title'] = message.notification?.title ?? '';
+    }
+    if ((datos['message'] ?? '').toString().isEmpty) {
+      datos['message'] = datos['body']?.toString() ?? message.notification?.body ?? '';
+    }
+
+    return datos;
+  }
+
   /// Navega según el tipo de notificación recibida.
+  ///
+  /// Si el push trae el financiamiento, se abre esa pantalla; si no, se muestra
+  /// el detalle de la notificación. Nunca se queda sin hacer nada: antes, tocar
+  /// una orden de pago (que manda `orden_pago_id`, no `financiamiento_id`) o
+  /// una notificación de texto sin adjuntos no abría nada.
   void handleNotificationTap(Map<String, dynamic> data) {
     final String? type = data['type']?.toString();
     final context = navigatorKey.currentContext;
     if (context == null) return;
 
-    if (type == 'orden_pago') {
+    if (type == 'orden_pago' || type == 'cuota_por_vencer') {
       final int financiamientoId =
           int.tryParse(data['financiamiento_id']?.toString() ?? '') ?? 0;
-      if (financiamientoId == 0) return;
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => FinanciamientoDetallePage(
-            idFinanciamiento: financiamientoId,
-            moneda: 'S/.',
-          ),
-        ),
-      );
-    } else if (type == 'bulk' || type == 'personal') {
-      // Construir un NotificationModel temporal desde el payload push
-      final hasRichContent = (data['image_url'] != null && data['image_url'].toString().isNotEmpty) ||
-          (data['file_url'] != null && data['file_url'].toString().isNotEmpty) ||
-          (data['link'] != null && data['link'].toString().isNotEmpty);
-
-      if (hasRichContent) {
-        final notification = NotificationModel(
-          id: data['notification_id']?.toString() ?? '',
-          type: type!,
-          notifiableType: '',
-          notifiableId: 0,
-          data: NotificationDataModel(
-            title: data['title']?.toString() ?? '',
-            message: data['message']?.toString() ?? '',
-            type: type,
-            imageUrl: data['image_url']?.toString(),
-            fileUrl: data['file_url']?.toString(),
-            fileName: data['file_name']?.toString(),
-            link: data['link']?.toString(),
-            extraData: {},
-          ),
-          createdAt: DateTime.now(),
-        );
-
+      if (financiamientoId > 0) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => NotificationDetailPage(notification: notification),
+            builder: (_) => FinanciamientoDetallePage(
+              idFinanciamiento: financiamientoId,
+              moneda: 'S/.',
+            ),
           ),
         );
+        return;
       }
     }
+
+    final String titulo = data['title']?.toString() ?? '';
+    final String mensaje = data['message']?.toString() ?? '';
+
+    // Sin texto no hay nada que mostrar: se evita abrir una pantalla vacía.
+    if (titulo.isEmpty && mensaje.isEmpty) return;
+
+    final notification = NotificationModel(
+      id: data['notification_id']?.toString() ?? '',
+      type: type ?? '',
+      notifiableType: '',
+      notifiableId: 0,
+      data: NotificationDataModel(
+        title: titulo,
+        message: mensaje,
+        type: type ?? '',
+        imageUrl: data['image_url']?.toString(),
+        fileUrl: data['file_url']?.toString(),
+        fileName: data['file_name']?.toString(),
+        link: data['link']?.toString(),
+        extraData: {},
+      ),
+      createdAt: DateTime.now(),
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NotificationDetailPage(notification: notification),
+      ),
+    );
   }
 
   /// Inicializa el plugin de notificaciones locales
@@ -404,6 +425,30 @@ class NotificationService {
               .replaceAll('{id}', idConductor)
               .replaceAll('{tipo}', tipoUsuario),
         ),
+        headers: ApiConstants.defaultHeaders,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Borra las notificaciones del usuario: solo las ya leídas, o todas si [todas].
+  Future<bool> deleteAll(
+    String idConductor,
+    int tipo, {
+    bool todas = false,
+  }) async {
+    try {
+      final String tipoUsuario = tipo == 1 ? 'conductor' : 'cliente';
+      final String url =
+          '${ApiConstants.baseUrl}${ApiConstants.deleteAllNotificationsEndpoint}'
+              .replaceAll('{id}', idConductor)
+              .replaceAll('{tipo}', tipoUsuario);
+
+      final response = await http.delete(
+        Uri.parse(todas ? '$url?todas=1' : url),
         headers: ApiConstants.defaultHeaders,
       );
 

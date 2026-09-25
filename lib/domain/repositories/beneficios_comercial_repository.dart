@@ -6,7 +6,7 @@ import '../../data/models/taller_model.dart';
 
 abstract class BeneficiosComercialRepository {
   Future<Either<Failure, List<BeneficioComercialEntity>>> getBeneficiosComerciales({int? tipo, String? audiencia});
-  Future<Either<Failure, List<BeneficioServicioEntity>>> getBeneficiosServicios({int? tallerId, String? audiencia, int? clienteConductorId});
+  Future<Either<Failure, List<BeneficioServicioEntity>>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId});
   Future<Either<Failure, BeneficioServicioEntity>> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<Either<Failure, List<TallerModel>>> getTalleres();
   Future<Either<Failure, TalleresAgrupadosResponse>> getTalleresAgrupados({

@@ -116,7 +116,7 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
                 ],
               ),
             ),
-            SvgPicture.asset('images/credigo_logo.svg', height: 48),
+            SvgPicture.asset('images/credigo_inicio.svg', height: 48),
             const SizedBox(height: 4),
             const Text(
               'así fácil, así de rápido, así de go',

@@ -24,6 +24,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   int _selectedFrecuenciaPagoId = 1;
   String _metodoPago = 'CAJA_AREQUIPA';
   double _selectedPorcentajeInicial = 30.0;
+  /// Color elegido por el cliente (beneficios con colores disponibles).
+  String? _colorElegido;
   final TextEditingController _operacionController = TextEditingController();
   final TextEditingController _montoLibreController = TextEditingController();
 
@@ -168,6 +170,22 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     final notaServicio = servicio.notaImportante;
     final notaTaller = provider.selectedTaller?.notaImportante;
 
+    // TK-0337 (diseño Canva): el primer pago del plan puede ser la cuota inicial
+    // (celulares, CrediYango) o la inscripción (Credi Ahorros, carros y motos).
+    // Al calcular el pago se comunica lo que realmente corresponde pagar.
+    final double montoInscripcion = variante?.montoInscripcion ?? 0;
+    final bool primerPagoEsInscripcion =
+        _isFinanciado && cuotaInicial <= 0 && montoInscripcion > 0;
+    final String simboloPago = _simboloPago(variante, servicio);
+
+    // TK-0337 (diseño págs. 24/26): colores disponibles del MODELO elegido
+    // (variante vinculada a su modelo de inventario); si no, los del producto
+    // vinculado al beneficio. Si hay colores, el cliente debe elegir uno.
+    final List<String> colores = (variante?.coloresDisponibles.isNotEmpty ?? false)
+        ? variante!.coloresDisponibles
+        : (servicio.producto?.coloresDisponibles ?? const <String>[]);
+    final bool faltaColor = colores.isNotEmpty && _colorElegido == null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -216,11 +234,20 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               ],
             ],
 
+            if (colores.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _buildColorSelector(colores),
+            ],
+
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
 
-            _buildInitialPaymentForm(cuotaInicial),
+            _buildInitialPaymentForm(
+              primerPagoEsInscripcion ? montoInscripcion : cuotaInicial,
+              esInscripcion: primerPagoEsInscripcion,
+              simbolo: simboloPago,
+            ),
 
             const SizedBox(height: 32),
 
@@ -228,7 +255,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: provider.isLoading || precio <= 0
+                onPressed: provider.isLoading || precio <= 0 || faltaColor
                     ? null
                     : () => _confirmarFinanciamiento(provider, cuotaInicial, montoCuota, precio),
                 style: ElevatedButton.styleFrom(
@@ -707,7 +734,95 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     );
   }
 
-  Widget _buildInitialPaymentForm(double monto) {
+  /// Símbolo de moneda del primer pago (la inicial/inscripción puede estar en
+  /// otra moneda que las cuotas, ej. CrediYango cobra la inicial en dólares).
+  String _simboloPago(VarianteEntity? variante, BeneficioServicioEntity? servicio) {
+    final inicial = (variante?.monedaInicialSimbolo ?? '').trim();
+    if (inicial.isNotEmpty) return inicial;
+    final moneda = (servicio?.moneda ?? '').trim();
+    if (moneda.isNotEmpty) return moneda;
+    return 'S/';
+  }
+
+  /// Selector de color del producto (diseño págs. 24/26: "seleccione el color
+  /// que hay disponible según stock"). Requerido cuando hay colores.
+  Widget _buildColorSelector(List<String> colores) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Selecciona el color:',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Colores disponibles según stock.',
+          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: colores.map((color) {
+            final bool isSel = _colorElegido == color;
+            return ChoiceChip(
+              avatar: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _colorDeNombre(color),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black26),
+                ),
+              ),
+              label: Text(color),
+              selected: isSel,
+              onSelected: (selected) {
+                if (selected) setState(() => _colorElegido = color);
+              },
+              selectedColor: AppTheme.primary,
+              labelStyle: TextStyle(
+                color: isSel ? Colors.black : Colors.black87,
+                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+              ),
+            );
+          }).toList(),
+        ),
+        if (_colorElegido == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Elige un color para continuar',
+              style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Color aproximado del nombre del color (solo referencial, para el chip).
+  Color _colorDeNombre(String nombre) {
+    final n = nombre.toUpperCase();
+    if (n.contains('NEGRO') || n.contains('BLACK') || n.contains('MEDIANOCHE') || n.contains('OCASO')) {
+      return Colors.black;
+    }
+    if (n.contains('BLANCO') || n.contains('WHITE') || n.contains('NIEVE')) return Colors.white;
+    if (n.contains('GRIS') || n.contains('PLATA') || n.contains('GREY') || n.contains('GRAY')) {
+      return Colors.grey;
+    }
+    if (n.contains('ROJO') || n.contains('RED')) return Colors.red;
+    if (n.contains('AZUL') || n.contains('BLUE')) return Colors.blue;
+    if (n.contains('VERDE') || n.contains('GREEN') || n.contains('LIME')) return Colors.green;
+    if (n.contains('DORADO') || n.contains('GOLD') || n.contains('TITANIO')) return Colors.amber;
+    if (n.contains('CORAL')) return Colors.deepOrangeAccent;
+    return Colors.blueGrey;
+  }
+
+  Widget _buildInitialPaymentForm(
+    double monto, {
+    bool esInscripcion = false,
+    String simbolo = 'S/',
+  }) {
     final metodos = _metodos;
     final label = kMetodoPagoLabels[_metodoPago] ?? _metodoPago;
     final requiereOperacion = _metodoPago != 'EFECTIVO' && _metodoPago != 'CAJA_AREQUIPA';
@@ -717,8 +832,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       children: [
         Text(
           _isFinanciado
-              ? 'Cuota Inicial a pagar: S/ ${monto.toStringAsFixed(2)}'
-              : 'Total a pagar: S/ ${monto.toStringAsFixed(2)}',
+              ? '${esInscripcion ? 'Inscripción' : 'Cuota Inicial'} a pagar: $simbolo ${monto.toStringAsFixed(2)}'
+              : 'Total a pagar: $simbolo ${monto.toStringAsFixed(2)}',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -885,6 +1000,9 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     String? nroDocumento,
   ]) async {
     final variante = provider.selectedVariante;
+    // Primer pago: inscripción cuando el plan no tiene inicial (Credi Ahorros).
+    final double montoInscripcion = variante?.montoInscripcion ?? 0;
+    final bool esInscripcion = cuotaInicial <= 0 && montoInscripcion > 0;
     // Con variante, o si es un beneficio comercial, siempre es financiado.
     final bool esFinanciado = variante != null ||
         provider.esBeneficioComercial ||
@@ -914,15 +1032,31 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           : null,
       firmaBase64: firmaBase64,
       nroDocumento: nroDocumento,
+      color: _colorElegido,
     );
 
     if (!mounted) return;
 
     if (result != null) {
-      final mensajeExito = _mensajeSegunEstadoApp(result.estadoApp);
+      final mensajeExito = _mensajeSegunEstadoApp(result.estadoApp, esInscripcion: esInscripcion);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensajeExito), backgroundColor: Colors.green),
       );
+
+      // Fase 3 (diseño Canva, pág. 27): alerta previa para que el cliente pague
+      // su primer pago (cuota inicial o inscripción) con su ID de financiamiento.
+      // El taller o comercio lo atiende recién después del pago.
+      final double primerPagoMonto = esInscripcion ? montoInscripcion : cuotaInicial;
+      if (esFinanciado && primerPagoMonto > 0) {
+        await _mostrarAlertaPrimerPago(
+          idFinanciamiento: result.idFinanciamiento,
+          monto: primerPagoMonto,
+          esInscripcion: esInscripcion,
+          aprobado: result.estadoApp == 'aprobado',
+          simbolo: _simboloPago(variante, servicio),
+        );
+        if (!mounted) return;
+      }
 
       // Si el usuario ya firmó en el flujo previo (captureOnly), ir directo al detalle
       final yaFirmo = firmaBase64 != null && firmaBase64.isNotEmpty;
@@ -973,10 +1107,68 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     }
   }
 
-  String _mensajeSegunEstadoApp(String? estadoApp) {
+  /// Fase 3 (diseño Canva, pág. 27): mensaje previo post-solicitud con el ID de
+  /// financiamiento y el primer pago a realizar (cuota inicial o inscripción).
+  /// El taller o comercio atiende al cliente recién después de ese pago.
+  Future<void> _mostrarAlertaPrimerPago({
+    required int idFinanciamiento,
+    required double monto,
+    required bool esInscripcion,
+    required bool aprobado,
+    required String simbolo,
+  }) async {
+    final String concepto = esInscripcion ? 'inscripción' : 'inicial';
+    final String cuando = aprobado
+        ? 'Realiza el pago en cualquier agente Caja Arequipa.'
+        : 'Cuando tu solicitud sea aprobada, realiza el pago en cualquier agente Caja Arequipa.';
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active, color: Color(0xFFF9A825)),
+            SizedBox(width: 8),
+            Expanded(child: Text('Importante')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ID de financiamiento: $idFinanciamiento',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${esInscripcion ? 'Inscripción' : 'Cuota inicial'} a pagar: $simbolo ${monto.toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$cuando El taller o comercio te atenderá luego de haber pagado tu $concepto.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _mensajeSegunEstadoApp(String? estadoApp, {bool esInscripcion = false}) {
     switch (estadoApp) {
       case 'aprobado':
-        return 'Servicio aprobado. Ya puede proceder con el pago de su cuota inicial.';
+        return esInscripcion
+            ? 'Servicio aprobado. Ya puede proceder con el pago de su inscripción.'
+            : 'Servicio aprobado. Ya puede proceder con el pago de su cuota inicial.';
       case 'pendiente_doble_validacion':
         return 'Solicitud enviada. Requiere revisión del administrador y del director.';
       case 'pendiente_aprobacion':

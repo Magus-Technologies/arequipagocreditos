@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:arequipagocreditos/data/models/cupon_public_model.dart';
+import '../../core/constants/api_constants.dart';
 
 class PublicCuponCard extends StatelessWidget {
   final CuponPublicModel cupon;
@@ -35,7 +36,7 @@ class PublicCuponCard extends StatelessWidget {
                     height: 120,
                     width: double.infinity,
                     child: Image.network(
-                      'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+                      '${ApiConstants.storageUrl}/${cupon.imagenBanner!}',
                       fit: BoxFit.cover,
                       errorBuilder: (c, e, s) => Container(
                         color: Colors.grey.shade200,

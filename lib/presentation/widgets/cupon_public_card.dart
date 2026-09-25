@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/cupon_entity.dart';
 import '../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../theme/app_theme.dart';
@@ -71,7 +72,7 @@ class _CuponPublicCardState extends State<CuponPublicCard> {
       child: Stack(
         children: [
           Image.network(
-            'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+            '${ApiConstants.storageUrl}/${cupon.imagenBanner!}',
             height: 120,
             width: double.infinity,
             fit: BoxFit.cover,

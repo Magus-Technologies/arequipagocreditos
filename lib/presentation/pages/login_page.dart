@@ -31,7 +31,16 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _checkBiometric() async {
     final authProvider = context.read<AuthProvider>();
     await authProvider.loadBiometricCredentialsStatus();
-    if (!authProvider.hasBiometricCredentials) return;
+    await authProvider.loadAccessMethodPrefs();
+    if (!authProvider.hasBiometricCredentials || !authProvider.hasAnyAccessMethodEnabled) return;
+    if (!mounted) return;
+
+    // Si el PIN propio de la app está activo, tiene prioridad sobre el
+    // prompt biométrico automático — es más predecible para la persona.
+    if (authProvider.accessPinEnabled && authProvider.hasPinConfigured) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const IngresarPinPage()));
+      return;
+    }
 
     final canAuth = await _localAuth.canCheckBiometrics || await _localAuth.isDeviceSupported();
     if (!mounted) return;
@@ -163,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 8),
-                            SvgPicture.asset('images/credigo_logo.svg', height: 110),
+                            SvgPicture.asset('images/credigo_inicio.svg', height: 110),
                             const SizedBox(height: 40),
                             TextFormField(
                               controller: _dniController,

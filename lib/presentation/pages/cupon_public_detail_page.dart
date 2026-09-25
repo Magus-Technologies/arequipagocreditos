@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/cupon_entity.dart';
 import '../../core/utils/date_utils.dart' as app_date_utils;
 import '../../theme/app_theme.dart';
@@ -39,7 +40,7 @@ class CuponPublicDetailPage extends StatelessWidget {
                 GestureDetector(
                   onTap: () => _openFullScreenImage(
                     context,
-                    'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+                              '${ApiConstants.storageUrl}/${cupon.imagenBanner!}',
                   ),
                   child: SizedBox(
                     height: 260,
@@ -50,7 +51,7 @@ class CuponPublicDetailPage extends StatelessWidget {
                           child: Hero(
                             tag: 'cupon_banner_${cupon.id}',
                             child: Image.network(
-                              'https://arequipago-ventas.pe/storage/${cupon.imagenBanner!}',
+                    '${ApiConstants.storageUrl}/${cupon.imagenBanner!}',
                               fit: BoxFit.cover,
                             ),
                           ),

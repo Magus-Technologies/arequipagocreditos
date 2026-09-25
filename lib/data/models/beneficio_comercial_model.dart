@@ -1,5 +1,7 @@
 import '../../domain/entities/beneficio_entity.dart';
+import '../../domain/entities/beneficio_servicio_entity.dart';
 import '../../core/constants/api_constants.dart';
+import 'beneficio_servicio_model.dart';
 
 class BeneficioComercialModel extends BeneficioComercialEntity {
   BeneficioComercialModel({
@@ -20,6 +22,7 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
     required super.moneda,
     required super.frecuenciaPago,
     super.visiblePara,
+    super.variantesDisponibles,
   });
 
   factory BeneficioComercialModel.fromJson(Map<String, dynamic> json) {
@@ -66,7 +69,16 @@ class BeneficioComercialModel extends BeneficioComercialEntity {
       moneda: json['moneda'] ?? 'S/.',
       frecuenciaPago: (json['frecuencia_pago'] ?? '').toString(),
       visiblePara: parseVisiblePara(json['visible_para']),
+      variantesDisponibles: _parseVariantes(json['variantes_disponibles']),
     );
+  }
+
+  static List<VarianteEntity> _parseVariantes(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((e) => VarianteModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   Map<String, dynamic> toJson() {

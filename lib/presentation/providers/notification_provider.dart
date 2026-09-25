@@ -87,6 +87,23 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Borra las notificaciones del usuario: solo las leídas, o todas si [todas].
+  Future<bool> deleteAllNotifications({bool todas = false}) async {
+    if (_currentUserId == null || _currentTipo == null) return false;
+
+    final success = await _notificationService.deleteAll(
+      _currentUserId!,
+      _currentTipo!,
+      todas: todas,
+    );
+
+    if (success) {
+      await refreshNotifications();
+    }
+
+    return success;
+  }
+
   /// Elimina una notificación específica
   Future<bool> deleteNotification(String notificationId) async {
     if (_currentUserId == null || _currentTipo == null) return false;
