@@ -511,7 +511,7 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
           'Cuota Inicial:',
           faltaElegir
               ? pendiente
-              : '$moneda ${(v?.cuotaInicial ?? beneficio.cuotaInicial).toStringAsFixed(2)}',
+              : '${v?.monedaInicialSimbolo ?? moneda} ${(v?.cuotaInicial ?? beneficio.cuotaInicial).toStringAsFixed(2)}',
         ),
         _buildDetailRow(
           'Cantidad de Cuotas:',

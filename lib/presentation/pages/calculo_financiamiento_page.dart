@@ -160,7 +160,9 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     } else if (_isFinanciado && detalle != null) {
       cuotaInicial = provider.calculateCuotaInicial(precio, _selectedPorcentajeInicial);
       montoAFinanciar = provider.calculateMontoAFinanciar(precio, cuotaInicial);
-      montoCuota = provider.calculateCuotaMonto(montoAFinanciar, _selectedCuotas, 10.0);
+      // La tasa ahora es editable por beneficio en la web (antes 10% fijo
+      // acá); `detalle.interes` ya trae la tasa real que definió el admin.
+      montoCuota = provider.calculateCuotaMonto(montoAFinanciar, _selectedCuotas, detalle.interes);
     } else {
       cuotaInicial = precio;
       montoAFinanciar = 0;

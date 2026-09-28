@@ -1,7 +1,7 @@
 name: arequipagocreditos
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.38+58
+version: 0.1.39+59
 
 environment:
   sdk: ^3.12.0
