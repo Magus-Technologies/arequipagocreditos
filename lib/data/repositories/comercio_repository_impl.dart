@@ -3,6 +3,7 @@ import '../../core/errors/failures.dart';
 import '../../domain/entities/comercio_entity.dart';
 import '../../domain/repositories/comercio_repository.dart';
 import '../datasources/comercio_remote_datasource.dart';
+import '../models/promo_taller_banner_model.dart';
 
 class ComercioRepositoryImpl implements ComercioRepository {
   final ComercioRemoteDataSource remoteDataSource;
@@ -24,6 +25,16 @@ class ComercioRepositoryImpl implements ComercioRepository {
     try {
       final categorias = await remoteDataSource.getCategorias();
       return Either.right(categorias);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesBanners() async {
+    try {
+      final banners = await remoteDataSource.getPromocionesBanners();
+      return Either.right(banners);
     } on Exception catch (e) {
       return Either.left(ServerFailure(e.toString()));
     }

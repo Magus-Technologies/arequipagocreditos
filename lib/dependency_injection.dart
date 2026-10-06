@@ -175,6 +175,7 @@ class DependencyInjection {
       create: (context) => ComerciosProvider(
         getComerciosUseCase: _getGetComerciosUseCase(),
         getComercioCategoriasUseCase: _getGetComercioCategoriasUseCase(),
+        getPromocionesBannersUseCase: _getGetComercioPromocionesBannersUseCase(),
       ),
     ),
   ];
@@ -357,4 +358,7 @@ class DependencyInjection {
 
   static GetComercioCategoriasUseCase _getGetComercioCategoriasUseCase() =>
       GetComercioCategoriasUseCase(_comercioRepository);
+
+  static GetComercioPromocionesBannersUseCase _getGetComercioPromocionesBannersUseCase() =>
+      GetComercioPromocionesBannersUseCase(_comercioRepository);
 }

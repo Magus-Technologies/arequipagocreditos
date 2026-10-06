@@ -403,6 +403,20 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                       '${variante.cantidadCuotas} cuotas de ${variante.monedaSimbolo} ${variante.montoCuota.toStringAsFixed(2)}',
                       style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                     ),
+                    // Diseño Credi Ahorro (pág. 25): monto de descuento y meta de viajes según el certificado.
+                    if (variante.descuentoSemanal != null && variante.descuentoSemanal! > 0 && variante.viajesRequeridos != null)
+                      Text.rich(
+                        TextSpan(
+                          style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                          children: [
+                            TextSpan(
+                              text: 'Descuento S/. ${_montoDescuento(variante.descuentoSemanal!)}',
+                              style: TextStyle(fontWeight: FontWeight.w700, color: Colors.red.shade700),
+                            ),
+                            TextSpan(text: ', meta ${variante.viajesRequeridos} viajes.'),
+                          ],
+                        ),
+                      ),
                     Text(
                       'Total: ${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}',
                       style: TextStyle(
@@ -471,6 +485,10 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
       ),
     );
   }
+
+  /// 50.0 → "50"; 52.5 → "52.50" (el descuento casi siempre es entero y así se ve en el diseño).
+  String _montoDescuento(double monto) =>
+      monto == monto.roundToDouble() ? monto.toStringAsFixed(0) : monto.toStringAsFixed(2);
 
   /// Texto legible de una característica del modelo ("RAM 8 GB", "Red 5G"…).
   String _textoCaracteristica(String clave, String valor) {

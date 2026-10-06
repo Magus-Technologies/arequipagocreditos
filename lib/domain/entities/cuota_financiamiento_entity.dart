@@ -9,6 +9,9 @@ class CuotaFinanciamientoEntity {
   final int idPago;
   /// true para la cuota 0 de Caja Arequipa (pago inicial)
   final bool esInicial;
+  /// Moneda propia de la cuota (1 = soles, 2 = dólares). Solo viene cuando difiere del contrato: una cuota especial por adenda
+  /// va en soles dentro de un contrato en dólares. null = la moneda del financiamiento.
+  final int? monedaId;
 
   const CuotaFinanciamientoEntity({
     required this.id,
@@ -20,7 +23,20 @@ class CuotaFinanciamientoEntity {
     this.fechaPago,
     required this.idPago,
     this.esInicial = false,
+    this.monedaId,
   });
+
+  /// Símbolo con el que se muestra el monto de ESTA cuota: el suyo si tiene moneda propia, si no el del contrato.
+  String simboloMoneda(String monedaContrato) {
+    switch (monedaId) {
+      case 1:
+        return 'S/.';
+      case 2:
+        return '\$';
+      default:
+        return monedaContrato;
+    }
+  }
 
   // Getters útiles
   bool get isPaid => estado.toLowerCase() == 'pagado' || estado.toLowerCase() == 'puntual';
@@ -88,6 +104,7 @@ class CuotaFinanciamientoEntity {
     String? fechaPago,
     int? idPago,
     bool? esInicial,
+    int? monedaId,
   }) {
     return CuotaFinanciamientoEntity(
       id: id ?? this.id,
@@ -99,6 +116,7 @@ class CuotaFinanciamientoEntity {
       fechaPago: fechaPago ?? this.fechaPago,
       idPago: idPago ?? this.idPago,
       esInicial: esInicial ?? this.esInicial,
+      monedaId: monedaId ?? this.monedaId,
     );
   }
 }

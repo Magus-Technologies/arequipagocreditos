@@ -233,7 +233,7 @@ class _CuotaCardState extends State<CuotaCard> {
                   const Icon(Icons.money, color: Colors.amber, size: 20),
                   const SizedBox(width: 6),
                   Text(
-                    "${widget.moneda} ${widget.cuota.monto}",
+                    "${widget.cuota.simboloMoneda(widget.moneda)} ${widget.cuota.monto.toStringAsFixed(2)}",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

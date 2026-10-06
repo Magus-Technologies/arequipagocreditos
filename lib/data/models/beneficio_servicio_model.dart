@@ -61,6 +61,8 @@ class VarianteModel extends VarianteEntity {
     super.imagen,
     super.caracteristicas,
     super.coloresDisponibles,
+    super.descuentoSemanal,
+    super.viajesRequeridos,
   });
 
   factory VarianteModel.fromJson(Map<String, dynamic> json) {
@@ -112,6 +114,12 @@ class VarianteModel extends VarianteEntity {
       coloresDisponibles: json['colores_disponibles'] is List
           ? (json['colores_disponibles'] as List).map((e) => e.toString()).toList()
           : const [],
+      descuentoSemanal: json['descuento_semanal'] != null
+          ? toDouble(json['descuento_semanal'])
+          : null,
+      viajesRequeridos: json['viajes_requeridos'] != null
+          ? toInt(json['viajes_requeridos'])
+          : null,
     );
   }
 }

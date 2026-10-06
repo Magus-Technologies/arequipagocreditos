@@ -56,6 +56,10 @@ class VarianteEntity {
   final Map<String, String> caracteristicas;
   /// Colores disponibles del modelo (de sus unidades).
   final List<String> coloresDisponibles;
+  /// Descuento semanal en soles y meta de viajes de este certificado (Credi Ahorro InDriver: 13,000 → S/. 50 y 80 viajes).
+  /// Null cuando la variante no tiene (p. ej. Yango): no se muestra nada.
+  final double? descuentoSemanal;
+  final int? viajesRequeridos;
 
   const VarianteEntity({
     required this.varianteId,
@@ -78,6 +82,8 @@ class VarianteEntity {
     this.imagen,
     this.caracteristicas = const {},
     this.coloresDisponibles = const [],
+    this.descuentoSemanal,
+    this.viajesRequeridos,
   });
 }
 

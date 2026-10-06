@@ -122,6 +122,7 @@ class ModelAdapters {
       estado: entity.estado,
       fechaPago: entity.fechaPago,
       idPago: entity.idPago,
+      monedaId: entity.monedaId,
     );
   }
 

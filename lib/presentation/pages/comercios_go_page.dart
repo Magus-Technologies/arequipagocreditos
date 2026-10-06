@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../components/comercio_card.dart';
 import 'comercio_detalle_page.dart';
 import '../components/beneficios_search_bar.dart';
+import '../components/servicios_taller_promociones_dialog.dart';
 import '../providers/comercios_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -28,7 +29,21 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
       final authProvider = context.read<AuthProvider>();
       provider.cargarCategorias();
       provider.cargarComercios(departamento: authProvider.currentUser?.departamento);
+      _mostrarPromociones(provider);
     });
+  }
+
+  /// Igual que en Servicios de Taller: al entrar sale un diálogo flotante con los flyers de la web (Promociones > Comercios),
+  /// que se desliza y se cierra para ver el listado. Sin flyers o con el interruptor apagado no sale nada.
+  Future<void> _mostrarPromociones(ComerciosProvider provider) async {
+    final banners = await provider.cargarPromocionesBanners();
+    if (!mounted || banners.isEmpty) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => ServiciosTallerPromocionesDialog(banners: banners),
+    );
   }
 
   @override

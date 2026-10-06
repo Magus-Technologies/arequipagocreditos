@@ -3,6 +3,8 @@ import '../../core/constants/api_constants.dart';
 import '../../data/models/promo_taller_banner_model.dart';
 import '../../theme/app_theme.dart';
 
+/// Diálogo flotante con los flyers de promociones (16:9, imagen contenida, puntos para pasar de uno a otro).
+/// Lo usan Servicios de Taller y Comercios GO: cada pantalla le pasa sus propios flyers.
 class ServiciosTallerPromocionesDialog extends StatefulWidget {
   final List<PromoTallerBannerModel> banners;
 

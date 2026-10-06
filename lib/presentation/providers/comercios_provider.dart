@@ -1,15 +1,18 @@
 import 'package:flutter/foundation.dart';
 import '../../core/errors/failures.dart';
+import '../../data/models/promo_taller_banner_model.dart';
 import '../../domain/entities/comercio_entity.dart';
 import '../../domain/usecases/get_comercios_usecase.dart';
 
 class ComerciosProvider extends ChangeNotifier {
   final GetComerciosUseCase getComerciosUseCase;
   final GetComercioCategoriasUseCase getComercioCategoriasUseCase;
+  final GetComercioPromocionesBannersUseCase getPromocionesBannersUseCase;
 
   ComerciosProvider({
     required this.getComerciosUseCase,
     required this.getComercioCategoriasUseCase,
+    required this.getPromocionesBannersUseCase,
   });
 
   List<ComercioEntity> _comercios = [];
@@ -54,6 +57,17 @@ class ComerciosProvider extends ChangeNotifier {
 
     _loading = false;
     notifyListeners();
+  }
+
+  /// Flyers de la pestaña Promociones de la web. Si algo falla (o el interruptor está apagado) devuelve vacío:
+  /// un flyer que no carga nunca debe estorbar el listado de comercios.
+  Future<List<PromoTallerBannerModel>> cargarPromocionesBanners() async {
+    try {
+      final result = await getPromocionesBannersUseCase();
+      return result.fold((_) => <PromoTallerBannerModel>[], (banners) => banners);
+    } catch (_) {
+      return <PromoTallerBannerModel>[];
+    }
   }
 
   Future<void> cargarCategorias() async {
