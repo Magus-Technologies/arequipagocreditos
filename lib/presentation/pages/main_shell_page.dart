@@ -23,13 +23,16 @@ class _MainShellPageState extends State<MainShellPage> {
 
   // Cada página raíz de pestaña recibe showBackButton/isNav en false: no hay
   // una ruta previa que cerrar, esta barra reemplaza esa navegación.
-  final List<Widget> _pages = const [
-    DashboardPage(),
-    BeneficiosPage(isNav: true),
-    ServiciosTallerPage(showBackButton: false),
-    DocumentosFirmadosPage(showBackButton: false),
-    MasPage(),
-  ];
+  List<Widget> get _pages => [
+        const DashboardPage(),
+        const BeneficiosPage(isNav: true),
+        ServiciosTallerPage(
+          showBackButton: false,
+          isActive: _currentIndex == 2,
+        ),
+        const DocumentosFirmadosPage(showBackButton: false),
+        const MasPage(),
+      ];
 
   Future<void> _abrirWhatsApp(BuildContext context) async {
     final uri = Uri.parse(

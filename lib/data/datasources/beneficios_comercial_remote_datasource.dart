@@ -4,6 +4,7 @@ import '../../core/constants/api_constants.dart';
 import '../models/beneficio_comercial_model.dart';
 import '../models/beneficio_servicio_model.dart';
 import '../models/taller_model.dart';
+import '../models/promo_taller_banner_model.dart';
 
 abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioComercialModel>> getBeneficiosComerciales({int? tipo, String? audiencia});
@@ -12,6 +13,7 @@ abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId});
   Future<BeneficioServicioModel> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners();
   Future<TalleresAgrupadosResponse> getTalleresAgrupados({
     String? audiencia,
     String? departamento,
@@ -153,6 +155,30 @@ class BeneficiosComercialRemoteDataSourceImpl
       }
     } catch (e) {
       throw Exception('Error al obtener talleres: $e');
+    }
+  }
+
+  @override
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() async {
+    try {
+      final url = '${ApiConstants.baseUrl}${ApiConstants.serviciosTalleresBannersEndpoint}';
+      final response = await client
+          .get(Uri.parse(url), headers: ApiConstants.defaultHeaders)
+          .timeout(ApiConstants.receiveTimeout);
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      final data = jsonResponse['data'];
+
+      if (response.statusCode == 200 && jsonResponse['success'] == true && data is List) {
+        return data
+            .map((banner) => PromoTallerBannerModel.fromJson(
+                  Map<String, dynamic>.from(banner as Map),
+                ))
+            .toList();
+      }
+
+      throw Exception(jsonResponse['message'] ?? 'No se pudieron obtener las promociones');
+    } catch (e) {
+      throw Exception('Error al obtener promociones de talleres: $e');
     }
   }
 

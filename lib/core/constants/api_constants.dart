@@ -50,6 +50,7 @@ class ApiConstants {
   static const String financiamientosEndpoint = '/app/list-financiamiento/{id}/{tipo}';
   static const String cuotasEndpoint = '/app/financiamientos/{id}';
   static const String beneficiosEndpoint = '/app/promociones/beneficios';
+  static const String serviciosTalleresBannersEndpoint = '/app/promociones/servicios/banners';
   static const String appVersionEndpoint = '/app/version';
   static const String ordenesPagoEndpoint = '/app/clientes/{clienteId}/ordenes-pago';
   static const String talleresListEndpoint = '/app/talleres-list';

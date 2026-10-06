@@ -35,7 +35,7 @@ class _MiNivelPageState extends State<MiNivelPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.primary,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -50,66 +50,59 @@ class _MiNivelPageState extends State<MiNivelPage> {
         child: SafeArea(
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: SizedBox(
+                  height: 48,
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
-                        onPressed: () => Navigator.pop(context),
+                      const Expanded(
+                        child: Text(
+                          'Mi Nivel',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
                       ),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'Mi Nivel',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                      Consumer<NivelTallerProvider>(
+                        builder: (context, nivelProvider, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: nivelProvider.isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                                      ),
+                                    )
+                                  : const Icon(Icons.refresh, color: Colors.black87, size: 20),
+                              onPressed: nivelProvider.isLoading ? null : _loadData,
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    Consumer<NivelTallerProvider>(
-                      builder: (context, nivelProvider, child) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.3 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: nivelProvider.isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
-                                    ),
-                                  )
-                                : const Icon(Icons.refresh, color: Colors.black87, size: 20),
-                            onPressed: nivelProvider.isLoading ? null : _loadData,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                    child: Consumer<NivelTallerProvider>(
-                      builder: (context, nivelProvider, child) => _buildContent(nivelProvider),
-                    ),
-                  ),
+                child: Consumer<NivelTallerProvider>(
+                  builder: (context, nivelProvider, child) => _buildContent(nivelProvider),
                 ),
               ),
             ],
@@ -121,7 +114,7 @@ class _MiNivelPageState extends State<MiNivelPage> {
 
   Widget _buildContent(NivelTallerProvider nivelProvider) {
     if (nivelProvider.isLoading && nivelProvider.nivel == null) {
-      return const Center(
+      return _fallbackSurface(const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -130,11 +123,11 @@ class _MiNivelPageState extends State<MiNivelPage> {
             Text('Cargando tu nivel...', style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500)),
           ],
         ),
-      );
+      ));
     }
 
     if (nivelProvider.hasError) {
-      return Center(
+      return _fallbackSurface(Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -148,33 +141,75 @@ class _MiNivelPageState extends State<MiNivelPage> {
             ],
           ),
         ),
-      );
+      ));
     }
 
     final nivel = nivelProvider.nivel;
     if (nivel == null) {
-      return const Center(
+      return _fallbackSurface(const Center(
         child: Text('No se pudo cargar tu nivel', style: TextStyle(color: Colors.grey)),
-      );
+      ));
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      color: AppTheme.primary,
-      backgroundColor: Colors.white,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _NivelActualCard(nivel: nivel),
-            const SizedBox(height: 20),
-            _ProgresoNivelCard(nivel: nivel),
-            const SizedBox(height: 20),
-            _TablaNivelesCard(nivel: nivel),
-          ],
-        ),
+    return _buildNivelContent(nivel);
+  }
+
+  Widget _fallbackSurface(Widget child) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
+      child: child,
+    );
+  }
+
+  Widget _buildNivelContent(NivelTallerEntity nivel) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          top: 152,
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          top: 160,
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            color: AppTheme.primary,
+            backgroundColor: Colors.white,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: _TablaNivelesCard(nivel: nivel),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 20,
+          top: 18,
+          right: 142,
+          child: _ProgresoNivelHero(nivel: nivel),
+        ),
+        Positioned(
+          top: -7,
+          right: 0,
+          width: 176,
+          height: 188,
+          child: IgnorePointer(
+            child: Image.asset(
+              'images/oso_polar_nivel.png',
+              fit: BoxFit.contain,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -183,145 +218,70 @@ String _svgParaNivel(String nivel) => 'images/nivel_$nivel.svg';
 
 String _capitalizar(String texto) => texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
 
-class _NivelActualCard extends StatelessWidget {
+const double _anchoInsigniaNivel = 36;
+const double _espacioInsigniaNivel = 12;
+const double _anchoColumnasPorcentajeNivel = 120;
+
+class _ProgresoNivelHero extends StatelessWidget {
   final NivelTallerEntity nivel;
 
-  const _NivelActualCard({required this.nivel});
+  const _ProgresoNivelHero({required this.nivel});
 
   @override
   Widget build(BuildContext context) {
-    final tieneNivel = nivel.tieneNivel;
+    final esNivelMaximo = nivel.esNivelMaximo;
+    final financiamientosFaltantes = nivel.financiamientosFaltantes ?? 0;
+    final objetivo = esNivelMaximo
+        ? ''
+        : (nivel.siguienteNivel!.toLowerCase() == 'plata' ? 'a la ' : 'al ') +
+            _capitalizar(nivel.siguienteNivel!);
+    final textoFinanciamientos = financiamientosFaltantes == 1
+        ? ' financiamiento finalizado para llegar '
+        : ' financiamientos finalizados para llegar ';
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha((0.05 * 255).toInt()), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: tieneNivel
-                ? SvgPicture.asset(_svgParaNivel(nivel.nivelActual!))
-                : Icon(Icons.emoji_events_outlined, size: 72, color: Colors.grey.shade300),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            tieneNivel ? 'Nivel ${_capitalizar(nivel.nivelActual!)}' : 'Aún sin nivel',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${nivel.financiamientosFinalizados} financiamientos finalizados',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-          if (tieneNivel) ...[
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _PorcentajeChip(
-                  etiqueta: 'Talleres',
-                  porcentaje: nivel.porcentajeInicialActualPara(categoriaNivelTaller),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              color: Color(0xFF161616),
+              fontSize: 13,
+              height: 1.3,
+            ),
+            children: [
+              if (esNivelMaximo)
+                const TextSpan(
+                  text: '¡Ya alcanzaste el nivel más alto!',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
-                _PorcentajeChip(
-                  etiqueta: 'Equipos celulares',
-                  porcentaje: nivel.porcentajeInicialActualPara(categoriaNivelCelular),
+              if (!esNivelMaximo) ...[
+                const TextSpan(text: 'Te faltan '),
+                TextSpan(
+                  text: financiamientosFaltantes.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                TextSpan(
+                  text: textoFinanciamientos + objetivo + '.',
                 ),
               ],
-            ),
-          ] else ...[
-            const SizedBox(height: 8),
-            Text(
-              'Completa 3 financiamientos pagados para alcanzar tu primer nivel.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PorcentajeChip extends StatelessWidget {
-  final String etiqueta;
-  final double? porcentaje;
-
-  const _PorcentajeChip({required this.etiqueta, required this.porcentaje});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.primary.withAlpha((0.15 * 255).toInt()),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        porcentaje != null ? '$etiqueta: ${porcentaje!.toStringAsFixed(0)}%' : '$etiqueta: —',
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-      ),
-    );
-  }
-}
-
-class _ProgresoNivelCard extends StatelessWidget {
-  final NivelTallerEntity nivel;
-
-  const _ProgresoNivelCard({required this.nivel});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha((0.05 * 255).toInt()), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(nivel.esNivelMaximo ? Icons.stars : Icons.trending_up, color: Colors.blue, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                nivel.esNivelMaximo ? '¡Nivel más alto alcanzado!' : 'Siguiente nivel',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            nivel.esNivelMaximo
-                ? 'Ya tienes la mejor inicial disponible en talleres y equipos celulares.'
-                : 'Te faltan ${nivel.financiamientosFaltantes} financiamientos finalizados para llegar a ${_capitalizar(nivel.siguienteNivel!)}.',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: 148,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: nivel.progresoSiguienteNivel,
               minHeight: 8,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: Colors.white,
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -376,14 +336,24 @@ class _TablaNivelesCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.only(left: 48, bottom: 6),
+            padding: const EdgeInsets.only(left: 14, right: 14, bottom: 6),
             child: Row(
               children: [
-                Expanded(
-                  child: Text('Talleres', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
-                ),
-                Expanded(
-                  child: Text('Celulares', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                const SizedBox(width: _anchoInsigniaNivel),
+                const SizedBox(width: _espacioInsigniaNivel),
+                const Expanded(child: SizedBox.shrink()),
+                SizedBox(
+                  width: _anchoColumnasPorcentajeNivel,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('Talleres', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                      ),
+                      Expanded(
+                        child: Text('Celulares', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -404,8 +374,8 @@ class _TablaNivelesCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    SizedBox(width: 36, height: 36, child: SvgPicture.asset(_svgParaNivel(info.nivel))),
-                    const SizedBox(width: 12),
+                    SizedBox(width: _anchoInsigniaNivel, height: _anchoInsigniaNivel, child: SvgPicture.asset(_svgParaNivel(info.nivel))),
+                    const SizedBox(width: _espacioInsigniaNivel),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,7 +392,7 @@ class _TablaNivelesCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(
-                      width: 120,
+                      width: _anchoColumnasPorcentajeNivel,
                       child: Row(
                         children: [
                           Expanded(

@@ -6,13 +6,19 @@ import '../components/taller_card.dart';
 import '../../theme/app_theme.dart';
 import 'servicios_taller_detalle_page.dart';
 import '../components/beneficios_search_bar.dart';
+import '../components/servicios_taller_promociones_dialog.dart';
 
 class ServiciosTallerPage extends StatefulWidget {
   /// false cuando esta pantalla vive como pestaña raíz de [MainShellPage]
   /// (ahí no hay una ruta previa que cerrar con la flecha de volver).
   final bool showBackButton;
+  final bool isActive;
 
-  const ServiciosTallerPage({super.key, this.showBackButton = true});
+  const ServiciosTallerPage({
+    super.key,
+    this.showBackButton = true,
+    this.isActive = true,
+  });
 
   @override
   State<ServiciosTallerPage> createState() => _ServiciosTallerPageState();
@@ -24,16 +30,39 @@ class _ServiciosTallerPageState extends State<ServiciosTallerPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.isActive) _scheduleLoadOnEnter();
+  }
+
+  @override
+  void didUpdateWidget(covariant ServiciosTallerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive) _scheduleLoadOnEnter();
+  }
+
+  void _scheduleLoadOnEnter() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<FinanciamientoServicioProvider>();
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.currentUser != null) {
-        provider.setAudiencia(authProvider.currentUser!.tipo);
-        provider.setDepartamentoUsuario(authProvider.currentUser!.departamento);
-      }
-      provider.loadTalleresAgrupados();
-      provider.setTallerSearchQuery('');
+      if (mounted && widget.isActive) _loadOnEnter();
     });
+  }
+
+  Future<void> _loadOnEnter() async {
+    final provider = context.read<FinanciamientoServicioProvider>();
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.currentUser != null) {
+      provider.setAudiencia(authProvider.currentUser!.tipo);
+      provider.setDepartamentoUsuario(authProvider.currentUser!.departamento);
+    }
+    provider.loadTalleresAgrupados();
+    provider.setTallerSearchQuery('');
+
+    final banners = await provider.getPromocionesTalleresBanners();
+    if (!mounted || !widget.isActive || banners.isEmpty) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => ServiciosTallerPromocionesDialog(banners: banners),
+    );
   }
 
   @override

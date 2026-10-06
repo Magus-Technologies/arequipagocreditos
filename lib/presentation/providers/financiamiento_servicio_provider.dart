@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/audiencia_helper.dart';
 import '../../data/models/taller_model.dart';
+import '../../data/models/promo_taller_banner_model.dart';
 import '../../domain/usecases/create_financiamiento_usecase.dart';
 import '../../domain/usecases/get_beneficios_servicios_usecase.dart';
 import '../../domain/usecases/get_documentos_firmados_usecase.dart';
@@ -111,6 +112,15 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   Future<void> setTipoVehicularFiltro(String? tipoVehicular) async {
     _tipoVehicularFiltro = (tipoVehicular == null || tipoVehicular.isEmpty) ? null : tipoVehicular;
     await loadTalleresAgrupados();
+  }
+
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() async {
+    try {
+      final result = await beneficiosRepository.getPromocionesTalleresBanners();
+      return result.fold((_) => <PromoTallerBannerModel>[], (banners) => banners);
+    } catch (_) {
+      return <PromoTallerBannerModel>[];
+    }
   }
 
   /// TK-0314: sirve para talleres y para comercios afiliados; el backend
