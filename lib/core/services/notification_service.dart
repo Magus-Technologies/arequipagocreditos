@@ -10,6 +10,7 @@ import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
 import 'package:arequipagocreditos/presentation/pages/financiamiento_detalle_page.dart';
 import 'package:arequipagocreditos/presentation/pages/notification_detail_page.dart';
 
@@ -148,6 +149,14 @@ class NotificationService {
     final String? type = data['type']?.toString();
     final context = navigatorKey.currentContext;
     if (context == null) return;
+
+    // TK-0355: «Adenda pendiente de firma» → Mis documentos, donde la adenda aparece con su botón de firmar.
+    if (type == 'adenda_pendiente') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const DocumentosFirmadosPage()),
+      );
+      return;
+    }
 
     if (type == 'orden_pago' || type == 'cuota_por_vencer') {
       final int financiamientoId =

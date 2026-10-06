@@ -4,6 +4,7 @@ import '../components/components.dart';
 import '../components/main_modules.dart';
 import '../../theme/app_theme.dart';
 import '../../core/utils/actualizacion_app_gate.dart';
+import '../../core/utils/adenda_pendiente_gate.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
@@ -24,7 +25,11 @@ class _DashboardPageState extends State<DashboardPage> {
       // El aviso de actualizacion va primero: si es obligatorio, bloquea el uso.
       await ActualizacionAppGate.verificar(context);
       if (mounted) {
-        ContratoPendienteGate.checkOnDashboard(context);
+        await ContratoPendienteGate.checkOnDashboard(context);
+      }
+      // TK-0355: las adendas se firman por separado del contrato; recién después de la ventana del contrato.
+      if (mounted) {
+        await AdendaPendienteGate.checkOnDashboard(context);
       }
     });
   }

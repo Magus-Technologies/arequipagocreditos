@@ -227,7 +227,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.uploadProfilePictureEndpoint}');
       final request = http.MultipartRequest('POST', url);
-      request.fields['id_usuario'] = idConductor.toString();
+      // El backend lee el id como `idConductor` (con `id_usuario` ya no llegaba y respondía "Datos inválidos").
+      request.fields['idConductor'] = idConductor.toString();
       request.fields['tipo'] = tipo.toString();
       request.files.add(await http.MultipartFile.fromPath('foto_perfil', imageFile.path));
       

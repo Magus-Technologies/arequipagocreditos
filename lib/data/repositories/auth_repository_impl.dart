@@ -123,6 +123,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> uploadProfilePicture(File imageFile) async {
     try {
       final result = await remoteDataSource.uploadProfilePicture(imageFile);
+      // El backend responde 400 con {success: false, message}: es un error, no una subida exitosa.
+      if (result['success'] == false) {
+        return Either.left(ValidationFailure(result['message']?.toString() ?? 'No se pudo subir la foto'));
+      }
       return Either.right(result);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
