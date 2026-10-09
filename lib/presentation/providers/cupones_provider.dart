@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/errors/failures.dart';
 import '../../core/utils/audiencia_helper.dart';
+import '../../data/models/uso_cupon_model.dart';
 import '../../domain/entities/cupon_entity.dart';
+import '../../domain/entities/uso_cupon_entity.dart';
 import '../../domain/usecases/cupones_usecases.dart';
 
 enum CuponesStatus { initial, loading, loaded, error, using }
@@ -75,7 +77,11 @@ class CuponesProvider extends ChangeNotifier {
     );
   }
 
-  Future<bool> usarCupon(int cuponId) async {
+  /// Confirma el uso del cupón y devuelve el uso con su código de 24 h; null si falló (el motivo queda en [errorMessage]).
+  /// Mientras hay un envío en curso ignora otro (doble toque).
+  Future<UsoCuponEntity?> usarCupon(int cuponId) async {
+    if (_isUsingCupon) return null;
+
     _isUsingCupon = true;
     _errorMessage = null;
     notifyListeners();
@@ -88,12 +94,14 @@ class CuponesProvider extends ChangeNotifier {
       (failure) {
         _errorMessage = _mapFailureToMessage(failure);
         notifyListeners();
-        return false;
+        return null;
       },
       (response) {
-        // Recargar cupones después de usar uno
+        // Recargar cupones después de usar uno: el cupón pasa a «Usado» y trae su código vigente.
         loadCupones();
-        return true;
+        final data = response['data'];
+        final json = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+        return UsoCuponModel.fromJson(json);
       },
     );
   }

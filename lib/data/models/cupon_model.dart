@@ -1,4 +1,5 @@
 import '../../domain/entities/cupon_entity.dart';
+import 'uso_cupon_model.dart';
 
 class CuponModel extends CuponEntity {
   const CuponModel({
@@ -20,6 +21,13 @@ class CuponModel extends CuponEntity {
     required super.estado,
     super.fechaAsignacion,
     super.visiblePara,
+    super.numero,
+    super.establecimiento,
+    super.precioNormal,
+    super.montoDescuentoEstimado,
+    super.montoPagarEstimado,
+    super.estadoUso,
+    super.usoVigente,
   });
 
   factory CuponModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +39,12 @@ class CuponModel extends CuponEntity {
         return value.toLowerCase() == 'true' || value == '1' || value.toLowerCase() == 'activo';
       }
       return false;
+    }
+
+    double? toDoubleOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value.toString());
     }
 
     return CuponModel(
@@ -59,6 +73,15 @@ class CuponModel extends CuponEntity {
               : null,
       visiblePara: json['visible_para'] is List
           ? (json['visible_para'] as List).map((e) => e.toString()).toList()
+          : null,
+      numero: json['numero']?.toString(),
+      establecimiento: json['establecimiento']?.toString(),
+      precioNormal: toDoubleOrNull(json['precio_normal']),
+      montoDescuentoEstimado: toDoubleOrNull(json['monto_descuento_estimado']),
+      montoPagarEstimado: toDoubleOrNull(json['monto_pagar_estimado']),
+      estadoUso: json['estado_uso']?.toString() ?? 'disponible',
+      usoVigente: json['uso_vigente'] is Map
+          ? UsoCuponModel.fromJson(Map<String, dynamic>.from(json['uso_vigente'] as Map))
           : null,
     );
   }
@@ -104,6 +127,13 @@ class CuponModel extends CuponEntity {
     estado: estado,
     fechaAsignacion: fechaAsignacion,
     visiblePara: visiblePara,
+    numero: numero,
+    establecimiento: establecimiento,
+    precioNormal: precioNormal,
+    montoDescuentoEstimado: montoDescuentoEstimado,
+    montoPagarEstimado: montoPagarEstimado,
+    estadoUso: estadoUso,
+    usoVigente: usoVigente,
   );
 
   CuponModel copyWith({
@@ -125,6 +155,13 @@ class CuponModel extends CuponEntity {
     String? estado,
     DateTime? fechaAsignacion,
     List<String>? visiblePara,
+    String? numero,
+    String? establecimiento,
+    double? precioNormal,
+    double? montoDescuentoEstimado,
+    double? montoPagarEstimado,
+    String? estadoUso,
+    UsoCuponModel? usoVigente,
   }) {
     return CuponModel(
       id: id ?? this.id,
@@ -145,6 +182,13 @@ class CuponModel extends CuponEntity {
       estado: estado ?? this.estado,
       fechaAsignacion: fechaAsignacion ?? this.fechaAsignacion,
       visiblePara: visiblePara ?? this.visiblePara,
+      numero: numero ?? this.numero,
+      establecimiento: establecimiento ?? this.establecimiento,
+      precioNormal: precioNormal ?? this.precioNormal,
+      montoDescuentoEstimado: montoDescuentoEstimado ?? this.montoDescuentoEstimado,
+      montoPagarEstimado: montoPagarEstimado ?? this.montoPagarEstimado,
+      estadoUso: estadoUso ?? this.estadoUso,
+      usoVigente: usoVigente ?? this.usoVigente,
     );
   }
 }

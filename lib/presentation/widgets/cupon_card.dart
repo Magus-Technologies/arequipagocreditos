@@ -10,10 +10,14 @@ class CuponCard extends StatefulWidget {
   final CuponModel cupon;
   final VoidCallback onUsar;
 
+  /// «Ver código»: solo se muestra mientras el código de 24 h del conductor siga vigente.
+  final VoidCallback? onVerCodigo;
+
   const CuponCard({
     super.key,
     required this.cupon,
     required this.onUsar,
+    this.onVerCodigo,
   });
 
   @override
@@ -187,8 +191,11 @@ class _CuponCardState extends State<CuponCard> {
             ],
           ),
         ),
-        // Botón de usar cupón
-        if (cupon.puedeUsarse) _buildUseButton(),
+        // Botón de usar cupón (o «Ver código» si ya lo usó y el código sigue vigente)
+        if (cupon.puedeUsarse)
+          _buildUseButton()
+        else if (cupon.tieneCodigoVigente && widget.onVerCodigo != null)
+          _buildVerCodigoButton(),
       ],
     );
   }
@@ -334,24 +341,34 @@ class _CuponCardState extends State<CuponCard> {
     );
   }
 
+  /// Texto del estado cuando el cupón ya no se puede usar: Usado (con código vigente), Código vencido, Vencido o No disponible.
+  String get _textoEstado {
+    if (cupon.tieneCodigoVigente) return 'Usado · código vigente por ${cupon.usoVigente!.restanteTexto}';
+    if (cupon.codigoVencido) return 'Código vencido';
+    if (cupon.estaVencido) return 'Vencido';
+    if (cupon.usosRealizados > 0) return 'Usado';
+    return 'No disponible';
+  }
+
   Widget _buildStatusInfo() {
     if (!cupon.puedeUsarse) {
+      final usado = cupon.tieneCodigoVigente || (!cupon.estaVencido && cupon.usosRealizados > 0 && !cupon.codigoVencido);
       return Column(
         children: [
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.red.withAlpha((0.2 * 255).toInt()),
+              color: (usado ? Colors.green : Colors.red).withAlpha((0.25 * 255).toInt()),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.info_outline, color: Colors.white, size: 16),
+                Icon(usado ? Icons.check_circle_outline : Icons.info_outline, color: Colors.white, size: 16),
                 const SizedBox(width: 8),
                 Text(
-                  cupon.estaVencido ? 'Vencido' : 'No disponible',
+                  _textoEstado,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -383,6 +400,25 @@ class _CuponCardState extends State<CuponCard> {
         child: const Text(
           'Usar Cupón',
           style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerCodigoButton() {
+    return Positioned(
+      bottom: 20,
+      right: 20,
+      child: OutlinedButton.icon(
+        key: const Key('ver_codigo_cupon'),
+        onPressed: widget.onVerCodigo,
+        icon: const Icon(Icons.qr_code_2, size: 18),
+        label: const Text('Ver código', style: TextStyle(fontWeight: FontWeight.w600)),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppTheme.primary,
+          foregroundColor: Colors.black87,
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );

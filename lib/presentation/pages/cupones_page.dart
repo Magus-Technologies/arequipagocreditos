@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../core/utils/model_adapters.dart';
 import '../widgets/cupon_card.dart';
 import '../widgets/confirmacion_uso_cupon_dialog.dart';
+import '../widgets/cupon_usado_dialog.dart';
 import '../widgets/dialogs.dart';
 
 class CuponesPage extends StatefulWidget {
@@ -61,6 +62,16 @@ class _CuponesPageState extends State<CuponesPage> {
     );
   }
 
+  /// «Ver código» de un cupón ya usado: el código sigue siendo válido hasta que se cumplan las 24 h.
+  void _verCodigo(CuponModel cupon) {
+    final uso = cupon.usoVigente;
+    if (uso == null) return;
+    showDialog(
+      context: context,
+      builder: (context) => CuponUsadoDialog(uso: uso, reabierto: true),
+    );
+  }
+
   void _confirmarUsoCupon(CuponModel cupon) async {
     // Mostrar indicador de carga
     showDialog(
@@ -71,20 +82,20 @@ class _CuponesPageState extends State<CuponesPage> {
 
     try {
       final cuponesProvider = context.read<CuponesProvider>();
-      final success = await cuponesProvider.usarCupon(cupon.id);
+      final uso = await cuponesProvider.usarCupon(cupon.id);
       
       // Cerrar el diálogo de carga
       if (mounted) Navigator.pop(context);
 
-      if (success) {
-        // Mostrar mensaje de éxito
+      if (uso != null) {
+        // «¡Cupón Usado!» con el código de 24 h (si el servidor es anterior al código, solo el aviso de éxito)
         if (mounted) {
           showDialog(
             context: context,
-            barrierDismissible: true,
-            builder: (context) => const ExitoDialog(
-              mensaje: 'Cupón usado exitosamente',
-            ),
+            barrierDismissible: false,
+            builder: (context) => uso.tieneCodigo
+                ? CuponUsadoDialog(uso: uso)
+                : const ExitoDialog(mensaje: 'Cupón usado exitosamente'),
           );
         }
       } else {
@@ -388,6 +399,7 @@ class _CuponesPageState extends State<CuponesPage> {
           return CuponCard(
             cupon: cuponesFiltrados[index],
             onUsar: () => _usarCupon(cuponesFiltrados[index]),
+            onVerCodigo: () => _verCodigo(cuponesFiltrados[index]),
           );
         },
       ),

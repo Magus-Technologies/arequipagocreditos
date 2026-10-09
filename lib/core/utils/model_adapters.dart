@@ -70,6 +70,13 @@ class ModelAdapters {
       estado: entity.estado,
       fechaAsignacion: entity.fechaAsignacion,
       esActivo: true,
+      numero: entity.numero,
+      establecimiento: entity.establecimiento,
+      precioNormal: entity.precioNormal,
+      montoDescuentoEstimado: entity.montoDescuentoEstimado,
+      montoPagarEstimado: entity.montoPagarEstimado,
+      estadoUso: entity.estadoUso,
+      usoVigente: entity.usoVigente,
     );
   }
 

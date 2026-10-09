@@ -1,3 +1,5 @@
+import 'uso_cupon_entity.dart';
+
 class CuponEntity {
   final int id;
   final String titulo;
@@ -18,6 +20,20 @@ class CuponEntity {
   final DateTime? fechaAsignacion;
   final List<String>? visiblePara;
 
+  // TK-0359: lo que el servidor manda para el resumen y el código de 24 h.
+  /// N.° de cupón (el de la promoción, con ceros: 000125).
+  final String? numero;
+  /// Nombre del establecimiento (campo propio del cupón; si no se llenó, el servidor manda el título).
+  final String? establecimiento;
+  final double? precioNormal;
+  /// Descuento en soles y lo que se paga en el local, calculados por el servidor (null = no se pueden calcular: porcentaje sin precio).
+  final double? montoDescuentoEstimado;
+  final double? montoPagarEstimado;
+  /// 'disponible' | 'usado' | 'codigo_vencido'.
+  final String estadoUso;
+  /// El código generado por este conductor si todavía no vence (para «Ver código»).
+  final UsoCuponEntity? usoVigente;
+
   const CuponEntity({
     required this.id,
     required this.titulo,
@@ -37,6 +53,13 @@ class CuponEntity {
     required this.estado,
     this.fechaAsignacion,
     this.visiblePara,
+    this.numero,
+    this.establecimiento,
+    this.precioNormal,
+    this.montoDescuentoEstimado,
+    this.montoPagarEstimado,
+    this.estadoUso = 'disponible',
+    this.usoVigente,
   });
 
   /// Retorna true si este cupón es visible para la audiencia dada.
@@ -45,7 +68,20 @@ class CuponEntity {
     return visiblePara!.contains(audiencia);
   }
 
-  bool get puedeUsarse => estado == "activo" && !estaVencido && tieneUsosDisponibles;
+  // `puedeUsar` es lo que decide el servidor: además del límite de usos, no deja generar otro código mientras haya uno vigente.
+  bool get puedeUsarse => estado == "activo" && !estaVencido && tieneUsosDisponibles && puedeUsar && usoVigente == null;
+
+  /// N.° de cupón con seis dígitos (000125); si el servidor no lo manda se arma con el id.
+  String get numeroFormateado => numero ?? id.toString().padLeft(6, '0');
+
+  String get nombreEstablecimiento {
+    final propio = establecimiento?.trim() ?? '';
+    return propio.isNotEmpty ? propio : titulo;
+  }
+
+  bool get tieneCodigoVigente => usoVigente != null && usoVigente!.vigente;
+
+  bool get codigoVencido => estadoUso == 'codigo_vencido';
   
   bool get estaVencido => DateTime.now().isAfter(fechaFin);
   

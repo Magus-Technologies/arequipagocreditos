@@ -139,7 +139,8 @@ class CuponesRemoteDataSourceImpl implements CuponesRemoteDataSource {
             headers: ApiConstants.defaultHeaders,
             body: jsonEncode({
               'cliente_conductor_id': idConductor,
-              'monto_descuento': 0.0, // Default for now, as use case doesn't provide it yet
+              // TK-0359: el servidor calcula el descuento; se manda 0 solo por compatibilidad con servidores anteriores.
+              'monto_descuento': 0.0,
             }),
           )
           .timeout(ApiConstants.connectionTimeout);
