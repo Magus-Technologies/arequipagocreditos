@@ -118,6 +118,15 @@ class CatalogosProvider extends ChangeNotifier {
     );
   }
 
+  /// Monto de inscripción y disponibilidad de IziPay para el paso de pago del pre-registro (aún no existe el registro).
+  Future<InscripcionPagoInfoModel> fetchInscripcionPagoInfo({String? plataforma, String? departamento}) async {
+    final result = await catalogosRepository.getInscripcionPagoInfo(plataforma: plataforma, departamento: departamento);
+    return result.fold(
+      (failure) => throw Exception(failure.message),
+      (info) => info,
+    );
+  }
+
   Future<IzipayInfoModel> fetchIzipayInfo(int clienteId) async {
     final result = await catalogosRepository.getIzipayInfo(clienteId);
     return result.fold(

@@ -378,6 +378,13 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
                   ),
                 ),
               ),
+              if (_filaPago() != null) ...[
+                Divider(height: 1, color: Colors.grey.shade200),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: _filaPago()!,
+                ),
+              ],
             ],
           ),
         ),
@@ -412,6 +419,76 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// El pago de la inscripción mientras la solicitud está en revisión: ya pagado, el código de Caja Arequipa que falta pagar
+  /// (vale 24 horas), o la captura de IziPay esperando validación. Sin pago al registrarse (solicitudes anteriores) no sale.
+  Widget? _filaPago() {
+    final estado = _estado;
+    if (estado == null) return null;
+
+    final IconData icono;
+    final String titulo;
+    final Widget detalle;
+
+    final orden = estado.ordenPago;
+    final captura = estado.pagoInscripcion?.capturaIzipay;
+
+    if (estado.inscripcionPagada) {
+      icono = Icons.check_circle_outline;
+      titulo = 'Pago de inscripción:';
+      detalle = const Text(
+        'Pagado',
+        key: Key('estado_pago_pagado'),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+      );
+    } else if (orden != null && orden.estado == 'pendiente') {
+      icono = Icons.storefront_outlined;
+      titulo = 'Tu código de pago (Caja Arequipa):';
+      detalle = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(
+            orden.codigo,
+            key: const Key('estado_codigo_caja'),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.black87),
+          ),
+          Text('Aún no registramos tu pago.', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700)),
+        ],
+      );
+    } else if (orden != null && orden.estado == 'vencida') {
+      icono = Icons.timer_off_outlined;
+      titulo = 'Tu código de pago venció:';
+      detalle = Text(
+        'Comunícate con CREDIGO para obtener uno nuevo.',
+        key: const Key('estado_codigo_vencido'),
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+      );
+    } else if (captura != null) {
+      icono = Icons.qr_code_2_rounded;
+      titulo = 'Pago por IziPay:';
+      detalle = Text(
+        captura.estado == 'rechazado'
+            ? 'Captura rechazada${(captura.motivoRechazo ?? '').isNotEmpty ? ': ${captura.motivoRechazo}' : ''}'
+            : 'Captura recibida: la validamos junto con tu solicitud.',
+        key: const Key('estado_captura'),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+      );
+    } else {
+      return null;
+    }
+
+    return _buildFilaInfo(
+      icono: Icon(icono, size: 21, color: Colors.grey.shade800),
+      contenido: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(titulo, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+          const SizedBox(height: 2),
+          detalle,
+        ],
+      ),
     );
   }
 
@@ -469,6 +546,29 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
   }
 
   Widget _buildAprobado(ConductorEstadoModel estado) {
+    // Pagó al registrarse: no hay nada más que pagar, no se le ofrecen otra vez los métodos.
+    if (estado.inscripcionPagada) {
+      return Column(
+        children: [
+          const SizedBox(height: 8),
+          _buildIconoEstado(Icons.check_rounded, const Color(0xFF22C55E)),
+          const SizedBox(height: 22),
+          const Text(
+            '¡Tu solicitud\nfue aprobada!',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 24, height: 1.2, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Tu pago de inscripción ya está registrado.\nBienvenido a CrediGO.',
+            key: Key('estado_aprobado_pagado'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, height: 1.4, fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         const SizedBox(height: 8),

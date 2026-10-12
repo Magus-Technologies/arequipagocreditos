@@ -6,6 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../core/utils/actualizacion_app_gate.dart';
 import '../../core/utils/adenda_pendiente_gate.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
+import '../../core/utils/datos_pendientes_gate.dart';
+import 'perfil_page.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
 
@@ -30,6 +32,10 @@ class _DashboardPageState extends State<DashboardPage> {
       // TK-0355: las adendas se firman por separado del contrato; recién después de la ventana del contrato.
       if (mounted) {
         await AdendaPendienteGate.checkOnDashboard(context);
+      }
+      // TK-0357: datos por actualizar (foto de perfil, DNI, SOAT). Al final: es un aviso, no una firma obligatoria.
+      if (mounted) {
+        await DatosPendientesGate.checkOnDashboard(context);
       }
     });
   }
@@ -132,6 +138,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           children: [
                             const SizedBox(height: 10),
+                            // TK-0357: aviso fijo mientras haya datos por actualizar (no puede financiar hasta completarlos).
+                            DatosPendientesBanner(
+                              pendientes: conductorEntity?.datosPendientes ?? const [],
+                              onActualizar: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const PerfilPage()),
+                              ),
+                            ),
                             // Sección de módulos principales (incluye la
                             // tarjeta "Mis Financiamientos", ahora su propia
                             // pantalla en vez de vivir inline acá).

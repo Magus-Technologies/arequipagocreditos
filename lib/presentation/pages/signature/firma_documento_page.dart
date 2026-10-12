@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:arequipagocreditos/core/constants/api_constants.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
@@ -8,8 +9,11 @@ import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/pdf_paginas.dart';
+import '../../../domain/entities/posicion_firma.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/signature_provider.dart';
+import 'colocar_firma_page.dart';
 import 'signature_canvas_page.dart';
 
 class FirmaDocumentoPage extends StatefulWidget {
@@ -22,6 +26,13 @@ class FirmaDocumentoPage extends StatefulWidget {
   /// Si es true, en lugar de llamar al API de firma devuelve el base64 via Navigator.pop.
   final bool captureOnly;
 
+  /// TK-0353 (documentos adicionales): después de dibujar la firma, el conductor la COLOCA sobre el PDF (página, lugar y tamaño)
+  /// y esa posición viaja con la firma para que el servidor la estampe ahí. Los demás documentos se firman como siempre.
+  final bool colocarEnPdf;
+
+  /// Cómo se abre el PDF para dibujar sus páginas al colocar la firma; por defecto `pdfx`. Solo cambia en las pruebas.
+  final AbridorDePdf? abridorDePdf;
+
   const FirmaDocumentoPage({
     super.key,
     required this.title,
@@ -31,6 +42,8 @@ class FirmaDocumentoPage extends StatefulWidget {
     this.onSigned,
     this.canPop = true,
     this.captureOnly = false,
+    this.colocarEnPdf = false,
+    this.abridorDePdf,
   });
 
   @override
@@ -144,7 +157,9 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Por favor, revise detenidamente el documento antes de proceder con la firma.',
+                                  widget.colocarEnPdf
+                                      ? 'Revisa el documento. Luego dibujarás tu firma y la colocarás en el lugar que corresponda.'
+                                      : 'Por favor, revise detenidamente el documento antes de proceder con la firma.',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.blue.shade800,
@@ -278,12 +293,56 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
       ),
     );
 
-    if (result != null && mounted) {
-      _submitSignature(result);
+    if (result == null || !mounted) return;
+
+    if (widget.colocarEnPdf) {
+      // Sin confirmar dónde va la firma no se firma nada: el conductor puede volver a intentarlo.
+      final posicion = await _colocarFirma(result);
+      if (posicion == null || !mounted) return;
+      _submitSignature(result, posicion: posicion);
+      return;
+    }
+
+    _submitSignature(result);
+  }
+
+  /// Abre las páginas del PDF descargado y deja que el conductor coloque su firma. Devuelve null si cancela o si el PDF no se
+  /// pudo abrir (se avisa).
+  Future<PosicionFirma?> _colocarFirma(String base64Firma) async {
+    final ruta = localPath;
+    if (ruta == null) return null;
+
+    PdfPaginas? paginas;
+    try {
+      final datos = base64Firma.contains(',') ? base64Firma.split(',').last : base64Firma;
+      paginas = await (widget.abridorDePdf ?? PdfPaginasPdfx.abrir)(ruta);
+      if (!mounted) return null;
+      return await Navigator.of(context).push<PosicionFirma>(
+        MaterialPageRoute(
+          builder: (context) => ColocarFirmaPage(
+            title: widget.title,
+            paginas: paginas!,
+            firmaPng: base64Decode(datos),
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error abriendo el PDF para colocar la firma: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo abrir el documento para colocar tu firma. Inténtalo de nuevo.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return null;
+    } finally {
+      await paginas?.cerrar();
     }
   }
 
-  void _submitSignature(String base64Firma) async {
+  void _submitSignature(String base64Firma, {PosicionFirma? posicion}) async {
     // Modo captura: devolver el base64 al caller sin llamar al API
     if (widget.captureOnly) {
       Navigator.of(context).pop(base64Firma);
@@ -299,6 +358,7 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
       id: widget.id,
       firmaBase64: base64Firma,
       nroDocumento: user.nroDocumento,
+      posicion: posicion,
     );
 
     if (success) {

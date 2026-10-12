@@ -1,5 +1,6 @@
 import '../../core/errors/failures.dart';
 import '../../core/utils/either.dart';
+import '../entities/posicion_firma.dart';
 import '../repositories/signature_repository.dart';
 
 class FirmarUseCase {
@@ -12,6 +13,7 @@ class FirmarUseCase {
     required int id,
     required String firmaBase64,
     required String nroDocumento,
+    PosicionFirma? posicion,
   }) async {
     if (firmaBase64.isEmpty) {
       return Either.left(const ValidationFailure('La firma no puede estar vacía'));
@@ -25,6 +27,7 @@ class FirmarUseCase {
       id: id,
       firmaBase64: firmaBase64,
       nroDocumento: nroDocumento,
+      posicion: posicion,
     );
   }
 }

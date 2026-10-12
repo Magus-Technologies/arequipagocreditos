@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../domain/entities/posicion_firma.dart';
 import '../../domain/usecases/signature_usecases.dart';
 
 class SignatureProvider extends ChangeNotifier {
@@ -18,6 +19,7 @@ class SignatureProvider extends ChangeNotifier {
     required int id,
     required String firmaBase64,
     required String nroDocumento,
+    PosicionFirma? posicion,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -28,6 +30,7 @@ class SignatureProvider extends ChangeNotifier {
       id: id,
       firmaBase64: firmaBase64,
       nroDocumento: nroDocumento,
+      posicion: posicion,
     );
 
     _isLoading = false;

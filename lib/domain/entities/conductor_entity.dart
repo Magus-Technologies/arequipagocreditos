@@ -35,6 +35,10 @@ class ConductorEntity {
   final String? firmaAfiliacionUrl;
   final String? firmaAfiliacionAt;
 
+  /// TK-0357: datos por actualizar (foto de perfil, DNI, SOAT). Cada item trae `codigo`, `mensaje` y `descripcion`.
+  /// Con algo pendiente no puede generar financiamientos. Lista vacía = al día.
+  final List<Map<String, dynamic>> datosPendientes;
+
   const ConductorEntity({
     required this.idConductor,
     required this.nombres,
@@ -65,6 +69,7 @@ class ConductorEntity {
     this.contratoAfiliacionUrl,
     this.firmaAfiliacionUrl,
     this.firmaAfiliacionAt,
+    this.datosPendientes = const [],
   });
 
   String get nombreCompleto => nombres;

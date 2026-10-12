@@ -151,7 +151,8 @@ class NotificationService {
     if (context == null) return;
 
     // TK-0355: «Adenda pendiente de firma» → Mis documentos, donde la adenda aparece con su botón de firmar.
-    if (type == 'adenda_pendiente') {
+    // TK-0353: igual para «Documento pendiente de firma» (PDF que la empresa anexó a su financiamiento).
+    if (type == 'adenda_pendiente' || type == 'documento_pendiente') {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const DocumentosFirmadosPage()),
       );

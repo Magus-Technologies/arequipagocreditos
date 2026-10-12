@@ -14,6 +14,7 @@ abstract class CatalogosRemoteDataSource {
   Future<List<PlataformaItemModel>> getPlataformas();
   Future<ConductorEstadoModel> getConductorEstado(int conductorId);
   Future<IzipayInfoModel> getIzipayInfo(int clienteId);
+  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento});
   Future<ConductorEstadoModel> generarOrdenCajaArequipa(int clienteId);
   Future<Map<String, dynamic>> subirCapturaIzipay({
     required int clienteConductorId,
@@ -129,6 +130,39 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
     throw Exception(
       body?['message'] ?? 'No pudimos generar tu codigo de pago.',
     );
+  }
+
+  @override
+  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento}) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.inscripcionMontoEndpoint}').replace(
+        queryParameters: {
+          if (plataforma != null && plataforma.isNotEmpty) 'plataforma': plataforma,
+          if (departamento != null && departamento.isNotEmpty) 'departamento': departamento,
+        },
+      );
+      final response = await client
+          .get(url, headers: ApiConstants.defaultHeaders)
+          .timeout(ApiConstants.connectionTimeout);
+
+      Map<String, dynamic>? body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 200 && body?['success'] == true && body?['data'] != null) {
+        return InscripcionPagoInfoModel.fromJson(body!['data'] as Map<String, dynamic>);
+      }
+      if (response.statusCode == 429) {
+        throw const ValidationException('Demasiados intentos. Espera un momento e inténtalo de nuevo.');
+      }
+      throw ServerException('Error del servidor (HTTP ${response.statusCode}). Intenta nuevamente.');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Error al calcular tu monto de inscripción: $e');
+    }
   }
 
   @override

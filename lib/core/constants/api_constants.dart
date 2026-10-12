@@ -37,6 +37,8 @@ class ApiConstants {
   static const String conductorPreRegistroEndpoint = '/app/conductores/pre-registro';
   static const String conductorEstadoEndpoint = '/app/conductores/{id}/estado';
   static const String izipayInfoEndpoint = '/app/inscripcion/izipay-info/{id}';
+  // Monto de la inscripción y QR de IziPay ANTES de que exista el registro (paso de pago del pre-registro).
+  static const String inscripcionMontoEndpoint = '/app/inscripcion/monto';
   static const String ordenCajaInscripcionEndpoint = '/app/inscripcion/orden-caja/{id}';
   static const String izipayCapturaEndpoint = '/app/inscripcion/izipay-captura';
   static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';

@@ -311,19 +311,25 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
     );
   }
 
-  /// Firma el documento pendiente (contrato o adenda) desde Mis Documentos.
-  /// Usa el mismo flujo del app (canvas + POST /app/firmar/{tipo}/{id}): el contrato se firma con su financiamiento y la
-  /// adenda con su propio tipo (`adenda-yango` / `adenda-indriver`) y su propia firma, independiente de la del contrato.
+  /// Firma el documento pendiente (contrato, adenda o documento adicional) desde Mis Documentos.
+  /// Usa el mismo flujo del app (canvas + POST /app/firmar/{tipo}/{id}): el contrato se firma con su financiamiento; la
+  /// adenda (`adenda-yango` / `adenda-indriver`) y el documento adicional (`documento-adicional`) con su propio tipo, su
+  /// propio id y su propia firma, independiente de la del contrato.
   Future<void> _firmarContrato(dynamic doc) async {
-    final bool esAdenda = doc.tipo == 'adenda';
+    final bool firmaSeparada = doc.esFirmaSeparada;
+    final String nombreDelDocumento = doc.tipo == 'adenda'
+        ? 'la adenda'
+        : doc.tipo == 'documento_adicional'
+            ? 'el documento'
+            : 'el contrato';
     final String? pdfUrl = doc.contratoUrl;
-    final String? tipoFirma = esAdenda ? doc.tipoFirma : 'contrato';
-    final int? idDocumento = esAdenda ? doc.adendaId : doc.financiamientoId;
+    final String? tipoFirma = firmaSeparada ? doc.tipoFirma : 'contrato';
+    final int? idDocumento = firmaSeparada ? doc.adendaId : doc.financiamientoId;
 
     if (pdfUrl == null || pdfUrl.isEmpty || tipoFirma == null || idDocumento == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No se pudo abrir ${esAdenda ? 'la adenda' : 'el contrato'} para firmar. Intenta más tarde.'),
+          content: Text('No se pudo abrir $nombreDelDocumento para firmar. Intenta más tarde.'),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -339,6 +345,8 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
           pdfUrl: pdfUrl,
           tipo: tipoFirma,
           id: idDocumento,
+          // Un documento adicional se firma colocando la firma sobre el propio PDF.
+          colocarEnPdf: doc.esDocumentoAdicional,
           onSigned: _recargarDocumentos,
         ),
       ),
@@ -357,16 +365,21 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
   Widget _buildDocumentCard(dynamic doc) {
     final bool isFinanciamiento = doc.tipo == 'financiamiento';
     final bool isAdenda = doc.tipo == 'adenda';
+    final bool isDocAdicional = doc.tipo == 'documento_adicional';
     final Color accentColor = isFinanciamiento
         ? Colors.blue.shade600
         : isAdenda
             ? Colors.deepPurple.shade400
-            : Colors.green.shade600;
+            : isDocAdicional
+                ? Colors.teal.shade600
+                : Colors.green.shade600;
     final IconData icon = isFinanciamiento
         ? Icons.description
         : isAdenda
             ? Icons.history_edu
-            : Icons.person_add;
+            : isDocAdicional
+                ? Icons.assignment_outlined
+                : Icons.person_add;
 
     final String? rawPdfUrl = doc.contratoUrl ??
         (doc.tipo == 'conductor'
@@ -473,7 +486,9 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
                     _buildDetailRow(Icons.attach_money, 'Monto', 'S/ ${doc.montoTotal?.toStringAsFixed(2) ?? '0.00'}'),
                     _buildDetailRow(Icons.calendar_month, 'Cuotas', '${doc.cantidadCuotas} (${doc.frecuenciaPago})'),
                   ],
-                  if (isAdenda) _buildDetailRow(Icons.group, 'Grupo', doc.grupoFinanciamiento ?? '-'),
+                  if (isAdenda || isDocAdicional) _buildDetailRow(Icons.group, 'Grupo', doc.grupoFinanciamiento ?? '-'),
+                  if (isDocAdicional && (doc.descripcion ?? '').isNotEmpty)
+                    _buildDetailRow(Icons.notes, 'Detalle', doc.descripcion!),
                   _buildDetailRow(Icons.person, 'Firmado por', doc.nombreFirmante),
                   _buildDetailRow(Icons.work, 'Cargo', doc.cargo),
                   const SizedBox(height: 16),
@@ -506,7 +521,7 @@ class _DocumentosFirmadosPageState extends State<DocumentosFirmadosPage> {
                           ),
                         )
                       else
-                        // Contrato o adenda pendiente: se firma desde acá mismo.
+                        // Contrato, adenda o documento adicional pendiente: se firma desde acá mismo.
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => _firmarContrato(doc),

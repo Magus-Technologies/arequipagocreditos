@@ -1,6 +1,7 @@
 import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
 import '../../core/utils/either.dart';
+import '../../domain/entities/posicion_firma.dart';
 import '../../domain/repositories/signature_repository.dart';
 import '../datasources/signature_remote_datasource.dart';
 
@@ -15,6 +16,7 @@ class SignatureRepositoryImpl implements SignatureRepository {
     required int id,
     required String firmaBase64,
     required String nroDocumento,
+    PosicionFirma? posicion,
   }) async {
     try {
       final result = await remoteDataSource.firmar(
@@ -22,6 +24,7 @@ class SignatureRepositoryImpl implements SignatureRepository {
         id: id,
         firmaBase64: firmaBase64,
         nroDocumento: nroDocumento,
+        posicion: posicion,
       );
       return Either.right(result);
     } on ServerException catch (e) {

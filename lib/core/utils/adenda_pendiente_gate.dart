@@ -5,7 +5,8 @@ import '../../presentation/pages/signature/firma_documento_page.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/financiamiento_servicio_provider.dart';
 
-/// TK-0355: ventana flotante de las ADENDAS pendientes de firma (Yango / InDriver).
+/// TK-0355: ventana flotante de las ADENDAS pendientes de firma (Yango / InDriver). TK-0353: también los DOCUMENTOS ADICIONALES que
+/// la empresa anexa a un financiamiento (`tipo == 'documento_adicional'`): se firman igual, cada uno con su propia firma.
 ///
 /// Es la misma idea que [ContratoPendienteGate], pero la adenda se firma POR SEPARADO del contrato: lleva su propia firma
 /// (`POST /app/firmar/adenda-yango|adenda-indriver/{id}`) y después aparece firmada en «Mis documentos». Al abrir el
@@ -20,7 +21,7 @@ class AdendaPendienteGate {
   static List<DocumentoFirmadoEntity> findPendientes(List<DocumentoFirmadoEntity> documentos) {
     return documentos
         .where((d) =>
-            d.tipo == 'adenda' &&
+            d.esFirmaSeparada &&
             !d.firmado &&
             d.tipoFirma != null &&
             d.adendaId != null &&
@@ -37,11 +38,37 @@ class AdendaPendienteGate {
     return findPendientes(provider.documentosFirmados?.documentos ?? []);
   }
 
-  static String _mensaje(List<DocumentoFirmadoEntity> pendientes) {
+  static bool _soloAdendas(List<DocumentoFirmadoEntity> p) => p.every((d) => d.tipo == 'adenda');
+
+  static bool _soloDocumentos(List<DocumentoFirmadoEntity> p) => p.every((d) => d.esDocumentoAdicional);
+
+  @visibleForTesting
+  static String titulo(List<DocumentoFirmadoEntity> pendientes) {
+    if (_soloAdendas(pendientes)) return 'Adenda pendiente';
+    if (_soloDocumentos(pendientes) && pendientes.length == 1) return 'Documento pendiente';
+    return 'Documentos pendientes';
+  }
+
+  @visibleForTesting
+  static String mensaje(List<DocumentoFirmadoEntity> pendientes) {
     if (pendientes.length == 1) {
-      return 'Tienes una adenda pendiente por firmar:\n${pendientes.first.nombreDocumento}.';
+      final articulo = pendientes.first.esDocumentoAdicional ? 'un documento' : 'una adenda';
+      return 'Tienes $articulo pendiente por firmar:\n${pendientes.first.nombreDocumento}.';
     }
-    return 'Tienes ${pendientes.length} adendas pendientes por firmar.';
+    if (_soloAdendas(pendientes)) return 'Tienes ${pendientes.length} adendas pendientes por firmar.';
+    if (_soloDocumentos(pendientes)) return 'Tienes ${pendientes.length} documentos pendientes por firmar.';
+    return 'Tienes ${pendientes.length} documentos y adendas pendientes por firmar.';
+  }
+
+  @visibleForTesting
+  static String indicacion(List<DocumentoFirmadoEntity> pendientes) {
+    if (_soloAdendas(pendientes)) {
+      return 'Revísala y fírmala para que quede registrada. Es una firma aparte de la de tu contrato.';
+    }
+    if (pendientes.length == 1) {
+      return 'Revísalo y fírmalo para que quede registrado. Es una firma aparte de la de tu contrato.';
+    }
+    return 'Revísalos y fírmalos para que queden registrados. Cada uno es una firma aparte de la de tu contrato.';
   }
 
   static Future<bool> _mostrarDialog(BuildContext context, List<DocumentoFirmadoEntity> pendientes) async {
@@ -63,20 +90,20 @@ class AdendaPendienteGate {
               child: Icon(Icons.history_edu, color: Colors.deepPurple.shade400, size: 28),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Adenda pendiente',
+            Text(
+              titulo(pendientes),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              _mensaje(pendientes),
+              mensaje(pendientes),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.4),
             ),
             const SizedBox(height: 8),
             Text(
-              'Revísala y fírmala para que quede registrada. Es una firma aparte de la de tu contrato.',
+              indicacion(pendientes),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500, height: 1.4),
             ),
@@ -123,6 +150,8 @@ class AdendaPendienteGate {
             pdfUrl: adenda.contratoUrl!,
             tipo: adenda.tipoFirma!,
             id: adenda.adendaId!,
+            // Un documento adicional se firma colocando la firma sobre el propio PDF.
+            colocarEnPdf: adenda.esDocumentoAdicional,
           ),
         ),
       );

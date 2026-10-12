@@ -8,6 +8,9 @@ class ResumenDocumentosEntity {
   /// Adendas ya firmadas / pendientes de firma (cada una se firma aparte del contrato).
   final int adendas;
   final int adendasPendientes;
+  /// TK-0353: documentos adicionales que la empresa anexó al financiamiento (PDF a firmar), firmados / pendientes.
+  final int documentosAdicionales;
+  final int documentosAdicionalesPendientes;
   final DateTime? ultimoFirmado;
 
   ResumenDocumentosEntity({
@@ -19,6 +22,8 @@ class ResumenDocumentosEntity {
     required this.contratos,
     this.adendas = 0,
     this.adendasPendientes = 0,
+    this.documentosAdicionales = 0,
+    this.documentosAdicionalesPendientes = 0,
     this.ultimoFirmado,
   });
 }
@@ -38,10 +43,13 @@ class DocumentoFirmadoEntity {
   final String cargo;
   final String firmaUrl;
   final String? contratoUrl;
-  /// Solo adendas: el `tipo` que se manda a `POST /app/firmar/{tipoFirma}/{adendaId}` (`adenda-yango` | `adenda-indriver`)
-  /// y el id de la adenda a firmar. El resto de documentos no los trae.
+  /// Solo adendas y documentos adicionales: el `tipo` que se manda a `POST /app/firmar/{tipoFirma}/{adendaId}`
+  /// (`adenda-yango` | `adenda-indriver` | `documento-adicional`) y el id del documento a firmar (en los documentos
+  /// adicionales el servidor lo manda como `documento_id`). El resto de documentos no los trae.
   final String? tipoFirma;
   final int? adendaId;
+  /// TK-0353: lo que la empresa escribió al anexar el documento adicional (opcional).
+  final String? descripcion;
   /// true = ya firmado; false = pendiente de firma (se puede firmar desde el app).
   final bool firmado;
   final DateTime? firmadoAt;
@@ -64,10 +72,17 @@ class DocumentoFirmadoEntity {
     this.contratoUrl,
     this.tipoFirma,
     this.adendaId,
+    this.descripcion,
     this.firmado = true,
     this.firmadoAt,
     required this.origen,
   });
+
+  /// Adendas (TK-0355) y documentos adicionales (TK-0353) se firman POR SEPARADO del contrato: cada uno con su propio
+  /// `tipoFirma` e id, no con el del financiamiento.
+  bool get esFirmaSeparada => tipo == 'adenda' || tipo == 'documento_adicional';
+
+  bool get esDocumentoAdicional => tipo == 'documento_adicional';
 }
 
 class ListadoDocumentosEntity {

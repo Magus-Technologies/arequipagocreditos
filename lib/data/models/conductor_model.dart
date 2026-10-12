@@ -31,6 +31,7 @@ class ConductorModel extends ConductorEntity {
     super.contratoAfiliacionUrl,
     super.firmaAfiliacionUrl,
     super.firmaAfiliacionAt,
+    super.datosPendientes,
   });
 
   factory ConductorModel.fromJson(Map<String, dynamic> json) {
@@ -88,6 +89,9 @@ class ConductorModel extends ConductorEntity {
       contratoAfiliacionUrl: c['contrato_afiliacion_url']?.toString(),
       firmaAfiliacionUrl: c['firma_afiliacion_url']?.toString(),
       firmaAfiliacionAt: c['firma_afiliacion_at']?.toString(),
+      datosPendientes: c['datos_pendientes'] is List
+          ? (c['datos_pendientes'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+          : const [],
     );
   }
 
@@ -122,6 +126,7 @@ class ConductorModel extends ConductorEntity {
       'contrato_afiliacion_url': contratoAfiliacionUrl,
       'firma_afiliacion_url': firmaAfiliacionUrl,
       'firma_afiliacion_at': firmaAfiliacionAt,
+      'datos_pendientes': datosPendientes,
     };
   }
 
@@ -155,5 +160,6 @@ class ConductorModel extends ConductorEntity {
     contratoAfiliacionUrl: contratoAfiliacionUrl,
     firmaAfiliacionUrl: firmaAfiliacionUrl,
     firmaAfiliacionAt: firmaAfiliacionAt,
+    datosPendientes: datosPendientes,
   );
 }

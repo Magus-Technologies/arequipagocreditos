@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/errors/exceptions.dart';
 import '../../core/constants/api_constants.dart';
+import '../../domain/entities/posicion_firma.dart';
 
 abstract class SignatureRemoteDataSource {
   Future<Map<String, dynamic>> firmar({
@@ -9,6 +10,7 @@ abstract class SignatureRemoteDataSource {
     required int id,
     required String firmaBase64,
     required String nroDocumento,
+    PosicionFirma? posicion,
   });
 }
 
@@ -23,6 +25,7 @@ class SignatureRemoteDataSourceImpl implements SignatureRemoteDataSource {
     required int id,
     required String firmaBase64,
     required String nroDocumento,
+    PosicionFirma? posicion,
   }) async {
     try {
       final endpoint = ApiConstants.firmarEndpoint
@@ -36,6 +39,8 @@ class SignatureRemoteDataSourceImpl implements SignatureRemoteDataSource {
         body: jsonEncode({
           'firma': firmaBase64,
           'nro_documento': nroDocumento,
+          // TK-0353: dónde colocó el conductor su firma sobre el PDF (solo documentos adicionales).
+          if (posicion != null) 'posicion': posicion.toJson(),
         }),
       ).timeout(ApiConstants.connectionTimeout);
 

@@ -47,6 +47,33 @@ class IzipayCapturaItemModel {
   }
 }
 
+/// Lo que el conductor paga al registrarse y cómo: el monto según su plataforma y departamento, y si IziPay está disponible
+/// (con su QR). Caja Arequipa siempre está. Viene de `GET /app/inscripcion/monto`, antes de que exista el registro.
+class InscripcionPagoInfoModel {
+  final double monto;
+  final bool cajaDisponible;
+  final bool izipayDisponible;
+  final String? qrUrl;
+
+  const InscripcionPagoInfoModel({
+    required this.monto,
+    this.cajaDisponible = true,
+    this.izipayDisponible = false,
+    this.qrUrl,
+  });
+
+  factory InscripcionPagoInfoModel.fromJson(Map<String, dynamic> json) {
+    final caja = json['caja_arequipa'];
+    final izipay = json['izipay'];
+    return InscripcionPagoInfoModel(
+      monto: double.tryParse((json['monto'] ?? '0').toString()) ?? 0,
+      cajaDisponible: caja is Map ? caja['disponible'] != false : true,
+      izipayDisponible: izipay is Map && izipay['disponible'] == true,
+      qrUrl: izipay is Map ? izipay['qr_url']?.toString() : null,
+    );
+  }
+}
+
 class IzipayInfoModel {
   final String qrUrl;
   final IzipayAPagarModel? aPagar;

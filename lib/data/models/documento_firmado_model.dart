@@ -15,7 +15,11 @@ class ListadoDocumentosModel extends ListadoDocumentosEntity {
     final adendas = ((json['adendas'] ?? const []) as List)
         .map((d) => DocumentoFirmadoModel.fromJson(d))
         .toList();
-    final todos = [...documentos, ...adendas];
+    // TK-0353: los documentos adicionales (PDF que la empresa anexa a un financiamiento) también vienen aparte.
+    final adicionales = ((json['documentos_adicionales'] ?? const []) as List)
+        .map((d) => DocumentoFirmadoModel.fromJson(d))
+        .toList();
+    final todos = [...documentos, ...adendas, ...adicionales];
     return ListadoDocumentosModel(
       resumen: ResumenDocumentosModel.fromJson(json['resumen']),
       documentos: [
@@ -36,6 +40,8 @@ class ResumenDocumentosModel extends ResumenDocumentosEntity {
     required super.contratos,
     super.adendas,
     super.adendasPendientes,
+    super.documentosAdicionales,
+    super.documentosAdicionalesPendientes,
     super.ultimoFirmado,
   });
 
@@ -45,12 +51,18 @@ class ResumenDocumentosModel extends ResumenDocumentosEntity {
       conductorId: conductor['id'] ?? 0,
       nombreConductor: conductor['nombre'] ?? '',
       nroDocumento: conductor['nro_documento'] ?? '',
-      // El total del servidor no cuenta las adendas (van en su lista aparte): se suman aquí.
-      totalDocumentos: (json['total_documentos'] ?? 0) + (json['adendas'] ?? 0) + (json['adendas_pendientes'] ?? 0),
+      // El total del servidor no cuenta las adendas ni los documentos adicionales (van en su lista aparte): se suman aquí.
+      totalDocumentos: (json['total_documentos'] ?? 0) +
+          (json['adendas'] ?? 0) +
+          (json['adendas_pendientes'] ?? 0) +
+          (json['documentos_adicionales'] ?? 0) +
+          (json['documentos_adicionales_pendientes'] ?? 0),
       afiliaciones: json['afiliaciones'] ?? 0,
       contratos: json['contratos'] ?? 0,
       adendas: json['adendas'] ?? 0,
       adendasPendientes: json['adendas_pendientes'] ?? 0,
+      documentosAdicionales: json['documentos_adicionales'] ?? 0,
+      documentosAdicionalesPendientes: json['documentos_adicionales_pendientes'] ?? 0,
       ultimoFirmado: DateTime.tryParse(json['ultimo_firmado'] ?? ''),
     );
   }
@@ -74,6 +86,7 @@ class DocumentoFirmadoModel extends DocumentoFirmadoEntity {
     super.contratoUrl,
     super.tipoFirma,
     super.adendaId,
+    super.descripcion,
     super.firmado,
     super.firmadoAt,
     required super.origen,
@@ -104,7 +117,9 @@ class DocumentoFirmadoModel extends DocumentoFirmadoEntity {
       firmaUrl: json['firma_url'] ?? '',
       contratoUrl: json['contrato_url'],
       tipoFirma: json['tipo_firma'],
-      adendaId: json['adenda_id'],
+      // Las adendas mandan `adenda_id`; los documentos adicionales, `documento_id`.
+      adendaId: json['adenda_id'] ?? json['documento_id'],
+      descripcion: json['descripcion'],
       // Documentos de afiliación no mandan el flag: siempre están firmados.
       firmado: json['firmado'] ?? true,
       firmadoAt: DateTime.tryParse(json['firmado_at'] ?? ''),

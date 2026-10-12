@@ -9,7 +9,9 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
+import '../../data/models/izipay_models.dart';
 import '../../theme/app_theme.dart';
+import '../components/pago_inscripcion_registro.dart';
 import '../providers/auth_provider.dart';
 import '../providers/catalogos_provider.dart';
 import 'conductor_register_success_page.dart';
@@ -25,7 +27,8 @@ class ConductorRegisterPage extends StatefulWidget {
 class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 1;
-  final int _totalSteps = 5;
+  // 1 datos · 2 plataforma · 3 contacto · 4 vehículo · 5 documentos · 6 pago de la inscripción (y se envía la solicitud).
+  final int _totalSteps = 6;
   bool _isPickingFile = false;
 
   static const List<String> _categoriasLicencia = [
@@ -71,11 +74,19 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   File? _licenciaAnverso;
   File? _licenciaReverso;
   File? _fotoPerfil;
-  // El pago de inscripción solo se registra al contado (ver
-  // "Modalidad de pago de inscripción" más abajo) — no se ofrece la opción
-  // de financiarlo, por eso queda fijo en 'contado' en vez de null.
-  String? _modalidadPago = 'contado';
+  // El pago de inscripción solo se registra al contado: no se ofrece financiarlo, por eso queda fijo en 'contado'.
+  // Cómo se paga (Caja Arequipa o IziPay) se elige en el último paso (_metodoPago).
+  final String _modalidadPago = 'contado';
   bool _aceptaTerminos = false;
+
+  // Step 6: pago de la inscripción, ANTES de enviar la solicitud. El monto depende de la plataforma y el departamento
+  // elegidos, así que se consulta al entrar al paso. IziPay: QR + captura; Caja Arequipa: el código llega al enviar.
+  InscripcionPagoInfoModel? _pagoInfo;
+  bool _pagoInfoCargando = false;
+  String? _pagoInfoError;
+  String? _metodoPago;
+  File? _capturaPago;
+  final _operacionController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
 
@@ -107,6 +118,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     _modeloController.dispose();
     _anioController.dispose();
     _colorController.dispose();
+    _operacionController.dispose();
     super.dispose();
   }
 
@@ -163,8 +175,16 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         if (_docIdentidadReverso == null) return 'Adjunta el reverso de tu DNI';
         if (_licenciaAnverso == null)     return 'Adjunta el anverso de tu licencia de conducir';
         if (_licenciaReverso == null)     return 'Adjunta el reverso de tu licencia de conducir';
-        if (_modalidadPago == null)       return 'Selecciona la modalidad de pago de inscripción';
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
+        return null;
+      case 6:
+        if (_pagoInfoCargando) return 'Espera un momento: estamos calculando tu monto de inscripción';
+        if (_pagoInfo == null) return _pagoInfoError ?? 'No pudimos calcular tu monto de inscripción. Inténtalo de nuevo';
+        if (_pagoInfo!.monto <= 0) return null; // inscripción sin costo: no hay nada que pagar
+        if (_metodoPago == null) return 'Elige cómo vas a pagar tu inscripción';
+        if (_metodoPago == PagoInscripcionRegistro.metodoIzipay && _capturaPago == null) {
+          return 'Adjunta la captura de tu pago por IziPay';
+        }
         return null;
     }
     return null;
@@ -206,8 +226,39 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
 
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
+      if (_currentStep == 6) _cargarPagoInfo();
     } else {
       _submit();
+    }
+  }
+
+  /// Monto de la inscripción y disponibilidad de IziPay. Se consulta cada vez que se entra al paso de pago, porque el monto
+  /// depende de la plataforma y el departamento, que se pueden haber cambiado al volver atrás.
+  Future<void> _cargarPagoInfo() async {
+    setState(() {
+      _pagoInfoCargando = true;
+      _pagoInfoError = null;
+    });
+    try {
+      final info = await context.read<CatalogosProvider>().fetchInscripcionPagoInfo(
+            plataforma: _plataforma,
+            departamento: _departamentoNombre,
+          );
+      if (!mounted) return;
+      setState(() {
+        _pagoInfo = info;
+        _pagoInfoCargando = false;
+        if (_metodoPago == PagoInscripcionRegistro.metodoIzipay && !info.izipayDisponible) {
+          _metodoPago = null;
+          _capturaPago = null;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _pagoInfoCargando = false;
+        _pagoInfoError = 'No pudimos calcular tu monto de inscripción. Revisa tu conexión e inténtalo de nuevo.';
+      });
     }
   }
 
@@ -267,6 +318,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         }
         setState(() {
           if (type == 'perfil') _fotoPerfil = file;
+          if (type == 'captura') _capturaPago = file;
         });
       }
     } finally {
@@ -334,6 +386,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     if (_anioController.text.trim().isNotEmpty) vehiculo['anio'] = _anioController.text.trim();
     if (_colorController.text.trim().isNotEmpty) vehiculo['color'] = _colorController.text.trim();
 
+    final pagaAlRegistrarse = _pagoInfo != null && _pagoInfo!.monto > 0 && _metodoPago != null;
+
     final data = {
       'tipo_doc': _tipoDocController.text,
       'nro_documento': _nroDocController.text.trim(),
@@ -352,6 +406,10 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       'direccion_detallada': _direccionController.text.trim(),
       'google_maps_url': _googleMapsUrlController.text.trim(),
       'modalidad_pago_inscripcion': _modalidadPago,
+      // El pago va dentro de la misma solicitud (solo si la inscripción tiene costo).
+      if (pagaAlRegistrarse) 'metodo_pago_inscripcion': _metodoPago,
+      if (pagaAlRegistrarse && _metodoPago == PagoInscripcionRegistro.metodoIzipay && _operacionController.text.trim().isNotEmpty)
+        'numero_operacion': _operacionController.text.trim(),
       if (vehiculo.isNotEmpty) 'vehiculo': jsonEncode(vehiculo),
     };
 
@@ -361,6 +419,9 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     if (_licenciaAnverso != null) files['licencia'] = _licenciaAnverso!;
     if (_licenciaReverso != null) files['licencia_reverso'] = _licenciaReverso!;
     if (_fotoPerfil != null) files['foto_perfil'] = _fotoPerfil!;
+    if (pagaAlRegistrarse && _metodoPago == PagoInscripcionRegistro.metodoIzipay && _capturaPago != null) {
+      files['captura_pago'] = _capturaPago!;
+    }
 
     final response = await authProvider.conductorPreRegister(data, files);
 
@@ -379,7 +440,13 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ConductorRegisterSuccessPage(conductorId: conductorId),
+            builder: (context) => ConductorRegisterSuccessPage(
+              conductorId: conductorId,
+              // El código de Caja o la captura de IziPay que se acaban de registrar con la solicitud.
+              inscripcion: responseData is Map && responseData['inscripcion'] is Map
+                  ? Map<String, dynamic>.from(responseData['inscripcion'] as Map)
+                  : null,
+            ),
           ),
         );
       }
@@ -543,6 +610,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       case 3: return 'Contacto y Ubicación';
       case 4: return 'Vehículo (Opcional)';
       case 5: return 'Adjuntar Documentación';
+      case 6: return 'Pago de Inscripción';
       default: return '';
     }
   }
@@ -747,16 +815,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             _buildModernFileTile('Licencia de Conducir (Reverso)', _licenciaReverso, () => _pickFile('licencia_reverso')),
             _buildModernFileTile('Foto de Perfil (Opcional)', _fotoPerfil, () => _pickImage('perfil')),
             const SizedBox(height: 20),
-            _buildSectionTitle('Modalidad de pago de inscripción'),
-            const SizedBox(height: 12),
-            _buildModalidadCard(
-              'contado',
-              'Al contado',
-              'Un solo pago con código en agentes Caja Arequipa',
-              Icons.payments_outlined,
-            ),
-            const SizedBox(height: 20),
-            _buildInfoNote('Tu solicitud será revisada. Una vez aprobada, recibirás tu código de pago de Caja Arequipa.'),
+            _buildInfoNote('En el siguiente paso pagarás tu inscripción y enviarás tu solicitud. Nuestro equipo la revisará junto con tu pago.'),
             const SizedBox(height: 20),
             PrivacyTermsCheckbox(
               onChanged: (val) {
@@ -764,6 +823,18 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
               },
             ),
           ],
+        );
+      case 6:
+        return PagoInscripcionRegistro(
+          info: _pagoInfo,
+          cargando: _pagoInfoCargando,
+          error: _pagoInfoError,
+          metodo: _metodoPago,
+          captura: _capturaPago,
+          operacionController: _operacionController,
+          onMetodo: (metodo) => setState(() => _metodoPago = metodo),
+          onElegirCaptura: () => _pickImage('captura'),
+          onReintentar: _cargarPagoInfo,
         );
       default:
         return const SizedBox();
@@ -940,45 +1011,6 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
                 ),
               ),
             ),
-    );
-  }
-
-  Widget _buildModalidadCard(String value, String title, String subtitle, IconData icon) {
-    final bool selected = _modalidadPago == value;
-    return InkWell(
-      onTap: () => setState(() => _modalidadPago = value),
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected ? Colors.black.withValues(alpha: 0.04) : Colors.grey[50],
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: selected ? Colors.black : Colors.grey[200]!,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: selected ? Colors.black : Colors.black45),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                ],
-              ),
-            ),
-            Icon(
-              selected ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: selected ? Colors.black : Colors.black26,
-            ),
-          ],
-        ),
-      ),
     );
   }
 

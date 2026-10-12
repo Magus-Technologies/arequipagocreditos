@@ -14,14 +14,26 @@ import 'conductor_estado_page.dart';
 class ConductorRegisterSuccessPage extends StatelessWidget {
   final int? conductorId;
 
-  const ConductorRegisterSuccessPage({super.key, this.conductorId});
+  /// Lo que se registró del pago al enviar la solicitud (`data.inscripcion` de la respuesta): el código de Caja Arequipa
+  /// (`orden_pago.codigo`) o la captura de IziPay (`captura_izipay`). Null si no hubo pago al registrarse.
+  final Map<String, dynamic>? inscripcion;
+
+  const ConductorRegisterSuccessPage({super.key, this.conductorId, this.inscripcion});
+
+  String? get _codigoCaja {
+    final orden = inscripcion?['orden_pago'];
+    final codigo = orden is Map ? orden['codigo']?.toString() : null;
+    return codigo == null || codigo.isEmpty ? null : codigo;
+  }
+
+  bool get _capturaIzipay => inscripcion?['captura_izipay'] is Map;
 
   static const Color _verde = Color(0xFF22C55E);
   static const Color _verdeTexto = Color(0xFF16A34A);
   static const Color _navy = Color(0xFF16233C);
 
-  /// Alto que necesita el diseño a tamaño natural.
-  static const double _altoBase = 700;
+  /// Alto que necesita el diseño a tamaño natural (con el pago de la inscripción la tarjeta es más alta).
+  double get _altoBase => _codigoCaja != null || _capturaIzipay ? 800 : 700;
 
   @override
   Widget build(BuildContext context) {
@@ -279,6 +291,60 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
+          if (_codigoCaja != null || _capturaIzipay) ...[
+            Divider(height: 1, color: Colors.grey.shade200),
+            _buildFilaPago(f),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// El pago de la inscripción: con Caja Arequipa, el código para pagar (vale 24 horas); con IziPay, que la captura quedó
+  /// recibida y se valida junto con la solicitud.
+  Widget _buildFilaPago(double f) {
+    final codigo = _codigoCaja;
+    return Padding(
+      key: const Key('exito_pago'),
+      padding: EdgeInsets.symmetric(vertical: 13 * f),
+      child: Row(
+        children: [
+          _buildIconoCircular(
+            f,
+            child: Icon(
+              codigo != null ? Icons.storefront_outlined : Icons.qr_code_2_rounded,
+              size: 21 * f,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          SizedBox(width: 12 * f),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  codigo != null ? 'Tu código de pago (Caja Arequipa):' : 'Pago por IziPay:',
+                  style: TextStyle(fontSize: 12 * f, color: Colors.grey.shade700),
+                ),
+                SizedBox(height: 2 * f),
+                if (codigo != null) ...[
+                  SelectableText(
+                    codigo,
+                    key: const Key('exito_codigo_caja'),
+                    style: TextStyle(fontSize: 22 * f, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.black87),
+                  ),
+                  Text(
+                    'Vale 24 horas. Págalo en un agente o agencia.',
+                    style: TextStyle(fontSize: 11 * f, color: Colors.grey.shade700),
+                  ),
+                ] else
+                  Text(
+                    'Captura recibida: la validamos junto con tu solicitud.',
+                    style: TextStyle(fontSize: 13 * f, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
               ],
             ),
           ),

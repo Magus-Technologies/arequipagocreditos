@@ -105,6 +105,10 @@ class ConductorEstadoModel {
   final OrdenPagoModel? ordenPago;
   final PagoInscripcionModel? pagoInscripcion;
 
+  /// El pago de la inscripción ya está hecho (o no hay nada que pagar): Caja confirmó el cobro o el equipo validó la
+  /// captura de IziPay. Puede ocurrir antes de que aprueben la solicitud, porque ahora se paga al registrarse.
+  final bool inscripcionPagada;
+
   const ConductorEstadoModel({
     required this.id,
     required this.nroDocumento,
@@ -113,6 +117,7 @@ class ConductorEstadoModel {
     this.modalidadPagoInscripcion,
     this.ordenPago,
     this.pagoInscripcion,
+    this.inscripcionPagada = false,
   });
 
   factory ConductorEstadoModel.fromJson(Map<String, dynamic> json) {
@@ -128,6 +133,7 @@ class ConductorEstadoModel {
       pagoInscripcion: json['pago_inscripcion'] != null
           ? PagoInscripcionModel.fromJson(json['pago_inscripcion'] as Map<String, dynamic>)
           : null,
+      inscripcionPagada: json['inscripcion_pagada'] == true || json['inscripcion_pagada'] == 1,
     );
   }
 }

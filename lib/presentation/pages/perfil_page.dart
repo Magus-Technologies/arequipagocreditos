@@ -280,6 +280,11 @@ class _PerfilPageState extends State<PerfilPage> {
         child: Column(
           children: [
             const SizedBox(height: 16),
+            // TK-0357: datos por actualizar (foto de perfil, DNI, SOAT); sin ellos no puede generar financiamientos.
+            DatosPendientesBanner(
+              pendientes: authProvider.currentUser?.datosPendientes ?? const [],
+              margin: const EdgeInsets.only(bottom: 16),
+            ),
             // Estado de la foto de perfil
             _buildProfileStatusCard(conductor),
             const SizedBox(height: 20),
