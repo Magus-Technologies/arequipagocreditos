@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../core/errors/failures.dart';
+import '../../core/utils/promociones_flyers_cache.dart';
 import '../../data/models/promo_taller_banner_model.dart';
 import '../../domain/entities/comercio_entity.dart';
 import '../../domain/usecases/get_comercios_usecase.dart';
@@ -59,15 +60,21 @@ class ComerciosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Flyers de la pestaña Promociones de la web. Si algo falla (o el interruptor está apagado) devuelve vacío:
+  Future<List<PromoTallerBannerModel>> _pedirPromociones() async {
+    final result = await getPromocionesBannersUseCase();
+    // Un error se lanza (en vez de devolver vacío) para que la caché conserve los flyers guardados en lugar de borrarlos.
+    return result.fold((falla) => throw Exception(falla.message), (banners) => banners);
+  }
+
+  /// Flyers de la pestaña Promociones de la web, listos para mostrar al entrar: usa la lista guardada (memoria o celular) y la refresca
+  /// por detrás; solo la primera vez espera al servidor. Si algo falla (o el interruptor está apagado) devuelve vacío:
   /// un flyer que no carga nunca debe estorbar el listado de comercios.
-  Future<List<PromoTallerBannerModel>> cargarPromocionesBanners() async {
-    try {
-      final result = await getPromocionesBannersUseCase();
-      return result.fold((_) => <PromoTallerBannerModel>[], (banners) => banners);
-    } catch (_) {
-      return <PromoTallerBannerModel>[];
-    }
+  Future<List<PromoTallerBannerModel>> cargarPromocionesBanners() =>
+      PromocionesFlyersCache.paraMostrar(PromocionesFlyersCache.comercios, _pedirPromociones);
+
+  /// Se llama al abrir el app: trae la lista y baja las imágenes por adelantado, así el cuadro sale al instante al entrar a Comercios GO.
+  Future<void> precargarPromociones() async {
+    await PromocionesFlyersCache.actualizar(PromocionesFlyersCache.comercios, _pedirPromociones);
   }
 
   Future<void> cargarCategorias() async {

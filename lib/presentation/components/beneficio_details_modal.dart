@@ -472,6 +472,23 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                         ),
                       ),
                     ],
+                    // Ficha técnica del vehículo de esta opción (PDF del modelo vinculado).
+                    if ((variante.fichaTecnicaUrl ?? '').isNotEmpty)
+                      TextButton.icon(
+                        onPressed: () => launchUrl(
+                          Uri.parse(variante.fichaTecnicaUrl!),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        icon: const Icon(Icons.description_outlined, size: 16),
+                        label: const Text('Ver ficha técnica', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.centerLeft,
+                        ),
+                      ),
                   ],
                 ),
               ),

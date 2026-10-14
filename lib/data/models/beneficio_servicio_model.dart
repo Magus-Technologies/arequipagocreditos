@@ -63,6 +63,7 @@ class VarianteModel extends VarianteEntity {
     super.coloresDisponibles,
     super.descuentoSemanal,
     super.viajesRequeridos,
+    super.fichaTecnicaUrl,
   });
 
   factory VarianteModel.fromJson(Map<String, dynamic> json) {
@@ -120,6 +121,9 @@ class VarianteModel extends VarianteEntity {
       viajesRequeridos: json['viajes_requeridos'] != null
           ? toInt(json['viajes_requeridos'])
           : null,
+      fichaTecnicaUrl: (json['ficha_tecnica_url']?.toString() ?? '').isEmpty
+          ? null
+          : json['ficha_tecnica_url'].toString(),
     );
   }
 }

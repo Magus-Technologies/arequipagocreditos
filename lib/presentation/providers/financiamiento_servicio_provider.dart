@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/audiencia_helper.dart';
+import '../../core/utils/promociones_flyers_cache.dart';
 import '../../data/models/taller_model.dart';
 import '../../data/models/promo_taller_banner_model.dart';
 import '../../domain/usecases/create_financiamiento_usecase.dart';
@@ -114,13 +115,20 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     await loadTalleresAgrupados();
   }
 
-  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() async {
-    try {
-      final result = await beneficiosRepository.getPromocionesTalleresBanners();
-      return result.fold((_) => <PromoTallerBannerModel>[], (banners) => banners);
-    } catch (_) {
-      return <PromoTallerBannerModel>[];
-    }
+  Future<List<PromoTallerBannerModel>> _pedirPromocionesTalleres() async {
+    final result = await beneficiosRepository.getPromocionesTalleresBanners();
+    // Un error se lanza (en vez de devolver vacío) para que la caché conserve los flyers guardados en lugar de borrarlos.
+    return result.fold((falla) => throw Exception(falla.message), (banners) => banners);
+  }
+
+  /// Los flyers del cuadro flotante de Talleres, listos para mostrar al entrar: usa la lista guardada (memoria o celular) y la refresca
+  /// por detrás; solo la primera vez espera al servidor. Si algo falla devuelve vacío: un flyer nunca debe estorbar el listado.
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() =>
+      PromocionesFlyersCache.paraMostrar(PromocionesFlyersCache.talleres, _pedirPromocionesTalleres);
+
+  /// Se llama al abrir el app: trae la lista y baja las imágenes por adelantado, así el cuadro sale al instante al entrar a Servicios.
+  Future<void> precargarPromocionesTalleres() async {
+    await PromocionesFlyersCache.actualizar(PromocionesFlyersCache.talleres, _pedirPromocionesTalleres);
   }
 
   /// TK-0314: sirve para talleres y para comercios afiliados; el backend

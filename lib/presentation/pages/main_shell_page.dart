@@ -3,8 +3,11 @@ import 'package:arequipagocreditos/presentation/pages/dashboard_page.dart';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mas_page.dart';
 import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
+import 'package:arequipagocreditos/presentation/providers/comercios_provider.dart';
+import 'package:arequipagocreditos/presentation/providers/financiamiento_servicio_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Punto de entrada principal de la app luego del login: una barra de
@@ -20,6 +23,18 @@ class MainShellPage extends StatefulWidget {
 
 class _MainShellPageState extends State<MainShellPage> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Los flyers de promociones (cuadro flotante de Servicios y de Comercios GO) se piden y se bajan ahora, por detrás: así, al entrar
+    // a esas pantallas, el cuadro sale al instante en vez de esperar al servidor y a la imagen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<FinanciamientoServicioProvider>().precargarPromocionesTalleres();
+      context.read<ComerciosProvider>().precargarPromociones();
+    });
+  }
 
   // Cada página raíz de pestaña recibe showBackButton/isNav en false: no hay
   // una ruta previa que cerrar, esta barra reemplaza esa navegación.

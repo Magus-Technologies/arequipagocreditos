@@ -60,6 +60,8 @@ class VarianteEntity {
   /// Null cuando la variante no tiene (p. ej. Yango): no se muestra nada.
   final double? descuentoSemanal;
   final int? viajesRequeridos;
+  /// Ficha técnica (PDF) del modelo de esta variante; null si no tiene (diseño «Beneficios en caso de vehículos con inicial»).
+  final String? fichaTecnicaUrl;
 
   const VarianteEntity({
     required this.varianteId,
@@ -84,6 +86,7 @@ class VarianteEntity {
     this.coloresDisponibles = const [],
     this.descuentoSemanal,
     this.viajesRequeridos,
+    this.fichaTecnicaUrl,
   });
 }
 

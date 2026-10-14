@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/api_constants.dart';
 import '../../data/models/promo_taller_banner_model.dart';
@@ -57,16 +58,17 @@ class _ServiciosTallerPromocionesDialogState
                           setState(() => _paginaActual = index),
                       itemBuilder: (context, index) {
                         final banner = widget.banners[index];
-                        return Image.network(
-                          ApiConstants.normalizeUrl(banner.rutaImagen),
+                        // Con caché en disco: si el flyer ya se bajó (el app lo precarga al abrirse) sale al instante, también
+                        // en los siguientes arranques. Image.network solo guardaba en memoria y lo bajaba de nuevo cada vez.
+                        return CachedNetworkImage(
+                          imageUrl: ApiConstants.normalizeUrl(banner.rutaImagen),
                           fit: BoxFit.contain,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Center(
+                          memCacheWidth: 1400,
+                          fadeInDuration: const Duration(milliseconds: 120),
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          errorWidget: (context, url, error) => Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24),
                               child: Text(

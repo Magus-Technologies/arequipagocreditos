@@ -16,4 +16,10 @@ class PromoTallerBannerModel {
       rutaImagen: json['ruta_imagen']?.toString() ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nombre_banner': nombreBanner,
+        'ruta_imagen': rutaImagen,
+      };
 }
