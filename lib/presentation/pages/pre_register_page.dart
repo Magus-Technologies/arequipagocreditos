@@ -8,8 +8,12 @@ import 'package:animate_do/animate_do.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
+import '../../data/models/izipay_models.dart';
 import '../../theme/app_theme.dart';
+import '../components/catalogo_dropdown.dart';
+import '../components/pago_inscripcion_registro.dart';
 import '../providers/auth_provider.dart';
+import '../providers/catalogos_provider.dart';
 
 class PreRegisterPage extends StatefulWidget {
   const PreRegisterPage({super.key});
@@ -21,8 +25,20 @@ class PreRegisterPage extends StatefulWidget {
 class _PreRegisterPageState extends State<PreRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 1;
-  final int _totalSteps = 3;
+  // 3 pasos mientras la inscripción de pasajeros sea GRATIS (hoy). Si el servidor dice que en su ciudad tiene precio, se suma un
+  // 4.º paso de pago antes de enviar; así los campos de pago salen solos cuando se decida cobrar, sin otra versión del app.
+  int _totalSteps = 3;
   bool _isPickingFile = false;
+
+  // Costo de la inscripción (se consulta al llegar al paso 3). Solo cobra si el servidor responde que el monto es de pasajeros.
+  InscripcionPagoInfoModel? _pagoInfo;
+  bool _costoComprobado = false;
+  bool _comprobandoCosto = false;
+  String? _costoError;
+  Future<void>? _costoFuture;
+  String? _metodoPago;
+  File? _capturaPago;
+  final _operacionController = TextEditingController();
 
   // Controllers Step 1
   final _tipoDocController = TextEditingController(text: 'DNI');
@@ -36,9 +52,14 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   final _telefonoController = TextEditingController();
   final _correoController = TextEditingController();
   final _ingresoMensualController = TextEditingController();
-  final _departamentoController = TextEditingController(text: 'AREQUIPA');
-  final _provinciaController = TextEditingController(text: 'AREQUIPA');
+  // Ubicación: se ELIGE de los catálogos (departamento → provincia → distrito) como en el registro de conductores. Antes quedaba
+  // fija en «AREQUIPA» para todos y, con precios por ciudad, un pasajero de Lima habría pagado como uno de Arequipa.
+  final _departamentoController = TextEditingController();
+  final _provinciaController = TextEditingController();
   final _distritoController = TextEditingController();
+  String? _departamentoCodigo;
+  String? _provinciaCodigo;
+  String? _distritoCodigo;
   final _direccionController = TextEditingController();
   final _googleMapsUrlController = TextEditingController();
 
@@ -58,6 +79,14 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   final ImagePicker _picker = ImagePicker();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<CatalogosProvider>().loadDepartamentos();
+    });
+  }
+
+  @override
   void dispose() {
     _nroDocController.dispose();
     _nombresController.dispose();
@@ -75,6 +104,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     _emergenciaNombreController.dispose();
     _emergenciaTelefonoController.dispose();
     _emergenciaParentescoController.dispose();
+    _operacionController.dispose();
     super.dispose();
   }
 
@@ -93,7 +123,9 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         if (empty(_telefonoController))       return 'Ingresa tu teléfono';
         if (empty(_correoController))         return 'Ingresa tu correo electrónico';
         if (empty(_ingresoMensualController)) return 'Ingresa tu ingreso neto aproximado';
-        if (empty(_distritoController))       return 'Ingresa tu distrito de residencia';
+        if (_departamentoCodigo == null)      return 'Selecciona tu departamento';
+        if (_provinciaCodigo == null)         return 'Selecciona tu provincia';
+        if (_distritoCodigo == null)          return 'Selecciona tu distrito';
         if (empty(_direccionController))      return 'Ingresa tu dirección exacta';
         if (empty(_googleMapsUrlController))  return 'Ingresa el link de Google Maps de tu dirección';
         final mapsError = _validateGoogleMapsUrl();
@@ -109,6 +141,13 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
           if (_docSustento == null) return 'Adjunta el sustento de ingresos';
         }
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
+        return null;
+      case 4:
+        if (_pagoInfo == null) return _costoError ?? 'No pudimos calcular tu monto de inscripción. Inténtalo de nuevo';
+        if (_metodoPago == null) return 'Elige cómo vas a pagar tu inscripción';
+        if (_metodoPago == PagoInscripcionRegistro.metodoIzipay && _capturaPago == null) {
+          return 'Adjunta la captura de tu pago por IziPay';
+        }
         return null;
     }
     return null;
@@ -132,17 +171,43 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     return null;
   }
 
-  void _nextStep() {
+  void _avisar(String texto) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(texto),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  Future<void> _nextStep() async {
     final error = _validateCurrentStep();
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+      _avisar(error);
+      return;
+    }
+
+    if (_currentStep == 2) {
+      setState(() => _currentStep++);
+      // Se averigua ya el costo de la inscripción para saber si habrá un paso de pago; no frena a la persona.
+      _comprobarCosto();
+      return;
+    }
+
+    if (_currentStep == 3) {
+      await _comprobarCosto();
+      if (!mounted) return;
+      if (!_costoComprobado) {
+        _avisar(_costoError ?? 'No pudimos comprobar el costo de tu inscripción. Revisa tu conexión e inténtalo de nuevo.');
+        return;
+      }
+      if (_totalSteps > 3) {
+        setState(() => _currentStep = 4);
+      } else {
+        _submit(); // inscripción gratuita: se envía como siempre
+      }
       return;
     }
 
@@ -151,6 +216,72 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     } else {
       _submit();
     }
+  }
+
+  /// Consulta el costo de la inscripción de pasajeros según su ciudad. Si es 0 (hoy), todo sigue igual: 3 pasos y sin pago.
+  /// Solo se cobra si el servidor confirma que el monto es el de pasajeros (un servidor anterior respondería el de un conductor).
+  Future<void> _comprobarCosto() {
+    if (_costoComprobado) return Future.value();
+    return _costoFuture ??= _consultarCosto().whenComplete(() => _costoFuture = null);
+  }
+
+  Future<void> _consultarCosto() async {
+    if (mounted) {
+      setState(() {
+        _comprobandoCosto = true;
+        _costoError = null;
+      });
+    }
+    final departamento = _departamentoController.text.trim();
+    try {
+      final info = await context.read<CatalogosProvider>().fetchInscripcionPagoInfo(
+            tipo: 'pasajero',
+            departamento: departamento,
+          );
+      if (!mounted) return;
+      // Si mientras tanto cambió de departamento, esta respuesta ya no vale: se vuelve a consultar al seguir.
+      if (departamento != _departamentoController.text.trim()) {
+        setState(() => _comprobandoCosto = false);
+        return;
+      }
+      final cobra = info.esCobroDePasajero;
+      setState(() {
+        _pagoInfo = cobra ? info : null;
+        _costoComprobado = true;
+        _comprobandoCosto = false;
+        _totalSteps = cobra ? 4 : 3;
+        if (!cobra || (_metodoPago == PagoInscripcionRegistro.metodoIzipay && !info.izipayDisponible)) {
+          _metodoPago = null;
+          _capturaPago = null;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      // No se pudo averiguar el costo (sin señal un instante, un servidor que todavía no lo conoce…): el registro sigue como
+      // siempre, sin paso de pago, y NO se bloquea a la persona por una consulta de más. Si en verdad tiene costo, el servidor
+      // rechaza el envío con un aviso y se la lleva al paso de pago (ver _llevarAlPagoSiElServidorLoPide).
+      setState(() {
+        _comprobandoCosto = false;
+        _costoComprobado = true;
+        _pagoInfo = null;
+        _totalSteps = 3;
+      });
+    }
+  }
+
+  /// Frase con la que el servidor avisa que la inscripción tiene costo y falta el pago (PasajeroAppController::preRegistro).
+  static const String _avisoCostoDelServidor = 'tiene un costo';
+
+  /// Si el servidor rechazó el envío porque la inscripción tiene costo (la consulta previa no pudo saberlo), se vuelve a consultar
+  /// y se lleva a la persona al paso de pago. Devuelve true si la llevó.
+  Future<bool> _llevarAlPagoSiElServidorLoPide(String mensaje) async {
+    if (!mensaje.contains(_avisoCostoDelServidor)) return false;
+    setState(() => _costoComprobado = false);
+    await _comprobarCosto();
+    if (!mounted || _totalSteps <= 3) return false;
+    setState(() => _currentStep = 4);
+    _avisar('La inscripción tiene un costo: elige cómo pagarla para enviar tu solicitud.');
+    return true;
   }
 
   void _prevStep() {
@@ -208,6 +339,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         }
         setState(() {
           if (type == 'perfil') _fotoPerfil = file;
+          if (type == 'captura') _capturaPago = file;
         });
       }
     } finally {
@@ -271,6 +403,9 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   void _submit() async {
     final authProvider = context.read<AuthProvider>();
 
+    // Solo con una inscripción de pago: gratis (hoy) no se manda nada de esto y el registro sale como siempre.
+    final pagaAlRegistrarse = _pagoInfo != null && _pagoInfo!.monto > 0 && _metodoPago != null;
+
     final data = {
       'tipo_doc': _tipoDocController.text,
       'nro_documento': _nroDocController.text,
@@ -290,9 +425,17 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
       'emergencia_nombre': _emergenciaNombreController.text,
       'emergencia_telefono': _emergenciaTelefonoController.text,
       'emergencia_parentesco': _emergenciaParentescoController.text,
+      if (pagaAlRegistrarse) 'metodo_pago_inscripcion': _metodoPago,
+      if (pagaAlRegistrarse &&
+          _metodoPago == PagoInscripcionRegistro.metodoIzipay &&
+          _operacionController.text.trim().isNotEmpty)
+        'numero_operacion': _operacionController.text.trim(),
     };
 
     final files = <String, File>{};
+    if (pagaAlRegistrarse && _metodoPago == PagoInscripcionRegistro.metodoIzipay && _capturaPago != null) {
+      files['captura_pago'] = _capturaPago!;
+    }
     if (_fotoPerfil != null) files['foto_perfil'] = _fotoPerfil!;
     if (_docSustento != null) files['doc_sustento_ingreso'] = _docSustento!;
     if (_docRecibo != null) files['doc_recibo_servicios'] = _docRecibo!;
@@ -303,6 +446,11 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
 
     if (response != null && response['success'] == true) {
       if (mounted) {
+        // Con pago al registrarse: el código de Caja (vale 24 h) o la captura de IziPay que se acaban de registrar.
+        final responseData = response['data'];
+        final inscripcion = responseData is Map && responseData['inscripcion'] is Map
+            ? Map<String, dynamic>.from(responseData['inscripcion'] as Map)
+            : null;
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -310,7 +458,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             child: AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: const Text('¡Excelente!', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Text(response['message'] ?? 'Su solicitud ha sido enviada.'),
+              content: _buildExitoContent(response['message'] ?? 'Su solicitud ha sido enviada.', inscripcion),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -328,6 +476,8 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
       final msg = authProvider.errorMessage
           ?? (response != null ? (response['message'] ?? response['error']) : null)
           ?? 'Error al enviar la solicitud. Intente nuevamente.';
+      if (await _llevarAlPagoSiElServidorLoPide(msg.toString())) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg.toString()),
@@ -337,6 +487,49 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         ),
       );
     }
+  }
+
+  /// Cuerpo del aviso «solicitud enviada». Con una inscripción de pago agrega lo que la persona debe hacer ahora.
+  Widget _buildExitoContent(String mensaje, Map<String, dynamic>? inscripcion) {
+    if (inscripcion == null) return Text(mensaje);
+
+    final monto = double.tryParse((inscripcion['monto'] ?? '0').toString()) ?? 0;
+    final orden = inscripcion['orden_pago'] is Map ? Map<String, dynamic>.from(inscripcion['orden_pago'] as Map) : null;
+    final codigo = orden?['codigo']?.toString();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(mensaje),
+        const SizedBox(height: 14),
+        if (codigo != null && codigo.isNotEmpty) ...[
+          const Text('Tu código de pago de inscripción', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 6),
+          Container(
+            key: const Key('exito_codigo_caja'),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)),
+            child: Text(
+              codigo,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 3),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Paga S/ ${monto.toStringAsFixed(2)} en un agente o agencia de Caja Arequipa con este código. Vale 24 horas.',
+            style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+          ),
+        ] else
+          Text(
+            'Recibimos la captura de tu pago de S/ ${monto.toStringAsFixed(2)}. La validaremos junto con tu solicitud.',
+            key: const Key('exito_captura_izipay'),
+            style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+          ),
+      ],
+    );
   }
 
   @override
@@ -482,6 +675,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
       case 1: return 'Información Personal';
       case 2: return 'Contacto y Ubicación';
       case 3: return 'Adjuntar Documentación';
+      case 4: return 'Pago de inscripción';
       default: return '';
     }
   }
@@ -504,6 +698,90 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         child: _buildStepContent(),
       ),
     );
+  }
+
+  /// Departamento → provincia → distrito, elegidos de los catálogos (igual que el registro de conductores). El departamento decide
+  /// el precio de la inscripción cuando lo tenga, así que ya no puede quedar fijo para todos.
+  List<Widget> _buildUbicacion() {
+    final catalogos = context.watch<CatalogosProvider>();
+
+    return [
+      CatalogoDropdown(
+        label: 'Departamento',
+        icon: Icons.public_outlined,
+        value: _departamentoCodigo,
+        items: catalogos.departamentos.map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre))).toList(),
+        loading: catalogos.departamentosLoading,
+        error: catalogos.departamentosError,
+        onRetry: () => catalogos.loadDepartamentos(),
+        onChanged: (val) {
+          if (val == null) return;
+          final item = catalogos.departamentos.firstWhere((d) => d.codigo == val);
+          setState(() {
+            _departamentoCodigo = val;
+            _departamentoController.text = item.nombre;
+            _provinciaCodigo = null;
+            _provinciaController.clear();
+            _distritoCodigo = null;
+            _distritoController.clear();
+            // El costo de la inscripción depende del departamento: se vuelve a consultar al llegar al paso 3.
+            _costoComprobado = false;
+            _pagoInfo = null;
+            _totalSteps = 3;
+            _metodoPago = null;
+            _capturaPago = null;
+          });
+          catalogos.clearDistritos();
+          catalogos.loadProvincias(val);
+        },
+      ),
+      const SizedBox(height: 20),
+      CatalogoDropdown(
+        label: 'Provincia',
+        icon: Icons.location_city_outlined,
+        value: _provinciaCodigo,
+        items: catalogos.provincias.map((p) => DropdownMenuItem(value: p.codigo, child: Text(p.nombre))).toList(),
+        loading: catalogos.provinciasLoading,
+        error: catalogos.provinciasError,
+        onRetry: () {
+          if (_departamentoCodigo != null) catalogos.loadProvincias(_departamentoCodigo!);
+        },
+        placeholder: _departamentoCodigo == null ? 'Selecciona primero el departamento' : null,
+        onChanged: (val) {
+          if (val == null) return;
+          final item = catalogos.provincias.firstWhere((p) => p.codigo == val);
+          setState(() {
+            _provinciaCodigo = val;
+            _provinciaController.text = item.nombre;
+            _distritoCodigo = null;
+            _distritoController.clear();
+          });
+          catalogos.loadDistritos(val);
+        },
+      ),
+      const SizedBox(height: 20),
+      CatalogoDropdown(
+        label: 'Distrito',
+        icon: Icons.map_outlined,
+        value: _distritoCodigo,
+        items: catalogos.distritos.map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre))).toList(),
+        loading: catalogos.distritosLoading,
+        error: catalogos.distritosError,
+        onRetry: () {
+          if (_provinciaCodigo != null) catalogos.loadDistritos(_provinciaCodigo!);
+        },
+        placeholder: _provinciaCodigo == null ? 'Selecciona primero la provincia' : null,
+        onChanged: (val) {
+          if (val == null) return;
+          final item = catalogos.distritos.firstWhere((d) => d.codigo == val);
+          setState(() {
+            _distritoCodigo = val;
+            _distritoController.text = item.nombre;
+          });
+        },
+      ),
+      const SizedBox(height: 20),
+    ];
   }
 
   Widget _buildStepContent() {
@@ -541,8 +819,7 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             const SizedBox(height: 20),
             _buildModernTextField(_ingresoMensualController, 'Ingreso Neto Aproximado', Icons.monetization_on_outlined, keyboardType: TextInputType.number),
             const SizedBox(height: 20),
-            _buildModernTextField(_distritoController, 'Distrito de residencia', Icons.map_outlined),
-            const SizedBox(height: 20),
+            ..._buildUbicacion(),
             _buildModernTextField(_direccionController, 'Dirección exacta', Icons.home_outlined),
             const SizedBox(height: 20),
             TextFormField(
@@ -628,6 +905,22 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             const SizedBox(height: 20),
             _buildPrivacyTerms(),
           ],
+        );
+      case 4:
+        // Pago de la inscripción: solo existe si el servidor dijo que en su ciudad tiene precio.
+        return PagoInscripcionRegistro(
+          info: _pagoInfo,
+          cargando: _comprobandoCosto,
+          error: _costoError,
+          metodo: _metodoPago,
+          captura: _capturaPago,
+          operacionController: _operacionController,
+          onMetodo: (metodo) => setState(() {
+            _metodoPago = metodo;
+            if (metodo != PagoInscripcionRegistro.metodoIzipay) _capturaPago = null;
+          }),
+          onElegirCaptura: () => _pickImage('captura'),
+          onReintentar: _comprobarCosto,
         );
       default:
         return const SizedBox();
@@ -751,14 +1044,14 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
             child: SizedBox(
               height: 55,
               child: ElevatedButton(
-                onPressed: authProvider.isLoading ? null : _nextStep,
+                onPressed: (authProvider.isLoading || _comprobandoCosto) ? null : _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 0,
                 ),
-                child: authProvider.isLoading
+                child: (authProvider.isLoading || _comprobandoCosto)
                   ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(
                       _currentStep == _totalSteps ? 'ENVIAR SOLICITUD' : 'SIGUIENTE',

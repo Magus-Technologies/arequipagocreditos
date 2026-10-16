@@ -55,17 +55,28 @@ class InscripcionPagoInfoModel {
   final bool izipayDisponible;
   final String? qrUrl;
 
+  /// De quién es el monto que respondió el servidor: «conductor» o «pasajero». Un servidor anterior al cobro de pasajeros no
+  /// manda el tipo y respondería el monto de un conductor aunque se pida el de un pasajero: el registro de pasajeros solo cobra
+  /// cuando el servidor confirma que es el de pasajeros.
+  final String? tipo;
+
+  /// ¿La inscripción de un PASAJERO tiene costo? Solo si el servidor confirma que el monto es el de pasajeros y es mayor a 0.
+  /// Hoy es gratis (0): el registro de pasajeros no pide ningún pago.
+  bool get esCobroDePasajero => tipo == 'pasajero' && monto > 0;
+
   const InscripcionPagoInfoModel({
     required this.monto,
     this.cajaDisponible = true,
     this.izipayDisponible = false,
     this.qrUrl,
+    this.tipo,
   });
 
   factory InscripcionPagoInfoModel.fromJson(Map<String, dynamic> json) {
     final caja = json['caja_arequipa'];
     final izipay = json['izipay'];
     return InscripcionPagoInfoModel(
+      tipo: json['tipo']?.toString(),
       monto: double.tryParse((json['monto'] ?? '0').toString()) ?? 0,
       cajaDisponible: caja is Map ? caja['disponible'] != false : true,
       izipayDisponible: izipay is Map && izipay['disponible'] == true,

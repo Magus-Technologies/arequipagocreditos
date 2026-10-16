@@ -14,7 +14,7 @@ abstract class CatalogosRemoteDataSource {
   Future<List<PlataformaItemModel>> getPlataformas();
   Future<ConductorEstadoModel> getConductorEstado(int conductorId);
   Future<IzipayInfoModel> getIzipayInfo(int clienteId);
-  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento});
+  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento, String? tipo});
   Future<ConductorEstadoModel> generarOrdenCajaArequipa(int clienteId);
   Future<Map<String, dynamic>> subirCapturaIzipay({
     required int clienteConductorId,
@@ -133,12 +133,13 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
   }
 
   @override
-  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento}) async {
+  Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento, String? tipo}) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.inscripcionMontoEndpoint}').replace(
         queryParameters: {
           if (plataforma != null && plataforma.isNotEmpty) 'plataforma': plataforma,
           if (departamento != null && departamento.isNotEmpty) 'departamento': departamento,
+          if (tipo != null && tipo.isNotEmpty) 'tipo': tipo,
         },
       );
       final response = await client

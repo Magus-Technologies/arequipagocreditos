@@ -74,9 +74,9 @@ class CatalogosRepositoryImpl implements CatalogosRepository {
   }
 
   @override
-  Future<Either<Failure, InscripcionPagoInfoModel>> getInscripcionPagoInfo({String? plataforma, String? departamento}) async {
+  Future<Either<Failure, InscripcionPagoInfoModel>> getInscripcionPagoInfo({String? plataforma, String? departamento, String? tipo}) async {
     try {
-      final result = await remoteDataSource.getInscripcionPagoInfo(plataforma: plataforma, departamento: departamento);
+      final result = await remoteDataSource.getInscripcionPagoInfo(plataforma: plataforma, departamento: departamento, tipo: tipo);
       return Either.right(result);
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
