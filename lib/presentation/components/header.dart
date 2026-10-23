@@ -229,7 +229,7 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                             label: 'Mi nivel',
                             value: nivelProvider.isLoading
                                 ? '-'
-                                : (nivel?.tieneNivel == true ? _capitalizar(nivel!.nivelActual!) : 'Sin nivel'),
+                                : (nivel?.tieneNivel == true ? nivel!.nombreNivelActual! : 'Sin nivel'),
                             primaryColor: colors.$1,
                             secondaryColor: colors.$2,
                             contentColor: colors.$3,
@@ -503,8 +503,6 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
   }
 }
 
-String _capitalizar(String texto) => texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
-
 /// Opcion del menu de acciones del panel de notificaciones.
 class _OpcionMenu extends StatelessWidget {
   final IconData icono;
@@ -556,8 +554,12 @@ Future<bool> _confirmarBorrado(BuildContext context, {required bool todas}) asyn
 /// (primario, secundario, color de contenido) para el degradado de la tarjeta
 /// "Mi Nivel" segun el nivel actual. Oro va en dorado con texto oscuro (como
 /// el diseño de gerencia); Bronce/Plata mantienen sus tonos con texto blanco.
+/// Pollito (nivel base) va en amarillo con texto oscuro; un nivel que cree el
+/// Director (TK-0390) usa el gris de siempre.
 (Color, Color, Color) _coloresParaNivel(String? nivel) {
   switch (nivel) {
+    case 'pollito':
+      return (const Color(0xFFFFD43B), const Color(0xFFFAB005), const Color(0xFF3A2700));
     case 'oro':
       return (const Color(0xFFF7B500), const Color(0xFFEFA200), const Color(0xFF3A2700));
     case 'plata':

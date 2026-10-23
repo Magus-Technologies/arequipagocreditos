@@ -60,6 +60,7 @@ class ApiConstants {
   static const String talleresCalificarEndpoint = '/app/talleres-list/{id}/calificar';
   static const String miNivelTallerEndpoint = '/app/talleres/mi-nivel/{clienteConductorId}';
   static const String comerciosListEndpoint = '/app/comercios-list';
+  static const String comerciosCalificarEndpoint = '/app/comercios-list/{id}/calificar';
   static const String comerciosCategoriasEndpoint = '/app/comercios-list/categorias';
   static const String comerciosBannersEndpoint = '/app/promociones/comercios/banners';
 

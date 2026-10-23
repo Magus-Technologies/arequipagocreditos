@@ -4,7 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../domain/entities/comercio_entity.dart';
 import '../components/beneficio_servicio_card.dart';
+import '../components/calificar_sheet.dart';
 import '../providers/auth_provider.dart';
+import '../providers/comercios_provider.dart';
 import '../providers/financiamiento_servicio_provider.dart';
 import '../../theme/app_theme.dart';
 import 'calculo_financiamiento_page.dart';
@@ -24,18 +26,62 @@ class ComercioDetallePage extends StatefulWidget {
 }
 
 class _ComercioDetallePageState extends State<ComercioDetallePage> {
+  late double _promedio;
+  late int _total;
+
   @override
   void initState() {
     super.initState();
+    _promedio = widget.comercio.promedioCalificacion;
+    _total = widget.comercio.totalCalificaciones;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanciamientoServicioProvider>();
-      final conductorId = context.read<AuthProvider>().currentUser?.idConductor;
+      final usuario = context.read<AuthProvider>().currentUser;
+      final conductorId = usuario?.idConductor;
+      // TK-0382: sin la audiencia los servicios llegaban sin filtrar si el conductor nunca había abierto Servicios de Talleres.
+      if (usuario != null) provider.setAudiencia(usuario.tipo);
       provider.loadBeneficiosServicios(
         comercioId: widget.comercio.id,
         clienteConductorId: conductorId,
       );
       provider.setBeneficioSearchQuery('');
     });
+  }
+
+  Future<void> _calificar() async {
+    final conductorId = context.read<AuthProvider>().currentUser?.idConductor;
+    if (conductorId == null) return;
+
+    final elegida = await mostrarCalificarSheet(
+      context,
+      titulo: 'Calificar comercio',
+      nombre: widget.comercio.nombreParaMostrar,
+    );
+    if (elegida == null || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final resultado = await context.read<ComerciosProvider>().calificarComercio(
+          comercioId: widget.comercio.id,
+          clienteConductorId: conductorId,
+          puntuacion: elegida.puntuacion,
+          comentario: elegida.comentario,
+        );
+    if (!mounted) return;
+
+    if (resultado != null) {
+      setState(() {
+        _promedio = (resultado['promedio_calificacion'] as num?)?.toDouble() ?? _promedio;
+        _total = (resultado['total_calificaciones'] as num?)?.toInt() ?? _total;
+      });
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(resultado != null ? '¡Gracias por tu calificación!' : 'No se pudo enviar la calificación.'),
+        backgroundColor: resultado != null ? Colors.green.shade600 : Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   Future<void> _abrir(String? url) async {
@@ -89,6 +135,7 @@ class _ComercioDetallePageState extends State<ComercioDetallePage> {
       body: Column(
         children: [
           _buildCabecera(comercio, titulo),
+          _buildCalificacion(),
           Expanded(
             child: Consumer<FinanciamientoServicioProvider>(
               builder: (context, provider, _) {
@@ -193,6 +240,52 @@ class _ComercioDetallePageState extends State<ComercioDetallePage> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalificacion() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          EstrellasPromedio(promedio: _promedio, size: 18),
+          const SizedBox(width: 6),
+          // Expanded y no Spacer: en pantallas angostas el texto se recorta en vez de desbordar la fila.
+          Expanded(
+            child: Text(
+              _total > 0 ? '${_promedio.toStringAsFixed(1)} ($_total)' : 'Sin calificaciones',
+              key: const Key('comercio-detalle-calificacion'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black87),
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            key: const Key('comercio-detalle-calificar'),
+            onTap: _calificar,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star_outline_rounded, size: 15, color: Color(0xFFF9A825)),
+                  SizedBox(width: 4),
+                  Text('Calificar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black87)),
+                ],
+              ),
             ),
           ),
         ],

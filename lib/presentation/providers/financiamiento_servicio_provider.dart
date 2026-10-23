@@ -115,8 +115,16 @@ class FinanciamientoServicioProvider with ChangeNotifier {
     await loadTalleresAgrupados();
   }
 
+  /// Los flyers guardados son de una ciudad: cada ciudad tiene su propia lista en la caché, así quien cambia de ciudad o de cuenta en el
+  /// mismo celular no ve primero los flyers de la otra. Sin ciudad conocida es la lista general de siempre.
+  String get _seccionFlyersTalleres {
+    final ciudad = _departamentoUsuario?.trim().toLowerCase() ?? '';
+    return ciudad.isEmpty ? PromocionesFlyersCache.talleres : '${PromocionesFlyersCache.talleres}_$ciudad';
+  }
+
   Future<List<PromoTallerBannerModel>> _pedirPromocionesTalleres() async {
-    final result = await beneficiosRepository.getPromocionesTalleresBanners();
+    // TK-0393: el servidor solo manda los flyers de todas las ciudades y los de la ciudad del conductor.
+    final result = await beneficiosRepository.getPromocionesTalleresBanners(departamento: _departamentoUsuario);
     // Un error se lanza (en vez de devolver vacío) para que la caché conserve los flyers guardados en lugar de borrarlos.
     return result.fold((falla) => throw Exception(falla.message), (banners) => banners);
   }
@@ -124,11 +132,11 @@ class FinanciamientoServicioProvider with ChangeNotifier {
   /// Los flyers del cuadro flotante de Talleres, listos para mostrar al entrar: usa la lista guardada (memoria o celular) y la refresca
   /// por detrás; solo la primera vez espera al servidor. Si algo falla devuelve vacío: un flyer nunca debe estorbar el listado.
   Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() =>
-      PromocionesFlyersCache.paraMostrar(PromocionesFlyersCache.talleres, _pedirPromocionesTalleres);
+      PromocionesFlyersCache.paraMostrar(_seccionFlyersTalleres, _pedirPromocionesTalleres);
 
   /// Se llama al abrir el app: trae la lista y baja las imágenes por adelantado, así el cuadro sale al instante al entrar a Servicios.
   Future<void> precargarPromocionesTalleres() async {
-    await PromocionesFlyersCache.actualizar(PromocionesFlyersCache.talleres, _pedirPromocionesTalleres);
+    await PromocionesFlyersCache.actualizar(_seccionFlyersTalleres, _pedirPromocionesTalleres);
   }
 
   /// TK-0314: sirve para talleres y para comercios afiliados; el backend

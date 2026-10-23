@@ -10,7 +10,7 @@ abstract class BeneficiosComercialRepository {
   Future<Either<Failure, List<BeneficioServicioEntity>>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId});
   Future<Either<Failure, BeneficioServicioEntity>> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<Either<Failure, List<TallerModel>>> getTalleres();
-  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesTalleresBanners();
+  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesTalleresBanners({String? departamento});
   Future<Either<Failure, TalleresAgrupadosResponse>> getTalleresAgrupados({
     String? audiencia,
     String? departamento,

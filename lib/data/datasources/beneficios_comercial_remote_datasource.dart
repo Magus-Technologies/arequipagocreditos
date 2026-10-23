@@ -13,7 +13,9 @@ abstract class BeneficiosComercialRemoteDataSource {
   Future<List<BeneficioServicioModel>> getBeneficiosServicios({int? tallerId, int? comercioId, String? audiencia, int? clienteConductorId});
   Future<BeneficioServicioModel> getBeneficioDetalle({required int beneficioId, int? clienteConductorId});
   Future<List<TallerModel>> getTalleres();
-  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners();
+  /// Flyers de Servicios de Talleres. Con la ciudad del conductor (`departamento`, de su perfil) el servidor solo manda los de todas
+  /// las ciudades y los de la suya (TK-0393); sin ella, solo los de todas las ciudades.
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners({String? departamento});
   Future<TalleresAgrupadosResponse> getTalleresAgrupados({
     String? audiencia,
     String? departamento,
@@ -159,11 +161,13 @@ class BeneficiosComercialRemoteDataSourceImpl
   }
 
   @override
-  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners() async {
+  Future<List<PromoTallerBannerModel>> getPromocionesTalleresBanners({String? departamento}) async {
     try {
-      final url = '${ApiConstants.baseUrl}${ApiConstants.serviciosTalleresBannersEndpoint}';
+      final ciudad = departamento?.trim() ?? '';
+      var uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.serviciosTalleresBannersEndpoint}');
+      if (ciudad.isNotEmpty) uri = uri.replace(queryParameters: {'departamento': ciudad});
       final response = await client
-          .get(Uri.parse(url), headers: ApiConstants.defaultHeaders)
+          .get(uri, headers: ApiConstants.defaultHeaders)
           .timeout(ApiConstants.receiveTimeout);
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final data = jsonResponse['data'];

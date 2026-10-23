@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:arequipagocreditos/domain/entities/nivel_taller_entity.dart';
+import 'package:arequipagocreditos/presentation/components/nivel_insignia.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/presentation/providers/nivel_taller_provider.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -186,7 +186,13 @@ class _MiNivelPageState extends State<MiNivelPage> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: _TablaNivelesCard(nivel: nivel),
+              child: Column(
+                children: [
+                  _NivelActualCard(nivel: nivel),
+                  const SizedBox(height: 16),
+                  _TablaNivelesCard(nivel: nivel),
+                ],
+              ),
             ),
           ),
         ),
@@ -214,10 +220,6 @@ class _MiNivelPageState extends State<MiNivelPage> {
   }
 }
 
-String _svgParaNivel(String nivel) => 'images/nivel_$nivel.svg';
-
-String _capitalizar(String texto) => texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
-
 const double _anchoInsigniaNivel = 36;
 const double _espacioInsigniaNivel = 12;
 const double _anchoColumnasPorcentajeNivel = 120;
@@ -231,10 +233,8 @@ class _ProgresoNivelHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final esNivelMaximo = nivel.esNivelMaximo;
     final financiamientosFaltantes = nivel.financiamientosFaltantes ?? 0;
-    final objetivo = esNivelMaximo
-        ? ''
-        : (nivel.siguienteNivel!.toLowerCase() == 'plata' ? 'a la ' : 'al ') +
-            _capitalizar(nivel.siguienteNivel!);
+    // El nombre del nivel lo define el Director: se nombra sin artículo («al nivel Plata») para que sirva con cualquiera.
+    final objetivo = esNivelMaximo ? '' : 'al nivel ${nivel.nombreSiguienteNivel}';
     final textoFinanciamientos = financiamientosFaltantes == 1
         ? ' financiamiento finalizado para llegar '
         : ' financiamientos finalizados para llegar ';
@@ -282,6 +282,63 @@ class _ProgresoNivelHero extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Tarjeta «Tu nivel»: la imagen del nivel en el que está hoy el conductor, con su nombre y cuántos financiamientos
+/// finalizados lleva. La imagen y el nombre salen del panel (TK-0390), así que cambian sin publicar otro app.
+class _NivelActualCard extends StatelessWidget {
+  final NivelTallerEntity nivel;
+
+  const _NivelActualCard({required this.nivel});
+
+  @override
+  Widget build(BuildContext context) {
+    final info = nivel.infoNivelActual;
+    final finalizados = nivel.financiamientosFinalizados;
+    final textoFinalizados = finalizados == 1
+        ? '1 financiamiento finalizado'
+        : '$finalizados financiamientos finalizados';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha((0.05 * 255).toInt()), blurRadius: 10, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (nivel.tieneNivel)
+            NivelInsignia(
+              key: const Key('nivel_actual_insignia'),
+              codigo: nivel.nivelActual!,
+              imagenUrl: info?.imagenUrl,
+              tamano: 92,
+            ),
+          if (nivel.tieneNivel) const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Tu nivel', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(
+                  nivel.nombreNivelActual ?? 'Aún sin nivel',
+                  key: const Key('nivel_actual_nombre'),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                ),
+                const SizedBox(height: 2),
+                Text(textoFinalizados, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -374,14 +431,14 @@ class _TablaNivelesCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    SizedBox(width: _anchoInsigniaNivel, height: _anchoInsigniaNivel, child: SvgPicture.asset(_svgParaNivel(info.nivel))),
+                    NivelInsignia(codigo: info.nivel, imagenUrl: info.imagenUrl, tamano: _anchoInsigniaNivel),
                     const SizedBox(width: _espacioInsigniaNivel),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _capitalizar(info.nivel),
+                            info.nombreVisible,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1F2937)),
                           ),
                           Text(

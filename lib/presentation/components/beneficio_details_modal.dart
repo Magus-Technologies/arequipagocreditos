@@ -120,8 +120,7 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
   ProductoBeneficioEntity? get _producto => _detalle?.producto;
 
   /// Stock del modelo en la ciudad del cliente, con acceso a la ficha técnica.
-  /// Es informativo: si no hay stock igual se puede solicitar (el asesor asigna
-  /// la unidad al entregar).
+  /// Con 0 de stock el botón de solicitar queda desactivado (`motivoSinStock`).
   Widget _buildStockInfo(ProductoBeneficioEntity producto) {
     final bool hayStock = producto.stockDisponible > 0;
     final String urlFicha = producto.fichaTecnicaUrl ?? '';
@@ -621,14 +620,17 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
     if (!_solicitudEnAppDisponible) return _buildWhatsappButton(context);
 
     final bool faltaVariante = _variantes.isNotEmpty && _varianteElegida == null;
-    final bool bloqueado = _motivoBloqueo != null;
+    // Sin stock en la ciudad del cliente (0 confirmado): no se puede pedir. El servidor también lo rechaza.
+    final String? motivoSinStock = _detalle?.motivoSinStock(_varianteElegida);
+    final String? motivo = _motivoBloqueo ?? motivoSinStock;
+    final bool bloqueado = motivo != null;
     final bool habilitado =
         beneficio.disponible && !faltaVariante && !bloqueado && !_procesando;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_motivoBloqueo != null) _buildMotivoBloqueo(_motivoBloqueo!),
+        if (motivo != null) _buildMotivoBloqueo(motivo),
         if (faltaVariante)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -657,7 +659,9 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                   )
                 : const Icon(Icons.shopping_cart_outlined, size: 20),
             label: Text(
-              beneficio.disponible ? 'Solicitar Beneficio' : 'No Disponible',
+              !beneficio.disponible
+                  ? 'No Disponible'
+                  : (motivoSinStock != null ? 'Sin stock' : 'Solicitar Beneficio'),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
@@ -669,6 +673,7 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
   Future<void> _solicitarBeneficio(BuildContext context) async {
     final detalle = _detalle;
     if (detalle == null) return;
+    if (detalle.motivoSinStock(_varianteElegida) != null) return;
 
     final alertas = detalle.clienteAlertas;
     if (alertas != null && !alertas.puedeSolicitar) {

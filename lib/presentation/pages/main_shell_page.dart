@@ -3,6 +3,7 @@ import 'package:arequipagocreditos/presentation/pages/dashboard_page.dart';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mas_page.dart';
 import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
+import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/presentation/providers/comercios_provider.dart';
 import 'package:arequipagocreditos/presentation/providers/financiamiento_servicio_provider.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +32,12 @@ class _MainShellPageState extends State<MainShellPage> {
     // a esas pantallas, el cuadro sale al instante en vez de esperar al servidor y a la imagen.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<FinanciamientoServicioProvider>().precargarPromocionesTalleres();
-      context.read<ComerciosProvider>().precargarPromociones();
+      // Los flyers de Servicios dependen de la ciudad del conductor (TK-0393): se fija antes de pedirlos.
+      final servicios = context.read<FinanciamientoServicioProvider>();
+      final departamento = context.read<AuthProvider>().currentUser?.departamento;
+      servicios.setDepartamentoUsuario(departamento);
+      servicios.precargarPromocionesTalleres();
+      context.read<ComerciosProvider>().precargarPromociones(departamento: departamento);
     });
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../domain/entities/comercio_entity.dart';
 import '../components/comercio_card.dart';
 import 'comercio_detalle_page.dart';
 import '../components/beneficios_search_bar.dart';
@@ -27,16 +28,18 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<ComerciosProvider>();
       final authProvider = context.read<AuthProvider>();
+      // TK-0382: el servidor solo manda los comercios con servicios para la audiencia del conductor (conductores, clientes, pasajeros).
+      if (authProvider.currentUser != null) provider.setAudiencia(authProvider.currentUser!.tipo);
       provider.cargarCategorias();
       provider.cargarComercios(departamento: authProvider.currentUser?.departamento);
-      _mostrarPromociones(provider);
+      _mostrarPromociones(provider, authProvider.currentUser?.departamento);
     });
   }
 
   /// Igual que en Servicios de Taller: al entrar sale un diálogo flotante con los flyers de la web (Promociones > Comercios),
   /// que se desliza y se cierra para ver el listado. Sin flyers o con el interruptor apagado no sale nada.
-  Future<void> _mostrarPromociones(ComerciosProvider provider) async {
-    final banners = await provider.cargarPromocionesBanners();
+  Future<void> _mostrarPromociones(ComerciosProvider provider, String? departamento) async {
+    final banners = await provider.cargarPromocionesBanners(departamento: departamento);
     if (!mounted || banners.isEmpty) return;
 
     await showDialog<void>(
@@ -110,10 +113,12 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
                         );
                       }
 
-                      final comercios = provider.filteredComercios;
+                      final grupos = provider.filteredGrupos;
+                      final totalComercios = grupos.fold<int>(0, (suma, g) => suma + g.comercios.length);
 
                       return Column(
                         children: [
+                          if (provider.loading) const LinearProgressIndicator(minHeight: 2, color: _comercioAccent),
                           BeneficiosSearchBar(
                             controller: _searchController,
                             searchQuery: _searchController.text,
@@ -128,19 +133,20 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
                             },
                           ),
                           _buildFiltroCategorias(provider),
+                          _buildFiltroTipoVehicular(provider),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                             child: Row(
                               children: [
                                 Text(
-                                  'Mostrando ${comercios.length} comercios',
+                                  'Mostrando $totalComercios comercios',
                                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
-                            child: comercios.isEmpty
+                            child: grupos.isEmpty
                                 ? Center(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -158,17 +164,27 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
                                     onRefresh: () => provider.cargarComercios(departamento: authProvider.currentUser?.departamento),
                                     child: ListView.builder(
                                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                      itemCount: comercios.length,
-                                      // TK-0314: tocar el comercio abre sus servicios.
-                                      itemBuilder: (context, index) => ComercioCard(
-                                        comercio: comercios[index],
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => ComercioDetallePage(comercio: comercios[index]),
-                                          ),
-                                        ),
-                                      ),
+                                      itemCount: grupos.length,
+                                      // TK-0382: agrupados por ciudad (Lima por distrito, el resto por provincia), como los talleres.
+                                      itemBuilder: (context, gi) {
+                                        final grupo = grupos[gi];
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildEncabezadoCiudad(grupo),
+                                            // TK-0314: tocar el comercio abre sus servicios.
+                                            ...grupo.comercios.map(
+                                              (comercio) => ComercioCard(
+                                                comercio: comercio,
+                                                onTap: () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(builder: (_) => ComercioDetallePage(comercio: comercio)),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                           ),
@@ -181,6 +197,71 @@ class _ComerciosGoPageState extends State<ComerciosGoPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEncabezadoCiudad(ComercioGrupoEntity grupo) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+      child: Row(
+        children: [
+          const Icon(Icons.location_city, size: 18, color: Colors.black54),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              grupo.nombre,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(10)),
+            child: Text(
+              '${grupo.total}',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const List<Map<String, String>> _tiposVehicular = [
+    {'value': '', 'label': 'Todos'},
+    {'value': 'vehiculo', 'label': 'Carro'},
+    {'value': 'moto', 'label': 'Moto'},
+    {'value': 'tuktuk', 'label': 'TukTuk'},
+  ];
+
+  /// TK-0382: igual que en talleres. Con el tipo de vehículo el servidor deja solo los comercios con servicios para ese vehículo.
+  Widget _buildFiltroTipoVehicular(ComerciosProvider provider) {
+    final actual = provider.tipoVehicularFiltro ?? '';
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+        itemCount: _tiposVehicular.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final tipo = _tiposVehicular[index];
+          final seleccionado = actual == tipo['value'];
+          return ChoiceChip(
+            key: Key('comercios-vehiculo-${tipo['value']!.isEmpty ? 'todos' : tipo['value']}'),
+            label: Text(tipo['label']!),
+            selected: seleccionado,
+            onSelected: (_) => provider.setTipoVehicularFiltro(tipo['value']),
+            selectedColor: _comercioAccent,
+            labelStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: seleccionado ? Colors.white : Colors.grey.shade700,
+            ),
+            backgroundColor: Colors.grey.shade100,
+            side: BorderSide(color: seleccionado ? _comercioAccent : Colors.grey.shade300),
+          );
+        },
       ),
     );
   }

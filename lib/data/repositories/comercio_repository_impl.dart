@@ -21,6 +21,46 @@ class ComercioRepositoryImpl implements ComercioRepository {
   }
 
   @override
+  Future<Either<Failure, List<ComercioGrupoEntity>>> getComerciosAgrupados({
+    int? categoriaId,
+    String? departamento,
+    String? audiencia,
+    String? tipoVehicular,
+  }) async {
+    try {
+      final grupos = await remoteDataSource.getComerciosAgrupados(
+        categoriaId: categoriaId,
+        departamento: departamento,
+        audiencia: audiencia,
+        tipoVehicular: tipoVehicular,
+      );
+      return Either.right(grupos);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> calificarComercio({
+    required int comercioId,
+    required int clienteConductorId,
+    required int puntuacion,
+    String? comentario,
+  }) async {
+    try {
+      final resultado = await remoteDataSource.calificarComercio(
+        comercioId: comercioId,
+        clienteConductorId: clienteConductorId,
+        puntuacion: puntuacion,
+        comentario: comentario,
+      );
+      return Either.right(resultado);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<ComercioCategoriaEntity>>> getCategorias() async {
     try {
       final categorias = await remoteDataSource.getCategorias();
@@ -31,9 +71,9 @@ class ComercioRepositoryImpl implements ComercioRepository {
   }
 
   @override
-  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesBanners() async {
+  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesBanners({String? departamento}) async {
     try {
-      final banners = await remoteDataSource.getPromocionesBanners();
+      final banners = await remoteDataSource.getPromocionesBanners(departamento: departamento);
       return Either.right(banners);
     } on Exception catch (e) {
       return Either.left(ServerFailure(e.toString()));

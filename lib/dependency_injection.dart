@@ -174,6 +174,8 @@ class DependencyInjection {
     ChangeNotifierProvider<ComerciosProvider>(
       create: (context) => ComerciosProvider(
         getComerciosUseCase: _getGetComerciosUseCase(),
+        getComerciosAgrupadosUseCase: _getGetComerciosAgrupadosUseCase(),
+        calificarComercioUseCase: _getCalificarComercioUseCase(),
         getComercioCategoriasUseCase: _getGetComercioCategoriasUseCase(),
         getPromocionesBannersUseCase: _getGetComercioPromocionesBannersUseCase(),
       ),
@@ -355,6 +357,12 @@ class DependencyInjection {
 
   static GetComerciosUseCase _getGetComerciosUseCase() =>
       GetComerciosUseCase(_comercioRepository);
+
+  static GetComerciosAgrupadosUseCase _getGetComerciosAgrupadosUseCase() =>
+      GetComerciosAgrupadosUseCase(_comercioRepository);
+
+  static CalificarComercioUseCase _getCalificarComercioUseCase() =>
+      CalificarComercioUseCase(_comercioRepository);
 
   static GetComercioCategoriasUseCase _getGetComercioCategoriasUseCase() =>
       GetComercioCategoriasUseCase(_comercioRepository);

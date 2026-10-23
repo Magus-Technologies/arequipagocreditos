@@ -7,6 +7,12 @@ int _toInt(dynamic value) {
   return int.tryParse(value.toString()) ?? 0;
 }
 
+double _toDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString()) ?? 0.0;
+}
+
 class ComercioCategoriaModel extends ComercioCategoriaEntity {
   const ComercioCategoriaModel({
     required super.id,
@@ -43,6 +49,8 @@ class ComercioModel extends ComercioEntity {
     super.descripcion,
     super.notaImportante,
     super.serviciosCount,
+    super.promedioCalificacion,
+    super.totalCalificaciones,
   });
 
   factory ComercioModel.fromJson(Map<String, dynamic> json) {
@@ -62,6 +70,22 @@ class ComercioModel extends ComercioEntity {
       descripcion: json['descripcion']?.toString(),
       notaImportante: json['nota_importante']?.toString(),
       serviciosCount: _toInt(json['servicios_count']),
+      promedioCalificacion: _toDouble(json['promedio_calificacion']),
+      totalCalificaciones: _toInt(json['total_calificaciones']),
+    );
+  }
+}
+
+class ComercioGrupoModel extends ComercioGrupoEntity {
+  const ComercioGrupoModel({required super.nombre, required super.total, required super.comercios});
+
+  factory ComercioGrupoModel.fromJson(Map<String, dynamic> json) {
+    return ComercioGrupoModel(
+      nombre: json['nombre']?.toString() ?? 'Sin ubicación',
+      total: _toInt(json['total']),
+      comercios: (json['comercios'] as List? ?? const [])
+          .map((c) => ComercioModel.fromJson(Map<String, dynamic>.from(c as Map)))
+          .toList(),
     );
   }
 }

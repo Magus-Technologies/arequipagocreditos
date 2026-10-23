@@ -56,9 +56,9 @@ class BeneficiosComercialRepositoryImpl implements BeneficiosComercialRepository
   }
 
   @override
-  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesTalleresBanners() async {
+  Future<Either<Failure, List<PromoTallerBannerModel>>> getPromocionesTalleresBanners({String? departamento}) async {
     try {
-      final banners = await remoteDataSource.getPromocionesTalleresBanners();
+      final banners = await remoteDataSource.getPromocionesTalleresBanners(departamento: departamento);
       return Either.right(banners);
     } on Exception catch (e) {
       return Either.left(ServerFailure(e.toString()));

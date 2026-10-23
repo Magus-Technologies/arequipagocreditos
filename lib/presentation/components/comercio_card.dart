@@ -108,6 +108,20 @@ class ComercioCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                            // TK-0382: las estrellas que le ponen los conductores, como en los talleres.
+                            if (comercio.tieneCalificaciones)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star_rounded, size: 15, color: Color(0xFFF59E0B)),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '${comercio.promedioCalificacion.toStringAsFixed(1)} (${comercio.totalCalificaciones})',
+                                    key: const Key('comercio-card-calificacion'),
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+                                  ),
+                                ],
+                              ),
                             // TK-0314: adelanta que el comercio tiene algo para solicitar.
                             if (comercio.serviciosCount > 0)
                               Container(

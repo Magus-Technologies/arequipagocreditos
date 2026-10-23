@@ -160,6 +160,25 @@ class BeneficioServicioEntity {
     if (visiblePara == null) return true;
     return visiblePara!.contains(audiencia);
   }
+
+  /// Motivo por el que NO se puede pedir desde el app por falta de stock en la ciudad del cliente (null = se puede).
+  /// Con opciones se mira la elegida; sin opciones, el producto del beneficio. Solo cuenta un 0 CONFIRMADO: sin información
+  /// de stock (`null`: el modelo no tiene unidades cargadas) se deja pedir. El servidor lo valida igual al crear el pedido.
+  String? motivoSinStock(VarianteEntity? varianteElegida) {
+    if (variantesDisponibles.isNotEmpty) {
+      final stock = varianteElegida?.stockDisponible;
+      if (varianteElegida != null && stock != null && stock <= 0) {
+        return _mensajeSinStock(varianteElegida.nombre);
+      }
+      return null;
+    }
+    final p = producto;
+    if (p != null && p.stockDisponible <= 0) return _mensajeSinStock(p.nombre);
+    return null;
+  }
+
+  static String _mensajeSinStock(String nombre) =>
+      '«$nombre» no tiene stock disponible en tu ciudad por ahora. Elige otra opción o vuelve a intentarlo más tarde.';
 }
 
 /// Producto real vinculado al servicio/beneficio (TK-0306 / TK-0337).
