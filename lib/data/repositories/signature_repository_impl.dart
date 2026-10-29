@@ -17,6 +17,7 @@ class SignatureRepositoryImpl implements SignatureRepository {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   }) async {
     try {
       final result = await remoteDataSource.firmar(
@@ -25,6 +26,7 @@ class SignatureRepositoryImpl implements SignatureRepository {
         firmaBase64: firmaBase64,
         nroDocumento: nroDocumento,
         posicion: posicion,
+        version: version,
       );
       return Either.right(result);
     } on ServerException catch (e) {

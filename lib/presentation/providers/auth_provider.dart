@@ -9,6 +9,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arequipagocreditos/core/constants/app_constants.dart';
 import '../../core/errors/failures.dart';
+import '../../core/utils/biometria_celular.dart';
 import '../../domain/entities/conductor_entity.dart';
 import '../../domain/usecases/auth_usecases.dart';
 
@@ -317,12 +318,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Por qué falló el último intento con huella/rostro (null si no hace falta decir nada, p. ej. la persona canceló). La pantalla
+  /// del PIN lo muestra: antes el intento fallaba en silencio y la persona solo veía el teclado.
+  String? _biometricMessage;
+  String? get biometricMessage => _biometricMessage;
+
   Future<bool> loginWithBiometrics(LocalAuthentication localAuth) async {
+    _biometricMessage = null;
     try {
       if (!hasAnyAccessMethodEnabled) return false;
 
-      final canAuth = await localAuth.canCheckBiometrics || await localAuth.isDeviceSupported();
-      if (!canAuth) return false;
+      // TK-0420: cuenta lo que el celular tiene REGISTRADO, no que traiga el sensor o un bloqueo de pantalla.
+      final bio = await BiometriaCelular.consultar(localAuth);
+      if (!bio.hayConfigurada) {
+        _biometricMessage = mensajeErrorBiometria(LocalAuthExceptionCode.noBiometricsEnrolled);
+        return false;
+      }
 
       // biometricOnly: true siempre — ahora el PIN es propio de la app
       // (ver loginWithPin), no hace falta pedirle al SO que ofrezca su
@@ -339,6 +350,10 @@ class AuthProvider extends ChangeNotifier {
 
       await login(dni, password);
       return _status == AuthStatus.authenticated;
+    } on LocalAuthException catch (e) {
+      debugPrint('Error en login biométrico: ${e.code}');
+      _biometricMessage = mensajeErrorBiometria(e.code);
+      return false;
     } catch (e) {
       debugPrint('Error en login biométrico: $e');
       return false;

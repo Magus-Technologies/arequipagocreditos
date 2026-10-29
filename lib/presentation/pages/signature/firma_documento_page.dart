@@ -30,6 +30,13 @@ class FirmaDocumentoPage extends StatefulWidget {
   /// y esa posición viaja con la firma para que el servidor la estampe ahí. Los demás documentos se firman como siempre.
   final bool colocarEnPdf;
 
+  /// TK-0401: aviso que reemplaza al texto de siempre sobre el PDF (p. ej. «actualizamos el contrato, fírmalo para continuar»).
+  final String? aviso;
+
+  /// TK-0401: versión del contrato de afiliación que se está leyendo. Viaja con la firma: si mientras tanto se publicó otra,
+  /// el servidor responde que el contrato cambió y el app lo vuelve a abrir en vez de registrar la firma de un texto viejo.
+  final int? version;
+
   /// Cómo se abre el PDF para dibujar sus páginas al colocar la firma; por defecto `pdfx`. Solo cambia en las pruebas.
   final AbridorDePdf? abridorDePdf;
 
@@ -43,6 +50,8 @@ class FirmaDocumentoPage extends StatefulWidget {
     this.canPop = true,
     this.captureOnly = false,
     this.colocarEnPdf = false,
+    this.aviso,
+    this.version,
     this.abridorDePdf,
   });
 
@@ -157,9 +166,10 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  widget.colocarEnPdf
-                                      ? 'Revisa el documento. Luego dibujarás tu firma y la colocarás en el lugar que corresponda.'
-                                      : 'Por favor, revise detenidamente el documento antes de proceder con la firma.',
+                                  widget.aviso ??
+                                      (widget.colocarEnPdf
+                                          ? 'Revisa el documento. Luego dibujarás tu firma y la colocarás en el lugar que corresponda.'
+                                          : 'Por favor, revise detenidamente el documento antes de proceder con la firma.'),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.blue.shade800,
@@ -359,6 +369,7 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
       firmaBase64: base64Firma,
       nroDocumento: user.nroDocumento,
       posicion: posicion,
+      version: widget.version,
     );
 
     if (success) {
@@ -391,6 +402,10 @@ class _FirmaDocumentoPageState extends State<FirmaDocumentoPage> {
           backgroundColor: Colors.red,
         ),
       );
+      // TK-0401: si el contrato cambió mientras lo leía, se refresca la sesión: `AppWrapper` abre el contrato nuevo.
+      if (widget.tipo == 'afiliacion') {
+        authProvider.refreshUserDataSilently();
+      }
     }
   }
 }

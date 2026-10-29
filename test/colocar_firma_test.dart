@@ -313,6 +313,7 @@ class _FirmarCaptura extends FirmarUseCase {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   }) async {
     this.tipo = tipo;
     this.id = id;

@@ -11,6 +11,7 @@ abstract class SignatureRemoteDataSource {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   });
 }
 
@@ -26,6 +27,7 @@ class SignatureRemoteDataSourceImpl implements SignatureRemoteDataSource {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   }) async {
     try {
       final endpoint = ApiConstants.firmarEndpoint
@@ -41,6 +43,8 @@ class SignatureRemoteDataSourceImpl implements SignatureRemoteDataSource {
           'nro_documento': nroDocumento,
           // TK-0353: dónde colocó el conductor su firma sobre el PDF (solo documentos adicionales).
           if (posicion != null) 'posicion': posicion.toJson(),
+          // TK-0401: qué versión del contrato de afiliación leyó; si se publicó otra mientras tanto, el servidor no la registra.
+          if (version != null) 'version': version,
         }),
       ).timeout(ApiConstants.connectionTimeout);
 

@@ -44,6 +44,8 @@ class ModelAdapters {
       contactoEmergencia: entity.contactoEmergencia,
       documentos: entity.documentos,
       afiliacionFirmada: entity.afiliacionFirmada,
+      afiliacionActualizada: entity.afiliacionActualizada,
+      contratoAfiliacionVersion: entity.contratoAfiliacionVersion,
       contratoAfiliacionUrl: entity.contratoAfiliacionUrl,
       firmaAfiliacionUrl: entity.firmaAfiliacionUrl,
       firmaAfiliacionAt: entity.firmaAfiliacionAt,
@@ -130,6 +132,8 @@ class ModelAdapters {
       fechaPago: entity.fechaPago,
       idPago: entity.idPago,
       monedaId: entity.monedaId,
+      montoPendiente: entity.montoPendiente,
+      descuentos: entity.descuentos,
     );
   }
 

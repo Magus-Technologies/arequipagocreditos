@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:arequipagocreditos/core/services/notification_service.dart';
+import 'package:arequipagocreditos/core/utils/biometria_celular.dart';
 import 'package:arequipagocreditos/presentation/pages/welcome_page.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:flutter/material.dart';
@@ -67,14 +68,21 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   bool _expiryAlertShown = false;
   static const int _nearExpiryDays = 7;
   DateTime? _pausedAt;
+  bool _firmaPendiente = false;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().checkAuthStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final auth = context.read<AuthProvider>();
+      await auth.checkAuthStatus();
+      // TK-0401: la sesión guardada puede ser de antes de que se publicara un contrato de afiliación nuevo: se consulta al
+      // servidor para que, si hay que volver a firmar, el app lo bloquee desde el principio.
+      if (mounted && auth.isAuthenticated) {
+        auth.refreshUserDataSilently();
+      }
     });
   }
 
@@ -105,6 +113,13 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
           auth.lock();
         }
       }
+
+      // TK-0401: si mientras el app estaba en segundo plano se publicó un contrato de afiliación nuevo, se entera al volver y
+      // lo bloquea hasta que firme.
+      final autenticado = context.read<AuthProvider>();
+      if (autenticado.isAuthenticated) {
+        autenticado.refreshUserDataSilently();
+      }
     }
   }
 
@@ -127,8 +142,8 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
             if (authProvider.needsBiometricSetupOffer) {
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (!context.mounted) return;
-                final canAuth = await _localAuth.canCheckBiometrics ||
-                    await _localAuth.isDeviceSupported();
+                // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
+                final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
                 if (!context.mounted) return;
                 if (!canAuth) {
                   context.read<AuthProvider>().declineBiometricSetup();
@@ -167,8 +182,8 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
               // Sesión restaurada automáticamente sin pasar por login manual
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (!context.mounted) return;
-                final canAuth = await _localAuth.canCheckBiometrics ||
-                    await _localAuth.isDeviceSupported();
+                // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
+                final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
                 if (!context.mounted) return;
                 if (!canAuth) {
                   context.read<AuthProvider>().declineBiometricSetup();
@@ -273,16 +288,33 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
             if (authProvider.currentUser != null &&
                 !authProvider.currentUser!.afiliacionFirmada &&
                 authProvider.currentUser!.contratoAfiliacionUrl != null) {
+              // TK-0401: si el contrato pasa a estar pendiente con la persona dentro de otra pantalla, se cierran las pantallas
+              // abiertas para que el contrato quede a la vista y no se pueda seguir usando el app sin firmarlo. Solo al
+              // pasar a pendiente (no en cada reconstrucción: cerraría la pantalla donde se dibuja la firma).
+              if (!_firmaPendiente) {
+                _firmaPendiente = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  NotificationService.navigatorKey.currentState?.popUntil((route) => route.isFirst);
+                });
+              }
               return FirmaDocumentoPage(
+                // TK-0401: cada versión del contrato es una pantalla nueva (vuelve a descargar el PDF).
+                key: ValueKey('afiliacion-v${authProvider.currentUser!.contratoAfiliacionVersion}'),
+                version: authProvider.currentUser!.contratoAfiliacionVersion,
                 title: 'Contrato de Afiliación',
                 pdfUrl: authProvider.currentUser!.contratoAfiliacionUrl!,
                 tipo: 'afiliacion',
                 id: authProvider.currentUser!.idConductor,
                 canPop: false,
+                // TK-0401: si ya había firmado y se publicó una versión nueva, se le explica por qué vuelve a firmar.
+                aviso: authProvider.currentUser!.afiliacionActualizada
+                    ? 'Actualizamos nuestro contrato de afiliación. Revísalo y fírmalo para seguir usando la app.'
+                    : null,
                 onSigned: () => authProvider.refreshUserDataSilently(),
               );
             }
 
+            _firmaPendiente = false;
             return const MainShellPage();
           case AuthStatus.unauthenticated:
           case AuthStatus.error:

@@ -5,6 +5,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../core/utils/biometria_celular.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -42,7 +43,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final canAuth = await _localAuth.canCheckBiometrics || await _localAuth.isDeviceSupported();
+    // TK-0420: solo si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
+    final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
     if (!mounted) return;
     setState(() => _biometricAvailable = canAuth);
     if (canAuth) _loginWithBiometrics();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/biometria_celular.dart';
 import '../../theme/app_theme.dart';
 import '../components/pin_keypad.dart';
 import '../providers/auth_provider.dart';
@@ -49,7 +50,9 @@ class _IngresarPinPageState extends State<IngresarPinPage> {
         (authProvider.accessFaceEnabled || authProvider.accessFingerprintEnabled);
     if (!usaBiometria) return;
 
-    final canAuth = await _localAuth.canCheckBiometrics || await _localAuth.isDeviceSupported();
+    // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS; con solo el sensor o el bloqueo de pantalla el intento
+    // fallaba y la persona quedaba otra vez en el teclado sin saber por qué.
+    final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
     if (!mounted) return;
     setState(() => _biometricAvailable = canAuth);
     if (canAuth) _unlockWithBiometrics();
@@ -59,7 +62,13 @@ class _IngresarPinPageState extends State<IngresarPinPage> {
     final authProvider = context.read<AuthProvider>();
     final estabaBloqueado = authProvider.isLocked;
     final ok = await authProvider.loginWithBiometrics(_localAuth);
-    if (!mounted || !ok) return;
+    if (!mounted) return;
+    if (!ok) {
+      // Si falló por algo que la persona debe saber (nada registrado, bloqueo por intentos...), se le dice; si solo canceló, no.
+      final motivo = authProvider.biometricMessage;
+      if (motivo != null) setState(() => _message = motivo);
+      return;
+    }
     if (estabaBloqueado) {
       // El wrapper raíz ya muestra el shell al desbloquearse.
       authProvider.unlock();

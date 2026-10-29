@@ -31,6 +31,14 @@ class ConductorEntity {
 
   // Firmas
   final bool afiliacionFirmada;
+
+  /// TK-0401: ya había firmado, pero se publicó una versión nueva del contrato de afiliación y debe firmarla otra vez.
+  /// El servidor manda `afiliacion_firmada = false` y el app bloquea todo hasta que firme (ver `main.dart`).
+  final bool afiliacionActualizada;
+
+  /// TK-0401: número de la versión vigente del contrato de afiliación (null si nunca se publicó una). Viaja con la firma para
+  /// que el servidor no registre la firma de una versión que ya no es la vigente.
+  final int? contratoAfiliacionVersion;
   final String? contratoAfiliacionUrl;
   final String? firmaAfiliacionUrl;
   final String? firmaAfiliacionAt;
@@ -66,6 +74,8 @@ class ConductorEntity {
     this.contactoEmergencia,
     this.documentos,
     this.afiliacionFirmada = false,
+    this.afiliacionActualizada = false,
+    this.contratoAfiliacionVersion,
     this.contratoAfiliacionUrl,
     this.firmaAfiliacionUrl,
     this.firmaAfiliacionAt,

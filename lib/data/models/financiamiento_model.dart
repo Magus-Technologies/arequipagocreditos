@@ -31,6 +31,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
     super.aprobado,
     super.estadoEntrega,
     super.estadoApp,
+    super.codigoPagoInicial,
+    super.vencePagoInicial,
   });
 
    factory FinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
 
     // POST response wraps id inside json['financiamiento']
     final financiamientoNested = json['financiamiento'] as Map<String, dynamic>?;
+    // Código propio de la inicial (POST de creación y detalle): con el id del financiamiento Caja cobra las cuotas, no la inicial.
+    final ordenInicial = json['orden_inicial'] as Map<String, dynamic>?;
 
     return FinanciamientoModel(
       idFinanciamiento: toInt(financiamientoNested?['id'] ?? json['idfinanciamiento'] ?? json['id']),
@@ -101,6 +105,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
       aprobado: parseNullableInt(json['aprobado'] ?? financiamientoNested?['aprobado']),
       estadoEntrega: json['estado_entrega']?.toString(),
       estadoApp: json['estado_app']?.toString(),
+      codigoPagoInicial: ordenInicial?['codigo']?.toString(),
+      vencePagoInicial: ordenInicial?['fecha_expiracion']?.toString(),
     );
   }
 
@@ -167,6 +173,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
         aprobado: aprobado,
         estadoEntrega: estadoEntrega,
         estadoApp: estadoApp,
+        codigoPagoInicial: codigoPagoInicial,
+        vencePagoInicial: vencePagoInicial,
       );
 
   @override
@@ -200,6 +208,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
     int? aprobado,
     String? estadoEntrega,
     String? estadoApp,
+    String? codigoPagoInicial,
+    String? vencePagoInicial,
   }) {
     return FinanciamientoModel(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -231,6 +241,8 @@ class FinanciamientoModel extends FinanciamientoEntity {
       aprobado: aprobado ?? this.aprobado,
       estadoEntrega: estadoEntrega ?? this.estadoEntrega,
       estadoApp: estadoApp ?? this.estadoApp,
+      codigoPagoInicial: codigoPagoInicial ?? this.codigoPagoInicial,
+      vencePagoInicial: vencePagoInicial ?? this.vencePagoInicial,
     );
   }
 }

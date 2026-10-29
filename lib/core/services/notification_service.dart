@@ -13,6 +13,8 @@ import 'dart:io';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
 import 'package:arequipagocreditos/presentation/pages/financiamiento_detalle_page.dart';
 import 'package:arequipagocreditos/presentation/pages/notification_detail_page.dart';
+import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -100,6 +102,11 @@ class NotificationService {
 
         // Notificar al provider para que refresque la lista
         onNotificationReceived?.call();
+
+        // TK-0401: un contrato de afiliación nuevo cambia la sesión (hay que firmarlo): se consulta al servidor ya.
+        if (message.data['type'] == 'contrato_afiliacion') {
+          _refrescarSesion();
+        }
       });
 
       // Manejar clics en notificaciones cuando la app está en segundo plano pero no cerrada
@@ -122,6 +129,14 @@ class NotificationService {
     } catch (e) {
       log('❌ Error al inicializar FCM: $e');
     }
+  }
+
+  /// TK-0401: vuelve a pedirle al servidor el perfil del usuario. Si se publicó un contrato de afiliación nuevo, el servidor
+  /// dice que ya no está firmado y `AppWrapper` abre la pantalla de firma (bloqueando lo demás).
+  void _refrescarSesion() {
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    context.read<AuthProvider>().refreshUserDataSilently();
   }
 
   /// Junta el `data` del push con el título y cuerpo del mensaje, para que el
@@ -149,6 +164,12 @@ class NotificationService {
     final String? type = data['type']?.toString();
     final context = navigatorKey.currentContext;
     if (context == null) return;
+
+    // TK-0401: «Contrato de afiliación» nuevo → se refresca la sesión y el app abre la pantalla para firmarlo.
+    if (type == 'contrato_afiliacion') {
+      _refrescarSesion();
+      return;
+    }
 
     // TK-0355: «Adenda pendiente de firma» → Mis documentos, donde la adenda aparece con su botón de firmar.
     // TK-0353: igual para «Documento pendiente de firma» (PDF que la empresa anexó a su financiamiento).

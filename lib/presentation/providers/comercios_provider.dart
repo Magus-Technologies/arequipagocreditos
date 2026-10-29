@@ -172,4 +172,14 @@ class ComerciosProvider extends ChangeNotifier {
     _categoriaFiltro = categoriaId;
     cargarComercios(departamento: departamento);
   }
+
+  /// Hay un filtro de categoría o de tipo de vehículo puesto (la búsqueda por texto no cuenta: se borra con su propia X).
+  bool get hayFiltros => _categoriaFiltro != null || _tipoVehicularFiltro != null;
+
+  /// Quita la categoría y el tipo de vehículo de una vez, con un solo pedido al servidor.
+  Future<void> limpiarFiltros({String? departamento}) async {
+    _categoriaFiltro = null;
+    _tipoVehicularFiltro = null;
+    await cargarComercios(departamento: departamento ?? _departamentoActual);
+  }
 }

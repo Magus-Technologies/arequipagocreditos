@@ -533,6 +533,11 @@ void main() {
 
       await tester.pumpWidget(app(repo, _conductor(), const ComerciosGoPage()));
       await tester.pumpAndSettle();
+
+      // El tipo de vehículo está en el panel del botón de filtros, no suelto en la pantalla.
+      expect(find.byKey(const Key('comercios-vehiculo-todos')), findsNothing);
+      await tester.tap(find.byKey(const Key('comercios-filtros-boton')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('comercios-vehiculo-todos')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('comercios-vehiculo-moto')));
@@ -540,6 +545,47 @@ void main() {
 
       expect(repo.pedidos.last['tipoVehicular'], 'moto');
       expect(repo.pedidos.last['departamento'], 'Arequipa');
+      // El panel se cierra y el filtro queda a la vista, con su X para quitarlo.
+      expect(find.byKey(const Key('comercios-vehiculo-moto')), findsNothing);
+      expect(find.byKey(const Key('comercios-quitar-vehiculo')), findsOneWidget);
+      expect(find.text('Moto'), findsOneWidget);
+    });
+
+    testWidgets('quitar el filtro de vehículo o pulsar Limpiar vuelve a pedir la lista sin filtros', (tester) async {
+      tester.view.physicalSize = const Size(411, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = _RepoFalso()..grupos = [_grupo('Cayma', [_comercio(id: 1, nombre: 'Bodega Luna')])];
+
+      await tester.pumpWidget(app(repo, _conductor(), const ComerciosGoPage()));
+      await tester.pumpAndSettle();
+      // Sin filtros no hay nada que limpiar.
+      expect(find.byKey(const Key('comercios-limpiar-filtros')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('comercios-filtros-boton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('comercios-vehiculo-tuktuk')));
+      await tester.pumpAndSettle();
+      expect(repo.pedidos.last['tipoVehicular'], 'tuktuk');
+
+      await tester.tap(find.byKey(const Key('comercios-quitar-vehiculo')));
+      await tester.pumpAndSettle();
+      expect(repo.pedidos.last['tipoVehicular'], isNull);
+      expect(find.byKey(const Key('comercios-limpiar-filtros')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('comercios-filtros-boton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('comercios-vehiculo-vehiculo')));
+      await tester.pumpAndSettle();
+      final pedidosAntes = repo.pedidos.length;
+
+      await tester.tap(find.byKey(const Key('comercios-limpiar-filtros')));
+      await tester.pumpAndSettle();
+      // Un solo pedido al servidor, ya sin tipo de vehículo ni categoría.
+      expect(repo.pedidos.length, pedidosAntes + 1);
+      expect(repo.pedidos.last['tipoVehicular'], isNull);
+      expect(repo.pedidos.last['categoriaId'], isNull);
     });
 
     testWidgets('sin comercios dice que no se encontró ninguno', (tester) async {

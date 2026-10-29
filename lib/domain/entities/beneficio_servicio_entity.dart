@@ -112,6 +112,9 @@ class BeneficioServicioEntity {
   final int cantidadCuotas;
   final double cuotaMensual;
   final String moneda;
+
+  /// Moneda de la cuota inicial cuando es distinta a la de las cuotas (TK-0414). Vacía = la misma de `moneda`.
+  final String monedaInicial;
   final String? frecuenciaPago;
   final bool disponible;
   final List<String> metodosPago;
@@ -145,6 +148,7 @@ class BeneficioServicioEntity {
     this.cantidadCuotas = 0,
     this.cuotaMensual = 0.0,
     this.moneda = 'S/.',
+    this.monedaInicial = '',
     this.frecuenciaPago,
     this.disponible = true,
     this.metodosPago = const ['CAJA_AREQUIPA'],

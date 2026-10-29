@@ -6,6 +6,8 @@ import '../../domain/entities/comercio_entity.dart';
 
 const Color _comercioAccent = Color(0xFFC2410C);
 
+/// Tarjeta de un comercio en el listado de Comercios GO: logo, nombre con sus estrellas, rubro, dirección y, abajo, cuántos servicios
+/// tiene y los accesos al mapa y al WhatsApp. Tocar la tarjeta abre sus servicios.
 class ComercioCard extends StatelessWidget {
   final ComercioEntity comercio;
   final VoidCallback? onTap;
@@ -14,162 +16,188 @@ class ComercioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((0.07 * 255).toInt()),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _comercioAccent.withAlpha((0.1 * 255).toInt()),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _comercioAccent.withAlpha((0.2 * 255).toInt()), width: 1.5),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: comercio.logo != null && comercio.logo!.isNotEmpty
-                    ? Image.network(
-                        '${ApiConstants.imagenesBaseUrl}/${comercio.logo!}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.storefront, color: _comercioAccent, size: 30),
-                      )
-                    : const Icon(Icons.storefront, color: _comercioAccent, size: 30),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      comercio.nombreParaMostrar,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (comercio.direccion != null && comercio.direccion!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+    final tieneMapa = comercio.googleMapsUrl != null && comercio.googleMapsUrl!.isNotEmpty;
+    final tieneWhatsapp = comercio.whatsappUrl != null && comercio.whatsappUrl!.isNotEmpty;
+    final tieneDireccion = comercio.direccion != null && comercio.direccion!.isNotEmpty;
+    final mostrarPie = comercio.serviciosCount > 0 || tieneMapa || tieneWhatsapp;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEFEAE4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.05 * 255).toInt()),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Logo(logo: comercio.logo),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.location_on, size: 13, color: Colors.grey.shade500),
-                          const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              comercio.direccion!,
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                              maxLines: 1,
+                              comercio.nombreParaMostrar,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937), height: 1.2),
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          // TK-0382: las estrellas que le ponen los conductores, como en los talleres.
+                          if (comercio.tieneCalificaciones) ...[
+                            const SizedBox(width: 8),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${comercio.promedioCalificacion.toStringAsFixed(1)} (${comercio.totalCalificaciones})',
+                                  key: const Key('comercio-card-calificacion'),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
-                    ],
-                    const SizedBox(height: 8),
-                    // Wrap y no Row: con un rubro largo más el chip de servicios,
-                    // la fila se desbordaba en teléfonos angostos. Así los
-                    // elementos bajan de línea en vez de recortarse.
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                      if (comercio.categoriaNombre != null && comercio.categoriaNombre!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          comercio.categoriaNombre!,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: _comercioAccent),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (tieneDireccion) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (comercio.categoriaNombre != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                constraints: const BoxConstraints(maxWidth: 160),
-                                decoration: BoxDecoration(
-                                  color: _comercioAccent.withAlpha((0.15 * 255).toInt()),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  comercio.categoriaNombre!,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade500),
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                comercio.direccion!,
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.25),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            // TK-0382: las estrellas que le ponen los conductores, como en los talleres.
-                            if (comercio.tieneCalificaciones)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.star_rounded, size: 15, color: Color(0xFFF59E0B)),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '${comercio.promedioCalificacion.toStringAsFixed(1)} (${comercio.totalCalificaciones})',
-                                    key: const Key('comercio-card-calificacion'),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-                                  ),
-                                ],
-                              ),
-                            // TK-0314: adelanta que el comercio tiene algo para solicitar.
-                            if (comercio.serviciosCount > 0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withAlpha((0.12 * 255).toInt()),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  comercio.serviciosCount == 1
-                                      ? '1 servicio'
-                                      : '${comercio.serviciosCount} servicios',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF15803D),
-                                  ),
-                                ),
-                              ),
+                            ),
                           ],
                         ),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
+                      ],
+                      if (mostrarPie) ...[
+                        const SizedBox(height: 10),
+                        Row(
                           children: [
-                            if (comercio.googleMapsUrl != null && comercio.googleMapsUrl!.isNotEmpty)
+                            // TK-0314: adelanta que el comercio tiene algo para solicitar. Expanded + Align: toma todo el espacio que
+                            // dejan los botones y la píldora queda a la izquierda con su ancho natural (sin recortarse).
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: comercio.serviciosCount > 0
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFDCFCE7),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.local_offer_rounded, size: 12, color: Color(0xFF15803D)),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                comercio.serviciosCount == 1 ? '1 servicio' : '${comercio.serviciosCount} servicios',
+                                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ),
+                            if (tieneMapa)
                               _ActionIcon(
-                                icon: const Icon(Icons.map, size: 14, color: Color(0xFF4285F4)),
+                                icon: const Icon(Icons.map_outlined, size: 16, color: Color(0xFF4285F4)),
                                 color: const Color(0xFF4285F4),
                                 onTap: () => launchUrl(Uri.parse(comercio.googleMapsUrl!)),
                               ),
-                            if (comercio.whatsappUrl != null && comercio.whatsappUrl!.isNotEmpty)
+                            if (tieneMapa && tieneWhatsapp) const SizedBox(width: 8),
+                            if (tieneWhatsapp)
                               _ActionIcon(
-                                icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: Color(0xFF25D366)),
+                                icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Color(0xFF25D366)),
                                 color: const Color(0xFF25D366),
                                 onTap: () => launchUrl(Uri.parse(comercio.whatsappUrl!)),
                               ),
                           ],
                         ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Logo extends StatelessWidget {
+  final String? logo;
+
+  const _Logo({required this.logo});
+
+  @override
+  Widget build(BuildContext context) {
+    const icono = Icon(Icons.storefront_rounded, color: _comercioAccent, size: 28);
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: _comercioAccent.withAlpha((0.08 * 255).toInt()),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _comercioAccent.withAlpha((0.18 * 255).toInt())),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: logo != null && logo!.isNotEmpty
+          ? Image.network(
+              '${ApiConstants.imagenesBaseUrl}/${logo!}',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => icono,
+            )
+          : icono,
     );
   }
 }
@@ -183,16 +211,13 @@ class _ActionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(7),
-        decoration: BoxDecoration(
-          color: color.withAlpha((0.1 * 255).toInt()),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withAlpha((0.2 * 255).toInt())),
-        ),
-        child: icon,
+    return Material(
+      color: color.withAlpha((0.1 * 255).toInt()),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(width: 36, height: 36, child: Center(child: icon)),
       ),
     );
   }

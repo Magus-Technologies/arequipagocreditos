@@ -20,6 +20,7 @@ class SignatureProvider extends ChangeNotifier {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -31,6 +32,7 @@ class SignatureProvider extends ChangeNotifier {
       firmaBase64: firmaBase64,
       nroDocumento: nroDocumento,
       posicion: posicion,
+      version: version,
     );
 
     _isLoading = false;

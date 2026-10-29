@@ -150,6 +150,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     super.cantidadCuotas,
     super.cuotaMensual,
     super.moneda,
+    super.monedaInicial,
     super.frecuenciaPago,
     super.disponible,
     super.metodosPago,
@@ -179,6 +180,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
     final cantidadCuotas = (fijoRaw?['cantidad_cuotas'] ?? json['cantidad_cuotas'] ?? 0) as int;
     final precioServicio = parseDouble(porcentualRaw?['precio_servicio'] ?? json['precio_servicio']);
     final moneda = (detalleRaw?['moneda'] ?? json['moneda'] ?? 'S/.') as String;
+    final monedaInicial = (detalleRaw?['moneda_inicial'] ?? json['moneda_inicial'] ?? '').toString();
     final frecuenciaPago = (detalleRaw?['frecuencia_pago_default'] ?? detalleRaw?['frecuencia_pago'] ?? json['frecuencia_pago']) as String?;
     final metodosPagoRaw = detalleRaw?['metodos_pago'] ?? json['metodos_pago'];
     final visibleParaRaw = detalleRaw?['visible_para'] ?? json['visible_para'];
@@ -210,6 +212,7 @@ class BeneficioServicioModel extends BeneficioServicioEntity {
       cantidadCuotas: cantidadCuotas,
       cuotaMensual: cuotaMensual,
       moneda: moneda,
+      monedaInicial: monedaInicial,
       frecuenciaPago: frecuenciaPago,
       disponible: json['disponible'] == true,
       metodosPago: _parseMetodosPago(metodosPagoRaw),

@@ -257,9 +257,79 @@ class _CuotaCardState extends State<CuotaCard> {
                   ),
                 ],
               ),
+              // TK-0425: descuentos de InDrive/Yango ya restados de esta cuota
+              if (widget.cuota.tieneDescuento) ...[
+                const SizedBox(height: 10),
+                _bloqueDescuentos(isPagado),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Cada descuento semanal (InDrive o Yango) que ya se restó de la cuota y, si todavía falta pagar, lo que queda por pagar.
+  Widget _bloqueDescuentos(bool isPagado) {
+    final cuota = widget.cuota;
+    final simbolo = cuota.simboloMoneda(widget.moneda);
+    final saldo = cuota.montoPendiente;
+    final verde = Colors.green.shade700;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final descuento in cuota.descuentos) ...[
+            Row(
+              children: [
+                Icon(Icons.local_offer_outlined, size: 16, color: verde),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Descuento ${descuento.plataformaTexto}',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: verde),
+                  ),
+                ),
+                Text(
+                  '− $simbolo ${descuento.monto.toStringAsFixed(2)}',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: verde),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 22, top: 2, bottom: 4),
+              child: Text(
+                [
+                  if (descuento.semanaTexto.isNotEmpty) 'Semana del ${descuento.semanaTexto}',
+                  if (descuento.fueConvertido && descuento.tipoCambio != null)
+                    'S/ ${descuento.montoSoles.toStringAsFixed(2)} al tipo de cambio ${descuento.tipoCambio!.toStringAsFixed(2)}',
+                ].join(' · '),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ),
+          ],
+          if (!isPagado && saldo != null) ...[
+            Divider(height: 12, color: Colors.green.shade200),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Saldo por pagar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                Text(
+                  '$simbolo ${saldo.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

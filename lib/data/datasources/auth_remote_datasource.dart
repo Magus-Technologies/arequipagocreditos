@@ -144,7 +144,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         final bool localFirmada = savedFirmada == true;
         final bool serverFirmada = profileData['afiliacion_firmada'] == true || profileData['afiliacion_firmada'] == 1;
         final bool existingFirmada = conductorMap['afiliacion_firmada'] == true || conductorMap['afiliacion_firmada'] == 1;
-        profileData['afiliacion_firmada'] = localFirmada || serverFirmada || existingFirmada;
+        // TK-0401: si se publicó una versión nueva del contrato (`afiliacion_actualizada`), la firma anterior ya no vale:
+        // el servidor manda la verdad y NO se aplica lo de «una vez firmado, siempre firmado». También se olvida la marca
+        // local, para que no vuelva a dar por firmado el contrato nuevo.
+        final bool actualizada = profileData['afiliacion_actualizada'] == true || profileData['afiliacion_actualizada'] == 1;
+        if (actualizada) {
+          await prefs.setBool(AppConstants.afiliacionFirmadaKey, false);
+        }
+        profileData['afiliacion_firmada'] = actualizada ? false : (localFirmada || serverFirmada || existingFirmada);
         profileData['contrato_afiliacion_url'] = profileData['contrato_afiliacion_url'] ?? conductorMap['contrato_afiliacion_url'] ?? savedContratoUrl;
         profileData['firma_afiliacion_url'] = profileData['firma_afiliacion_url'] ?? conductorMap['firma_afiliacion_url'];
         profileData['firma_afiliacion_at'] = profileData['firma_afiliacion_at'] ?? conductorMap['firma_afiliacion_at'];

@@ -9,5 +9,6 @@ abstract class SignatureRepository {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   });
 }

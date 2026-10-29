@@ -9,6 +9,7 @@ import 'signature/firma_documento_page.dart';
 import 'financiamiento_detalle_page.dart';
 import '../widgets/image_full_screen_view.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/simbolo_moneda.dart';
 
 class CalculoFinanciamientoPage extends StatefulWidget {
   const CalculoFinanciamientoPage({super.key});
@@ -28,6 +29,12 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   String? _colorElegido;
   final TextEditingController _operacionController = TextEditingController();
   final TextEditingController _montoLibreController = TextEditingController();
+
+  /// Símbolo de la moneda del beneficio (TK-0414); lo fija `build` y lo leen los widgets de abajo.
+  String _simboloMoneda = 'S/';
+
+  /// Símbolo de la cuota inicial: puede ser otro que el de las cuotas (TK-0414, «editar beneficio» con ambas monedas).
+  String _simboloInicial = 'S/';
 
   static const Map<String, String> kMetodoPagoLabels = {
     'CAJA_AREQUIPA': 'Caja Arequipa',
@@ -146,6 +153,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     // Con variante elegida, los importes salen de la variante (el backend los
     // vuelve a derivar al crear el financiamiento).
     final variante = provider.selectedVariante;
+    _simboloMoneda = simboloMonedaBeneficio(servicio.moneda, monedaDeLaVariante: variante?.monedaSimbolo);
+    _simboloInicial = simboloMonedaBeneficio(
+      servicio.monedaInicial.trim().isNotEmpty ? servicio.monedaInicial : servicio.moneda,
+      monedaDeLaVariante: variante?.monedaInicialSimbolo,
+    );
     if (variante != null) {
       precio = variante.montoTotal;
       cuotaInicial = variante.cuotaInicial;
@@ -283,7 +295,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   String? _validarMonto(double precio, double? tope) {
     if (precio <= 0) return 'Ingresa el monto del servicio';
     if (tope != null && precio > tope) {
-      return 'El monto no puede superar S/ ${tope.toStringAsFixed(0)}';
+      return 'El monto no puede superar $_simboloMoneda ${tope.toStringAsFixed(0)}';
     }
     return null;
   }
@@ -366,10 +378,10 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               controller: _montoLibreController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                prefixText: 'S/ ',
+                prefixText: '$_simboloMoneda ',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                helperText: tieneTope ? 'Máximo permitido: S/ ${tope.toStringAsFixed(0)}' : null,
+                helperText: tieneTope ? 'Máximo permitido: $_simboloMoneda ${tope.toStringAsFixed(0)}' : null,
                 errorText: _validarMonto(precio, tieneTope ? tope : null),
               ),
               onChanged: (val) => setState(() {}),
@@ -383,7 +395,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  'S/ ${precio.toStringAsFixed(2)}',
+                  '$_simboloMoneda ${precio.toStringAsFixed(2)}',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
                 ),
               ],
@@ -408,7 +420,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Inicial:', style: TextStyle(fontWeight: FontWeight.w600)),
-              Text('S/ ${cuotaInicial.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('$_simboloInicial ${cuotaInicial.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 8),
@@ -417,7 +429,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             children: [
               Text('$_selectedCuotas cuotas ${detalle.frecuenciaPago}:', style: const TextStyle(fontWeight: FontWeight.w600)),
               Text(
-                'S/ ${montoCuota.toStringAsFixed(2)} c/u',
+                '$_simboloMoneda ${montoCuota.toStringAsFixed(2)} c/u',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
               ),
             ],
@@ -493,7 +505,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       children: [
         _buildPaymentOption(
           title: 'CONTADO',
-          subtitle: 'Pago total de S/ ${precio.toStringAsFixed(2)}',
+          subtitle: 'Pago total de $_simboloMoneda ${precio.toStringAsFixed(2)}',
           isSelected: !_isFinanciado,
           onTap: () => setState(() => _isFinanciado = false),
           icon: Icons.money,
@@ -671,7 +683,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 children: [
                   Text('Cuota inicial (${_selectedPorcentajeInicial.toStringAsFixed(0)}%):',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('S/ ${cuotaInicial.toStringAsFixed(2)}',
+                  Text('$_simboloMoneda ${cuotaInicial.toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -680,7 +692,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('A financiar:', style: TextStyle(fontWeight: FontWeight.w600)),
-                  Text('S/ ${(precio - cuotaInicial).toStringAsFixed(2)}',
+                  Text('$_simboloMoneda ${(precio - cuotaInicial).toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -690,7 +702,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 children: [
                   Text('${_frecuenciasMap[_selectedFrecuenciaPagoId]} por cuota (c/10%):',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text('S/ ${montoCuota.toStringAsFixed(2)}',
+                  Text('$_simboloMoneda ${montoCuota.toStringAsFixed(2)}',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
                 ],
               ),
@@ -700,7 +712,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 children: [
                   const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   Text(
-                    'S/ ${(cuotaInicial + montoCuota * _selectedCuotas).toStringAsFixed(2)}',
+                    '$_simboloMoneda ${(cuotaInicial + montoCuota * _selectedCuotas).toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
                 ],
@@ -741,6 +753,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
   String _simboloPago(VarianteEntity? variante, BeneficioServicioEntity? servicio) {
     final inicial = (variante?.monedaInicialSimbolo ?? '').trim();
     if (inicial.isNotEmpty) return inicial;
+    final inicialDelBeneficio = (servicio?.monedaInicial ?? '').trim();
+    if (inicialDelBeneficio.isNotEmpty) return inicialDelBeneficio;
     final moneda = (servicio?.moneda ?? '').trim();
     if (moneda.isNotEmpty) return moneda;
     return 'S/';
@@ -889,7 +903,7 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'El número de orden será el ID del financiamiento.\n'
+                    'Tu inicial se paga con un código propio, válido por 24 horas: lo verás al confirmar y quedará en tus órdenes de pago.\n'
                     'Realiza el pago en cualquier agente Caja Arequipa.',
                     style: TextStyle(fontSize: 13, color: Colors.blue.shade800),
                   ),
@@ -1046,12 +1060,14 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
       );
 
       // Fase 3 (diseño Canva, pág. 27): alerta previa para que el cliente pague
-      // su primer pago (cuota inicial o inscripción) con su ID de financiamiento.
+      // su primer pago (cuota inicial o inscripción) con el código de pago de la inicial.
       // El taller o comercio lo atiende recién después del pago.
       final double primerPagoMonto = esInscripcion ? montoInscripcion : cuotaInicial;
       if (esFinanciado && primerPagoMonto > 0) {
         await _mostrarAlertaPrimerPago(
           idFinanciamiento: result.idFinanciamiento,
+          codigoPago: result.codigoPagoInicial,
+          vence: result.vencePagoInicial,
           monto: primerPagoMonto,
           esInscripcion: esInscripcion,
           aprobado: result.estadoApp == 'aprobado',
@@ -1109,11 +1125,16 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     }
   }
 
-  /// Fase 3 (diseño Canva, pág. 27): mensaje previo post-solicitud con el ID de
-  /// financiamiento y el primer pago a realizar (cuota inicial o inscripción).
+  /// Fase 3 (diseño Canva, pág. 27): mensaje previo post-solicitud con el código de
+  /// pago y el primer pago a realizar (cuota inicial o inscripción). El código es el
+  /// propio de la inicial (vence a las 24 h): el ID del financiamiento en Caja cobra
+  /// las cuotas, no la inicial. Si la solicitud sigue pendiente aún no hay código: se
+  /// emite al aprobarla y llega por aviso y en las órdenes de pago.
   /// El taller o comercio atiende al cliente recién después de ese pago.
   Future<void> _mostrarAlertaPrimerPago({
     required int idFinanciamiento,
+    required String? codigoPago,
+    required String? vence,
     required double monto,
     required bool esInscripcion,
     required bool aprobado,
@@ -1123,6 +1144,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
     final String cuando = aprobado
         ? 'Realiza el pago en cualquier agente Caja Arequipa.'
         : 'Cuando tu solicitud sea aprobada, realiza el pago en cualquier agente Caja Arequipa.';
+    final bool tieneCodigo = codigoPago != null && codigoPago.isNotEmpty;
+    final DateTime? venceEn = vence == null ? null : DateTime.tryParse(vence)?.toLocal();
 
     await showDialog<void>(
       context: context,
@@ -1139,10 +1162,21 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'ID de financiamiento: $idFinanciamiento',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            if (tieneCodigo) ...[
+              Text(
+                'Código de pago de tu $concepto: $codigoPago',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (venceEn != null)
+                Text(
+                  'Válido hasta el ${DateFormat('dd/MM/yyyy HH:mm').format(venceEn)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
+            ] else
+              Text(
+                'Financiamiento N.° $idFinanciamiento',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             const SizedBox(height: 8),
             Text(
               '${esInscripcion ? 'Inscripción' : 'Cuota inicial'} a pagar: $simbolo ${monto.toStringAsFixed(2)}',
@@ -1152,6 +1186,13 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             Text(
               '$cuando El taller o comercio te atenderá luego de haber pagado tu $concepto.',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              tieneCodigo
+                  ? 'Con el N.° de financiamiento $idFinanciamiento pagarás tus cuotas después.'
+                  : 'Te avisaremos con el código de pago de tu $concepto apenas se apruebe; también lo verás en tus órdenes de pago.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),

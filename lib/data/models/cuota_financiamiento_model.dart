@@ -12,6 +12,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
     required super.idPago,
     super.esInicial,
     super.monedaId,
+    super.montoPendiente,
+    super.descuentos,
   });
 
   factory CuotaFinanciamientoModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,15 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       if (value is String) return int.tryParse(value) ?? 0;
       return 0;
     }
+
+    // TK-0425: descuentos de InDrive/Yango ya restados de esta cuota. Un servidor antiguo no los manda: sin descuentos.
+    final descuentosJson = json["descuentos"];
+    final descuentos = descuentosJson is List
+        ? descuentosJson
+            .whereType<Map>()
+            .map((d) => DescuentoCuotaEntity.fromJson(Map<String, dynamic>.from(d)))
+            .toList()
+        : <DescuentoCuotaEntity>[];
 
     return CuotaFinanciamientoModel(
       id: toInt(json["id"] ?? json["idcuotas_financiamiento"]),
@@ -34,6 +45,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       idPago: toInt(json["idPago"] ?? json["id_pago"] ?? json["pago_id"]),
       esInicial: json["es_inicial"] == true || json["es_inicial"] == 1,
       monedaId: int.tryParse((json["moneda_id"] ?? '').toString()),
+      montoPendiente: double.tryParse((json["monto_pendiente"] ?? '').toString()),
+      descuentos: descuentos,
     );
   }
 
@@ -49,6 +62,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       "idPago": idPago,
       "es_inicial": esInicial,
       "moneda_id": monedaId,
+      "monto_pendiente": montoPendiente,
+      "descuentos": descuentos.map((d) => d.toJson()).toList(),
     };
   }
 
@@ -63,6 +78,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
         idPago: idPago,
         esInicial: esInicial,
         monedaId: monedaId,
+        montoPendiente: montoPendiente,
+        descuentos: descuentos,
       );
 
   @override
@@ -77,6 +94,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
     int? idPago,
     bool? esInicial,
     int? monedaId,
+    double? montoPendiente,
+    List<DescuentoCuotaEntity>? descuentos,
   }) {
     return CuotaFinanciamientoModel(
       id: id ?? this.id,
@@ -89,6 +108,8 @@ class CuotaFinanciamientoModel extends CuotaFinanciamientoEntity {
       idPago: idPago ?? this.idPago,
       esInicial: esInicial ?? this.esInicial,
       monedaId: monedaId ?? this.monedaId,
+      montoPendiente: montoPendiente ?? this.montoPendiente,
+      descuentos: descuentos ?? this.descuentos,
     );
   }
 }

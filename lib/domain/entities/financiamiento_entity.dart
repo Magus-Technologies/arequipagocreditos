@@ -29,6 +29,9 @@ class FinanciamientoEntity {
   final int? aprobado;
   final String? estadoEntrega;
   final String? estadoApp;
+  // Código de pago de la cuota inicial (propio, vence a las 24 h). Distinto del id del financiamiento, con el que Caja cobra las cuotas.
+  final String? codigoPagoInicial;
+  final String? vencePagoInicial;
 
   const FinanciamientoEntity({
     required this.idFinanciamiento,
@@ -60,6 +63,8 @@ class FinanciamientoEntity {
     this.aprobado,
     this.estadoEntrega,
     this.estadoApp,
+    this.codigoPagoInicial,
+    this.vencePagoInicial,
   });
 
   // Getters útiles
@@ -126,6 +131,8 @@ class FinanciamientoEntity {
     int? aprobado,
     String? estadoEntrega,
     String? estadoApp,
+    String? codigoPagoInicial,
+    String? vencePagoInicial,
   }) {
     return FinanciamientoEntity(
       idFinanciamiento: idFinanciamiento ?? this.idFinanciamiento,
@@ -157,6 +164,8 @@ class FinanciamientoEntity {
       aprobado: aprobado ?? this.aprobado,
       estadoEntrega: estadoEntrega ?? this.estadoEntrega,
       estadoApp: estadoApp ?? this.estadoApp,
+      codigoPagoInicial: codigoPagoInicial ?? this.codigoPagoInicial,
+      vencePagoInicial: vencePagoInicial ?? this.vencePagoInicial,
     );
   }
 }

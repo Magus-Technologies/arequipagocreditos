@@ -136,6 +136,8 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         if (empty(_emergenciaTelefonoController))  return 'Ingresa el teléfono del contacto de emergencia';
         if (empty(_emergenciaParentescoController)) return 'Ingresa el parentesco del contacto de emergencia';
         if (Platform.isAndroid) {
+          // TK-0414: la foto de perfil es obligatoria al registrarse (en iOS sigue opcional, como el resto de los documentos).
+          if (_fotoPerfil == null) return 'Sube tu foto de perfil (rostro claro)';
           if (_docDni == null)     return 'Adjunta tu DNI o CE';
           if (_docRecibo == null)  return 'Adjunta el recibo de luz o agua';
           if (_docSustento == null) return 'Adjunta el sustento de ingresos';

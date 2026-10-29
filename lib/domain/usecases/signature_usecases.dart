@@ -14,6 +14,7 @@ class FirmarUseCase {
     required String firmaBase64,
     required String nroDocumento,
     PosicionFirma? posicion,
+    int? version,
   }) async {
     if (firmaBase64.isEmpty) {
       return Either.left(const ValidationFailure('La firma no puede estar vacía'));
@@ -28,6 +29,7 @@ class FirmarUseCase {
       firmaBase64: firmaBase64,
       nroDocumento: nroDocumento,
       posicion: posicion,
+      version: version,
     );
   }
 }

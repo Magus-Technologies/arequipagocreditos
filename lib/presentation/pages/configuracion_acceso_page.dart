@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/biometria_celular.dart';
 import '../../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import 'crear_pin_page.dart';
@@ -11,6 +12,9 @@ import 'crear_pin_page.dart';
 /// guardada de forma segura (DNI + contraseña en FlutterSecureStorage) — el
 /// celular es quien decide, al pedir authenticate(), cual biometria usar
 /// segun lo que la persona ya tenga configurado en su equipo.
+///
+/// TK-0420: face/huella solo se pueden activar si el celular tiene algo REGISTRADO (no basta con que traiga el sensor), y antes
+/// de activarlos se comprueba que funcionen. Si no, se le dice por qué (antes fallaba en silencio y seguía pidiendo el PIN).
 class ConfiguracionAccesoPage extends StatefulWidget {
   const ConfiguracionAccesoPage({super.key});
 
@@ -18,29 +22,42 @@ class ConfiguracionAccesoPage extends StatefulWidget {
   State<ConfiguracionAccesoPage> createState() => _ConfiguracionAccesoPageState();
 }
 
-class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> {
+class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> with WidgetsBindingObserver {
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _loadingCapabilities = true;
-  bool _deviceHasBiometrics = false;
+  BiometriaCelular _bio = const BiometriaCelular(hayHardware: false, tipos: []);
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// La persona pudo ir a Ajustes del celular a registrar su huella o rostro: al volver se vuelve a consultar.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_loadingCapabilities) _refrescarBiometria();
   }
 
   Future<void> _init() async {
     await context.read<AuthProvider>().loadAccessMethodPrefs();
-    bool hasBiometrics = false;
-    try {
-      hasBiometrics = await _localAuth.canCheckBiometrics;
-    } catch (_) {}
+    await _refrescarBiometria();
     if (!mounted) return;
-    setState(() {
-      _deviceHasBiometrics = hasBiometrics;
-      _loadingCapabilities = false;
-    });
+    setState(() => _loadingCapabilities = false);
+  }
+
+  Future<void> _refrescarBiometria() async {
+    final bio = await BiometriaCelular.consultar(_localAuth);
+    if (!mounted) return;
+    setState(() => _bio = bio);
   }
 
   Future<bool> _promptPasswordAndSave(AuthProvider authProvider) async {
@@ -132,12 +149,26 @@ class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> {
     return confirmed ?? false;
   }
 
-  Future<bool> _confirmWithDeviceAuth() async {
+  void _avisar(String? mensaje) {
+    if (mensaje == null || !mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mensaje), duration: const Duration(seconds: 5)));
+  }
+
+  /// Pide la huella/rostro del celular (solo biometría: el PIN del celular no vale, porque al ingresar tampoco se aceptaría) para
+  /// comprobar que de verdad funciona antes de activarla. Si falla por algo que no sea que la persona canceló, se le dice por qué.
+  Future<bool> _confirmarConBiometria() async {
     try {
       return await _localAuth.authenticate(
         localizedReason: 'Confirma tu identidad para activar esta opción',
+        biometricOnly: true,
       );
+    } on LocalAuthException catch (e) {
+      _avisar(mensajeErrorBiometria(e.code));
+      return false;
     } catch (_) {
+      _avisar('No se pudo usar la biometría del celular. Inténtalo de nuevo.');
       return false;
     }
   }
@@ -153,12 +184,14 @@ class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> {
 
     try {
       if (value) {
+        // Primero se comprueba la biometría y recién después se piden/guardan las credenciales: así, si el celular no puede,
+        // no queda nada guardado a medias (con las credenciales guardadas el app ya cuenta la biometría como método de acceso).
+        final confirmed = await _confirmarConBiometria();
+        if (!confirmed) return;
+
         if (!authProvider.hasBiometricCredentials) {
           final ready = await _promptPasswordAndSave(authProvider);
           if (!ready) return;
-        } else {
-          final confirmed = await _confirmWithDeviceAuth();
-          if (!confirmed) return;
         }
       }
       await set(value);
@@ -271,10 +304,8 @@ class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> {
                                   icon: Icons.face_retouching_natural,
                                   color: const Color(0xFF8B5CF6),
                                   title: 'Reconocimiento facial',
-                                  subtitle: _deviceHasBiometrics
-                                      ? 'Usa el reconocimiento facial de tu celular'
-                                      : 'No disponible en este dispositivo',
-                                  enabled: _deviceHasBiometrics,
+                                  subtitle: _bio.motivoNoDisponible(rostro: true) ?? _bio.descripcion(rostro: true),
+                                  enabled: _bio.motivoNoDisponible(rostro: true) == null,
                                   value: authProvider.accessFaceEnabled,
                                   onChanged: (v) => _onToggle(
                                     value: v,
@@ -286,10 +317,8 @@ class _ConfiguracionAccesoPageState extends State<ConfiguracionAccesoPage> {
                                   icon: Icons.fingerprint,
                                   color: const Color(0xFF10B981),
                                   title: 'Huella dactilar',
-                                  subtitle: _deviceHasBiometrics
-                                      ? 'Usa tu huella dactilar'
-                                      : 'No disponible en este dispositivo',
-                                  enabled: _deviceHasBiometrics,
+                                  subtitle: _bio.motivoNoDisponible(rostro: false) ?? _bio.descripcion(rostro: false),
+                                  enabled: _bio.motivoNoDisponible(rostro: false) == null,
                                   value: authProvider.accessFingerprintEnabled,
                                   onChanged: (v) => _onToggle(
                                     value: v,
