@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../theme/app_theme.dart';
+import '../components/evento_invitado_aviso.dart';
 import 'auth_bottom_nav.dart';
 import 'conductor_estado_page.dart';
 import 'register_selection_page.dart';
@@ -13,6 +14,15 @@ class WelcomePage extends StatelessWidget {
   Future<int?> _solicitudGuardada() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(AppConstants.conductorPreRegistroIdKey);
+  }
+
+  void _abrirIniciarSesion(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AuthBottomNav(),
+      ),
+    );
   }
 
   @override
@@ -32,6 +42,9 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Hay un evento activo y la persona todavía no inició sesión: sale una ventana flotante con el banner y se la lleva a
+              // iniciar sesión, donde ve el detalle y compra. No ocupa lugar en la pantalla (es solo el disparador).
+              EventoInvitadoAviso(onIniciarSesion: () => _abrirIniciarSesion(context)),
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -95,14 +108,7 @@ class WelcomePage extends StatelessWidget {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AuthBottomNav(),
-                      ),
-                    );
-                  },
+                  onPressed: () => _abrirIniciarSesion(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,

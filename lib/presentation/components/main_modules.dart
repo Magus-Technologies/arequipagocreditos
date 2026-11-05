@@ -2,6 +2,7 @@ import 'package:arequipagocreditos/presentation/components/components.dart';
 import 'package:arequipagocreditos/presentation/pages/pages.dart';
 import 'package:arequipagocreditos/presentation/pages/servicios_taller_page.dart';
 import 'package:arequipagocreditos/presentation/pages/documentos_firmados_page.dart';
+import 'package:arequipagocreditos/presentation/pages/eventos_page.dart';
 import 'package:arequipagocreditos/presentation/pages/comercios_go_page.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/theme/app_theme.dart';
@@ -65,6 +66,14 @@ class MainModules extends StatelessWidget {
         backgroundColor: const Color(0xFF7C3AED),
         iconColor: Colors.white,
         page: const OrdenesPagoPage(),
+      ),
+      _ModuloConfig(
+        icon: Icons.celebration,
+        title: 'Eventos',
+        subtitle: 'Próximos y realizados',
+        backgroundColor: const Color(0xFFDB2777),
+        iconColor: Colors.white,
+        page: const EventosPage(),
       ),
       _ModuloConfig(
         icon: Icons.fact_check,

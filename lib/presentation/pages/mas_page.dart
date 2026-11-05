@@ -1,6 +1,7 @@
 import 'package:arequipagocreditos/core/utils/model_adapters.dart';
 import 'package:arequipagocreditos/presentation/pages/configuracion_acceso_page.dart';
 import 'package:arequipagocreditos/presentation/pages/cupones_page.dart';
+import 'package:arequipagocreditos/presentation/pages/eventos_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mi_nivel_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mis_financiamientos_page.dart';
 import 'package:arequipagocreditos/presentation/pages/ordenes_pago_page.dart';
@@ -29,6 +30,12 @@ class MasPage extends StatelessWidget {
         title: 'Cupones',
         color: AppTheme.primary,
         page: const CuponesPage(),
+      ),
+      _MasItem(
+        icon: Icons.celebration,
+        title: 'Eventos',
+        color: const Color(0xFFDB2777),
+        page: const EventosPage(),
       ),
       _MasItem(
         icon: Icons.qr_code_2,

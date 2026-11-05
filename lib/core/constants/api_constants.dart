@@ -64,6 +64,15 @@ class ApiConstants {
   static const String comerciosCategoriasEndpoint = '/app/comercios-list/categorias';
   static const String comerciosBannersEndpoint = '/app/promociones/comercios/banners';
 
+  // Eventos (tickets): todos son públicos y piden cliente_conductor_id + nro_documento.
+  static const String eventosListaEndpoint = '/app/eventos';
+  static const String eventoActivoEndpoint = '/app/eventos/activo';
+  static const String eventoMisComprasEndpoint = '/app/eventos/mis-compras';
+  static const String eventoComprasEndpoint = '/app/eventos/{id}/compras';
+  static const String eventoCompraCapturaEndpoint = '/app/eventos/compras/{id}/captura';
+  static const String eventoCompraTicketPdfEndpoint = '/app/eventos/compras/{id}/ticket.pdf';
+  static const String eventoCompraCancelarEndpoint = '/app/eventos/compras/{id}/cancelar';
+
   static const String cuponesEndpoint = '/app/promociones/cupones/listar';
   static const String firmarEndpoint = '/app/firmar/{tipo}/{id}';
 

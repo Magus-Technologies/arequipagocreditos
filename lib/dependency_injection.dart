@@ -16,6 +16,7 @@ import 'data/datasources/catalogos_remote_datasource.dart';
 import 'data/datasources/ordenes_pago_remote_datasource.dart';
 import 'data/datasources/nivel_taller_remote_datasource.dart';
 import 'data/datasources/comercio_remote_datasource.dart';
+import 'data/datasources/evento_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cupones_repository_impl.dart';
 import 'data/repositories/cupones_public_repository_impl.dart';
@@ -27,6 +28,7 @@ import 'data/repositories/catalogos_repository_impl.dart';
 import 'data/repositories/ordenes_pago_repository_impl.dart';
 import 'data/repositories/nivel_taller_repository_impl.dart';
 import 'data/repositories/comercio_repository_impl.dart';
+import 'data/repositories/evento_repository_impl.dart';
 
 // Domain Layer
 import 'domain/repositories/auth_repository.dart';
@@ -40,6 +42,7 @@ import 'domain/repositories/catalogos_repository.dart';
 import 'domain/repositories/ordenes_pago_repository.dart';
 import 'domain/repositories/nivel_taller_repository.dart';
 import 'domain/repositories/comercio_repository.dart';
+import 'domain/repositories/evento_repository.dart';
 import 'domain/usecases/auth_usecases.dart';
 import 'domain/usecases/cupones_usecases.dart';
 import 'domain/usecases/get_public_cupones_usecase.dart';
@@ -70,6 +73,7 @@ import 'presentation/providers/catalogos_provider.dart';
 import 'presentation/providers/ordenes_pago_provider.dart';
 import 'presentation/providers/nivel_taller_provider.dart';
 import 'presentation/providers/comercios_provider.dart';
+import 'presentation/providers/evento_provider.dart';
 
 class DependencyInjection {
   static List<ChangeNotifierProvider> get providers => [
@@ -180,6 +184,17 @@ class DependencyInjection {
         getPromocionesBannersUseCase: _getGetComercioPromocionesBannersUseCase(),
       ),
     ),
+    // Eventos (tickets): sin casos de uso, el provider habla directo con el repositorio (cada caso de uso sería una línea
+    // que solo reenvía la llamada).
+    ChangeNotifierProvider<EventoProvider>(
+      create: (context) {
+        final provider = EventoProvider(repository: _eventoRepository);
+        // Al cerrar sesión (o entrar otra persona) se descartan el evento y las compras de la anterior.
+        final auth = context.read<AuthProvider>();
+        provider.vincularSesion(auth, () => auth.currentUser?.idConductor);
+        return provider;
+      },
+    ),
   ];
 
   // Repositories
@@ -227,6 +242,9 @@ class DependencyInjection {
   static ComercioRepository get _comercioRepository =>
       ComercioRepositoryImpl(remoteDataSource: _comercioRemoteDataSource);
 
+  static EventoRepository get _eventoRepository =>
+      EventoRepositoryImpl(remoteDataSource: _eventoRemoteDataSource);
+
   // DataSources
   static AuthRemoteDataSource get _authRemoteDataSource =>
       AuthRemoteDataSourceImpl(client: _httpClient);
@@ -265,6 +283,9 @@ class DependencyInjection {
 
   static ComercioRemoteDataSource get _comercioRemoteDataSource =>
       ComercioRemoteDataSourceImpl(client: _httpClient);
+
+  static EventoRemoteDataSource get _eventoRemoteDataSource =>
+      EventoRemoteDataSourceImpl(client: _httpClient);
 
   // Network
   static http.Client get _httpClient => http.Client();

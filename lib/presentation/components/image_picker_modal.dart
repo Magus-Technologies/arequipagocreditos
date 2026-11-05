@@ -3,14 +3,18 @@ import 'package:arequipagocreditos/theme/app_theme.dart';
 
 class ImagePickerModal extends StatelessWidget {
   final VoidCallback onGalleryTap;
-  final VoidCallback onFileTap;
+
+  /// Sin esta opción no se dibuja el botón «Archivos» (p. ej. la captura de un pago solo ofrece galería y cámara).
+  final VoidCallback? onFileTap;
   final VoidCallback onCameraTap;
+  final String title;
 
   const ImagePickerModal({
     super.key,
     required this.onGalleryTap,
     required this.onFileTap,
     required this.onCameraTap,
+    this.title = 'Seleccionar foto de perfil',
   });
 
   @override
@@ -40,7 +44,7 @@ class ImagePickerModal extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Seleccionar foto de perfil',
+                title,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -56,11 +60,12 @@ class ImagePickerModal extends StatelessWidget {
                     label: 'Galería',
                     onTap: onGalleryTap,
                   ),
-                  _buildOptionButton(
-                    icon: Icons.folder,
-                    label: 'Archivos',
-                    onTap: onFileTap,
-                  ),
+                  if (onFileTap != null)
+                    _buildOptionButton(
+                      icon: Icons.folder,
+                      label: 'Archivos',
+                      onTap: onFileTap!,
+                    ),
                   _buildOptionButton(
                     icon: Icons.photo_camera,
                     label: 'Cámara',

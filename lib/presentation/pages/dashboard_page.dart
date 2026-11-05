@@ -7,6 +7,8 @@ import '../../core/utils/actualizacion_app_gate.dart';
 import '../../core/utils/adenda_pendiente_gate.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../core/utils/datos_pendientes_gate.dart';
+import '../../core/utils/evento_gate.dart';
+import '../components/evento_acceso_card.dart';
 import 'perfil_page.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
@@ -24,6 +26,9 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // Eventos: se pide el evento activo ya, sin esperar a los avisos de abajo, para que la entrada fija del inicio aparezca
+      // enseguida. No se espera (unawaited): nunca retrasa ni bloquea el resto.
+      EventoGate.precargar(context);
       // El aviso de actualizacion va primero: si es obligatorio, bloquea el uso.
       await ActualizacionAppGate.verificar(context);
       if (mounted) {
@@ -36,6 +41,10 @@ class _DashboardPageState extends State<DashboardPage> {
       // TK-0357: datos por actualizar (foto de perfil, DNI, SOAT). Al final: es un aviso, no una firma obligatoria.
       if (mounted) {
         await DatosPendientesGate.checkOnDashboard(context);
+      }
+      // Eventos (tickets): el aviso con el banner va al FINAL de la cadena, para no pisar los avisos de firma ni de datos.
+      if (mounted) {
+        await EventoGate.checkOnDashboard(context);
       }
     });
   }
@@ -145,6 +154,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                 MaterialPageRoute(builder: (_) => const PerfilPage()),
                               ),
                             ),
+                            // Entrada fija a «Mis tickets»: solo se ve mientras haya un evento activo.
+                            const EventoAccesoCard(),
                             // Sección de módulos principales (incluye la
                             // tarjeta "Mis Financiamientos", ahora su propia
                             // pantalla en vez de vivir inline acá).

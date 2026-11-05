@@ -69,6 +69,7 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
   static const int _nearExpiryDays = 7;
   DateTime? _pausedAt;
   bool _firmaPendiente = false;
+  bool _ofertaBiometricaAbierta = false;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   @override
@@ -123,6 +124,70 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
     }
   }
 
+  /// Pregunta si quiere activar huella/rostro. Antes los botones del diálogo usaban el `context` del `Consumer` de [build] (el
+  /// builder del diálogo ignoraba el suyo): si ese contexto ya estaba desactivado al tocar «Activar» o «No, gracias» (el
+  /// `Consumer` se reconstruye en cada cambio del estado de sesión) salía «Looking up a deactivated widget's ancestor is unsafe»
+  /// y el botón no hacía nada. Ahora los botones usan el contexto del propio diálogo y el [AuthProvider] se toma ANTES de
+  /// mostrarlo (vive por encima del MaterialApp). Además cada reconstrucción del `Consumer` agendaba otro diálogo y se apilaban:
+  /// [_ofertaBiometricaAbierta] deja solo uno.
+  Future<void> _ofrecerBiometria(BuildContext context, {required bool viaRelogin}) async {
+    if (_ofertaBiometricaAbierta || !context.mounted) return;
+    _ofertaBiometricaAbierta = true;
+    try {
+      final auth = context.read<AuthProvider>();
+      // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
+      final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
+      if (!mounted || !context.mounted) return;
+      if (!canAuth) {
+        auth.declineBiometricSetup();
+        return;
+      }
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Acceso biométrico'),
+          content: Text(
+            viaRelogin
+                ? '¿Deseas activar el inicio de sesión con huella o Face ID? Necesitarás ingresar tus credenciales una vez para configurarlo.'
+                : '¿Deseas activar el inicio de sesión con huella o Face ID para la próxima vez?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                auth.declineBiometricSetup();
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('No, gracias'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                if (viaRelogin) {
+                  Navigator.pop(dialogContext);
+                  auth.logout(clearBiometric: false);
+                  return;
+                }
+                // Primero se guardan las credenciales (el diálogo sigue abierto, así nada lo vuelve a ofrecer) y luego se cierra.
+                try {
+                  await auth.acceptBiometricSetup();
+                } finally {
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                }
+              },
+              child: const Text('Activar'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _ofertaBiometricaAbierta = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -138,86 +203,11 @@ class _AppWrapperState extends State<AppWrapper> with WidgetsBindingObserver {
             if (authProvider.isLocked) {
               return const IngresarPinPage();
             }
-            // Ofrecer configuración biométrica tras login manual con credenciales disponibles
-            if (authProvider.needsBiometricSetupOffer) {
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                if (!context.mounted) return;
-                // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
-                final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
-                if (!context.mounted) return;
-                if (!canAuth) {
-                  context.read<AuthProvider>().declineBiometricSetup();
-                  return;
-                }
-                showDialog<void>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Acceso biométrico'),
-                    content: const Text('¿Deseas activar el inicio de sesión con huella o Face ID para la próxima vez?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthProvider>().declineBiometricSetup();
-                        },
-                        child: const Text('No, gracias'),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          await context.read<AuthProvider>().acceptBiometricSetup();
-                        },
-                        child: const Text('Activar'),
-                      ),
-                    ],
-                  ),
-                );
-              });
-            } else if (authProvider.needsBiometricSetupViaRelogin) {
-              // Sesión restaurada automáticamente sin pasar por login manual
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                if (!context.mounted) return;
-                // TK-0420: solo se ofrece si el celular tiene huella/rostro REGISTRADOS (no basta el sensor ni el bloqueo de pantalla).
-                final canAuth = (await BiometriaCelular.consultar(_localAuth)).hayConfigurada;
-                if (!context.mounted) return;
-                if (!canAuth) {
-                  context.read<AuthProvider>().declineBiometricSetup();
-                  return;
-                }
-                showDialog<void>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Acceso biométrico'),
-                    content: const Text('¿Deseas activar el inicio de sesión con huella o Face ID? Necesitarás ingresar tus credenciales una vez para configurarlo.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthProvider>().declineBiometricSetup();
-                        },
-                        child: const Text('No, gracias'),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthProvider>().logout(clearBiometric: false);
-                        },
-                        child: const Text('Activar'),
-                      ),
-                    ],
-                  ),
-                );
-              });
+            // Ofrecer configuración biométrica: tras un login manual con credenciales disponibles, o con la sesión restaurada sin
+            // pasar por el login (en ese caso hay que volver a ingresar las credenciales una vez).
+            if (authProvider.needsBiometricSetupOffer || authProvider.needsBiometricSetupViaRelogin) {
+              final viaRelogin = !authProvider.needsBiometricSetupOffer;
+              WidgetsBinding.instance.addPostFrameCallback((_) => _ofrecerBiometria(context, viaRelogin: viaRelogin));
             }
             // Procesar notificación pendiente (app abierta desde estado terminado)
             if (NotificationService.pendingNotificationData != null) {
