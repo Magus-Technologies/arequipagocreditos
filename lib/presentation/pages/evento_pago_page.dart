@@ -161,6 +161,8 @@ class _EventoPagoPageState extends State<EventoPagoPage> {
             final pendiente = compra.estadoCompra == EstadoCompra.pendiente;
             final confirmado = compra.estadoCompra == EstadoCompra.confirmado;
             final lugar = provider.evento?.id == compra.eventoId ? provider.evento?.lugar : null;
+            // El enlace viene con la propia compra; si no (servidor viejo), del evento cargado.
+            final mapaUrl = compra.mapaUrl ?? (provider.evento?.id == compra.eventoId ? provider.evento?.mapaUrl : null);
 
             // Margen lateral de las tarjetas: el ticket va con el suyo adentro del `RepaintBoundary` (para que la imagen que se
             // comparte lleve su sombra completa).
@@ -199,6 +201,12 @@ class _EventoPagoPageState extends State<EventoPagoPage> {
                   if (confirmado) ...[
                     const SizedBox(height: 2),
                     conMargen(EventoTicketAcciones(compra: compra, capturaKey: _ticketKey)),
+                  ],
+                  // «Cómo llegar» bajo el ticket, con la compra pendiente o confirmada (cuando hay ticket en pantalla). FUERA del ticket: no
+                  // sale en la imagen que se comparte (el PDF ya trae el enlace escrito).
+                  if ((pendiente || confirmado) && mapaUrl != null) ...[
+                    const SizedBox(height: 10),
+                    conMargen(EventoBotonMapa(url: mapaUrl)),
                   ],
                   // El QR para PAGAR solo para una compra vieja sin captura: las nuevas ya se registran pagadas y con captura.
                   if (pendiente && !compra.tieneCaptura && compra.qrUrl != null) ...[

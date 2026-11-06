@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/evento_models.dart';
 import '../../theme/app_theme.dart';
 
@@ -261,6 +262,69 @@ class EventoBotonComprar extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// «Cómo llegar»: abre el enlace del mapa del evento (Google Maps) en la aplicación de mapas del celular, o en el navegador si no hay. Si no
+/// se puede abrir avisa con un mensaje en vez de quedarse mudo. `compacto` es un texto con ícono para ponerlo bajo el lugar; sin él es un
+/// botón de ancho completo.
+class EventoBotonMapa extends StatelessWidget {
+  final String url;
+  final bool compacto;
+
+  /// Cómo se abre el enlace. Las pruebas lo cambian para no lanzar nada de verdad.
+  static Future<bool> Function(Uri) abridor = (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
+
+  const EventoBotonMapa({super.key, required this.url, this.compacto = false});
+
+  Future<void> _abrir(BuildContext context) async {
+    final uri = Uri.tryParse(url);
+    var abierto = false;
+    if (uri != null) {
+      try {
+        abierto = await abridor(uri);
+      } catch (_) {
+        abierto = false;
+      }
+    }
+    if (!abierto && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo abrir el mapa. Inténtalo de nuevo.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (compacto) {
+      return TextButton.icon(
+        key: const Key('evento_mapa_compacto'),
+        onPressed: () => _abrir(context),
+        icon: const Icon(Icons.directions_rounded, size: 18),
+        label: const Text('Cómo llegar', style: TextStyle(fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF1A56DB),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        key: const Key('evento_boton_mapa'),
+        onPressed: () => _abrir(context),
+        icon: const Icon(Icons.directions_rounded, size: 20),
+        label: const Text('Cómo llegar', style: TextStyle(fontWeight: FontWeight.bold)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

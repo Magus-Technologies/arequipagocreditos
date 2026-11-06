@@ -48,6 +48,16 @@ String? _toUrl(dynamic value) {
   return ApiConstants.normalizeUrl(texto);
 }
 
+/// Enlace del mapa (Google Maps u otro): solo se acepta un enlace http o https. Cualquier otra cosa (vacío, «javascript:», texto suelto) es «sin mapa»:
+/// el botón «Cómo llegar» no aparece en vez de abrir algo raro.
+String? _toEnlace(dynamic value) {
+  final texto = _toText(value);
+  if (texto == null) return null;
+  final uri = Uri.tryParse(texto);
+  if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty) return null;
+  return texto;
+}
+
 /// Cuántos tickets lleva esta persona en el evento y cuántos más puede comprar (tope por persona).
 class MisTicketsModel {
   final int comprados;
@@ -69,6 +79,9 @@ class EventoModel {
   final String? descripcion;
   final String? lugar;
 
+  /// Enlace de Google Maps del lugar (opcional). Con él las pantallas del evento ofrecen «Cómo llegar».
+  final String? mapaUrl;
+
   /// Instante del evento en UTC. Para mostrarlo usar `EventoFormato.fechaHora` (hora de Lima).
   final DateTime? fechaHora;
   final String? bannerUrl;
@@ -89,6 +102,7 @@ class EventoModel {
     required this.nombre,
     this.descripcion,
     this.lugar,
+    this.mapaUrl,
     this.fechaHora,
     this.bannerUrl,
     this.precioTicket = 0,
@@ -106,6 +120,7 @@ class EventoModel {
       nombre: _toText(json['nombre']) ?? 'Evento',
       descripcion: _toText(json['descripcion']),
       lugar: _toText(json['lugar']),
+      mapaUrl: _toEnlace(json['mapa_url']),
       fechaHora: _toDate(json['fecha_hora']),
       bannerUrl: _toUrl(json['banner_url']),
       precioTicket: _toDouble(json['precio_ticket']),
@@ -123,6 +138,7 @@ class EventoModel {
       nombre: nombre,
       descripcion: descripcion,
       lugar: lugar,
+      mapaUrl: mapaUrl,
       fechaHora: fechaHora,
       bannerUrl: bannerUrl,
       precioTicket: precioTicket,
@@ -133,6 +149,9 @@ class EventoModel {
       misTickets: misTickets ?? this.misTickets,
     );
   }
+
+  /// ¿El evento trae un enlace de mapa que se puede abrir?
+  bool get tieneMapa => mapaUrl != null;
 }
 
 /// Lo que muestra la pantalla «Eventos»: los próximos (del más cercano al más lejano) y los ya realizados (el más reciente primero).
@@ -174,6 +193,9 @@ class EventoCompraModel {
   final String? motivoRechazo;
   final String? capturaUrl;
   final String? qrUrl;
+
+  /// Enlace de Google Maps del lugar del evento (opcional): el ticket ofrece «Cómo llegar» con él.
+  final String? mapaUrl;
   final bool puedeSubirCaptura;
   final bool puedeCancelar;
   final DateTime? creadoEn;
@@ -191,6 +213,7 @@ class EventoCompraModel {
     this.motivoRechazo,
     this.capturaUrl,
     this.qrUrl,
+    this.mapaUrl,
     this.puedeSubirCaptura = false,
     this.puedeCancelar = false,
     this.creadoEn,
@@ -210,6 +233,7 @@ class EventoCompraModel {
       motivoRechazo: _toText(json['motivo_rechazo']),
       capturaUrl: _toUrl(json['captura_url']),
       qrUrl: _toUrl(json['qr_url']),
+      mapaUrl: _toEnlace(json['mapa_url']),
       puedeSubirCaptura: _toBool(json['puede_subir_captura']),
       puedeCancelar: _toBool(json['puede_cancelar']),
       creadoEn: _toDate(json['creado_en']),

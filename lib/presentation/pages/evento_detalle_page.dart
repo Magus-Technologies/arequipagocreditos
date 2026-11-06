@@ -66,6 +66,12 @@ class _EventoDetallePageState extends State<EventoDetallePage> {
                   if (evento.lugar != null) ...[
                     const SizedBox(height: 12),
                     _dato(Icons.place_rounded, 'Lugar', evento.lugar!),
+                    // «Cómo llegar» debajo del lugar, alineado con su texto (ícono de 34 px + 12 de separación).
+                    if (evento.tieneMapa)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 46, top: 2),
+                        child: Align(alignment: Alignment.centerLeft, child: EventoBotonMapa(url: evento.mapaUrl!, compacto: true)),
+                      ),
                   ],
                   if (!widget.realizado && evento.precioTicket > 0) ...[
                     const SizedBox(height: 12),
