@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../presentation/pages/perfil_page.dart';
+import '../../presentation/pages/actualizar_datos_page.dart';
 import '../../presentation/providers/auth_provider.dart';
 
 /// TK-0357: ventana flotante de los DATOS POR ACTUALIZAR (foto de perfil, DNI y SOAT de Flota).
@@ -83,7 +83,7 @@ class DatosPendientesGate {
     );
 
     if (actualizar == true && context.mounted) {
-      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PerfilPage()));
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ActualizarDatosPage()));
     }
   }
 }

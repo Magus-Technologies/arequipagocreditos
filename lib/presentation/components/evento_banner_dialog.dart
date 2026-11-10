@@ -9,9 +9,9 @@ import 'evento_widgets.dart';
 /// Aviso que sale al entrar al inicio cuando hay un evento activo: el banner, el nombre y la fecha.
 /// Cierra con `true` si la persona quiere comprar (toca el banner o el botón) y con `false`/null si dice «Ahora no».
 ///
-/// Con `invitado` es el aviso de ANTES de iniciar sesión (pantalla de bienvenida): lleva la etiqueta «NUEVO EVENTO» sobre el banner,
-/// no muestra el lugar ni el precio (eso queda detrás del inicio de sesión) y el botón dice «Ver más detalle · Inicia sesión para
-/// continuar». Cierra con `true` si la persona quiere iniciar sesión.
+/// Con `invitado` es el aviso de ANTES de iniciar sesión (pantalla de bienvenida, TK-0450): el evento es PÚBLICO, así que lleva la
+/// etiqueta «NUEVO EVENTO» sobre el banner, muestra el lugar y el precio y el botón dice «Ver evento y comprar» (cierra con `true`: se
+/// abre el detalle, donde compra sin necesidad de cuenta). Debajo, «Ya tengo cuenta · Iniciar sesión» cierra con `'sesion'`.
 class EventoBannerDialog extends StatelessWidget {
   final EventoModel evento;
   final bool invitado;
@@ -72,19 +72,26 @@ class EventoBannerDialog extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(fecha, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
                     ],
-                    if (!invitado && evento.lugar != null) ...[
+                    if (evento.lugar != null) ...[
                       const SizedBox(height: 2),
                       Text(evento.lugar!, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
                     ],
                     const SizedBox(height: 16),
                     EventoBotonComprar(
                       key: Key(invitado ? 'evento_invitado_boton' : 'evento_banner_comprar'),
-                      texto: invitado ? 'Ver más detalle' : 'Comprar tickets',
-                      subtexto: invitado
-                          ? 'Inicia sesión para continuar'
-                          : (evento.precioTicket > 0 ? '${EventoFormato.monto(evento.precioTicket)} por ticket' : null),
+                      texto: invitado ? 'Ver evento y comprar' : 'Comprar tickets',
+                      subtexto: evento.precioTicket > 0 ? '${EventoFormato.monto(evento.precioTicket)} por ticket' : null,
                       onPressed: () => Navigator.of(context).pop(true),
                     ),
+                    if (invitado)
+                      Align(
+                        alignment: Alignment.center,
+                        child: TextButton(
+                          key: const Key('evento_invitado_iniciar_sesion'),
+                          onPressed: () => Navigator.of(context).pop('sesion'),
+                          child: const Text('Ya tengo cuenta · Iniciar sesión'),
+                        ),
+                      ),
                   ],
                 ),
               ),

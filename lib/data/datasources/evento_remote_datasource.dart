@@ -4,16 +4,19 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import '../../core/errors/exceptions.dart';
+import '../models/evento_invitado.dart';
 import '../models/evento_models.dart';
 
-/// Endpoints públicos `/app/eventos/...` (sin token). Todos piden `cliente_conductor_id` + `nro_documento`
-/// (deben coincidir), salvo `activo`, donde son opcionales.
+/// Endpoints públicos `/app/eventos/...` (sin token). Los de una persona REGISTRADA piden `cliente_conductor_id` + `nro_documento`
+/// (deben coincidir); en la lista y en `activo` son opcionales (con ellos se ven también los eventos privados). Los de un INVITADO
+/// (TK-0450: compra de un evento público sin cuenta) piden `nro_documento` + `telefono` del comprador.
 ///
 /// Los errores de negocio (422 tope excedido, evento vencido, 403, 404) salen como [ValidationException] con el mensaje del
 /// servidor, listo para mostrarse; lo demás (red, 5xx) sale como [ServerException].
 abstract class EventoRemoteDataSource {
-  /// Todos los eventos que se pueden ver: los próximos y los ya realizados. No pide persona.
-  Future<EventosListaModel> getEventos();
+  /// Los eventos que se pueden ver: los próximos y los ya realizados. Sin persona, solo los PÚBLICOS; con persona válida, también los
+  /// privados.
+  Future<EventosListaModel> getEventos({int? clienteConductorId, String? nroDocumento});
 
   /// Evento activo más próximo, o null si no hay.
   Future<EventoModel?> getEventoActivo({int? clienteConductorId, String? nroDocumento});
@@ -48,6 +51,34 @@ abstract class EventoRemoteDataSource {
     required int clienteConductorId,
     required String nroDocumento,
   });
+
+  // ---------------------------------------------------------------------------------------------------------------------
+  // Invitado (sin cuenta): eventos PÚBLICOS
+
+  /// El evento público completo (términos, política y QR de pago incluidos), o null si ya no está disponible o no es público.
+  Future<EventoModel?> getEventoPublico(int eventoId);
+
+  Future<EventoCompraModel> registrarCompraInvitado({
+    required int eventoId,
+    required EventoInvitado invitado,
+    required int cantidad,
+    required File captura,
+  });
+
+  Future<List<EventoCompraModel>> getMisComprasInvitado({required String nroDocumento, required String telefono});
+
+  Future<EventoCompraModel> subirCapturaInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+    required File captura,
+  });
+
+  Future<Uint8List> descargarTicketPdfInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+  });
 }
 
 class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
@@ -65,6 +96,19 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
   Map<String, String> _persona(int clienteConductorId, String nroDocumento) => {
         'cliente_conductor_id': clienteConductorId.toString(),
         'nro_documento': nroDocumento,
+      };
+
+  /// Qué eventos se piden en la lista y en «activo»: con la persona de la sesión (id + documento) el servidor devuelve los públicos Y
+  /// los privados; SIN sesión se manda `solo_publicos=1` (así solo salen los públicos). Un app antiguo que no manda ninguno de los dos
+  /// recibe todo, como hasta ahora: por eso el app nuevo sin sesión lo dice explícitamente.
+  Map<String, String> _filtroVisibilidad(int? clienteConductorId, String? nroDocumento) {
+    if (clienteConductorId == null || nroDocumento == null || nroDocumento.isEmpty) return const {'solo_publicos': '1'};
+    return _persona(clienteConductorId, nroDocumento);
+  }
+
+  Map<String, String> _comprador(String nroDocumento, String telefono) => {
+        'nro_documento': nroDocumento,
+        'telefono': telefono,
       };
 
   Map<String, dynamic>? _decode(http.Response response) {
@@ -122,6 +166,12 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
     return EventoCompraModel.fromJson(Map<String, dynamic>.from(data));
   }
 
+  List<EventoCompraModel> _compras(Map<String, dynamic> body) {
+    final data = body['data'];
+    if (data is! List) return const [];
+    return data.whereType<Map>().map((c) => EventoCompraModel.fromJson(Map<String, dynamic>.from(c))).toList();
+  }
+
   Future<T> _proteger<T>(Future<T> Function() accion) async {
     try {
       return await accion();
@@ -133,10 +183,13 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
   }
 
   @override
-  Future<EventosListaModel> getEventos() {
+  Future<EventosListaModel> getEventos({int? clienteConductorId, String? nroDocumento}) {
     return _proteger(() async {
       final response = await client
-          .get(_uri(ApiConstants.eventosListaEndpoint), headers: ApiConstants.defaultHeaders)
+          .get(
+            _uri(ApiConstants.eventosListaEndpoint, _filtroVisibilidad(clienteConductorId, nroDocumento)),
+            headers: ApiConstants.defaultHeaders,
+          )
           .timeout(ApiConstants.receiveTimeout);
 
       final data = _exigirExito(response)['data'];
@@ -150,12 +203,7 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
     return _proteger(() async {
       final response = await client
           .get(
-            _uri(
-              ApiConstants.eventoActivoEndpoint,
-              clienteConductorId != null && nroDocumento != null && nroDocumento.isNotEmpty
-                  ? _persona(clienteConductorId, nroDocumento)
-                  : null,
-            ),
+            _uri(ApiConstants.eventoActivoEndpoint, _filtroVisibilidad(clienteConductorId, nroDocumento)),
             headers: ApiConstants.defaultHeaders,
           )
           .timeout(ApiConstants.receiveTimeout);
@@ -177,12 +225,7 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
           )
           .timeout(ApiConstants.receiveTimeout);
 
-      final data = _exigirExito(response)['data'];
-      if (data is! List) return const [];
-      return data
-          .whereType<Map>()
-          .map((c) => EventoCompraModel.fromJson(Map<String, dynamic>.from(c)))
-          .toList();
+      return _compras(_exigirExito(response));
     });
   }
 
@@ -231,29 +274,35 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
     });
   }
 
+  /// Baja el PDF del ticket (con o sin persona: `consulta` trae los datos que piden las dos variantes). Un error del servidor sale
+  /// con su mensaje.
+  Future<Uint8List> _bajarPdf(String path, Map<String, String> consulta) async {
+    final response = await client
+        .get(
+          _uri(path, consulta),
+          // Con «json» en el Accept, Laravel contesta los errores en JSON (con su mensaje) y no con una página HTML.
+          headers: const {'Accept': 'application/pdf, application/json'},
+        )
+        .timeout(const Duration(seconds: 60));
+
+    final tipo = (response.headers['content-type'] ?? '').toLowerCase();
+    if (response.statusCode == 200 && tipo.contains('application/pdf') && response.bodyBytes.isNotEmpty) {
+      return response.bodyBytes;
+    }
+    // Un error del servidor (422 «se habilita cuando confirmemos tu pago», 403, 404…) sale con su mensaje.
+    _exigirExito(response);
+    throw const ServerException('El servidor no devolvió el ticket. Intenta nuevamente.');
+  }
+
   @override
   Future<Uint8List> descargarTicketPdf({
     required int compraId,
     required int clienteConductorId,
     required String nroDocumento,
   }) {
-    return _proteger(() async {
+    return _proteger(() {
       final path = ApiConstants.eventoCompraTicketPdfEndpoint.replaceAll('{id}', compraId.toString());
-      final response = await client
-          .get(
-            _uri(path, _persona(clienteConductorId, nroDocumento)),
-            // Con «json» en el Accept, Laravel contesta los errores en JSON (con su mensaje) y no con una página HTML.
-            headers: const {'Accept': 'application/pdf, application/json'},
-          )
-          .timeout(const Duration(seconds: 60));
-
-      final tipo = (response.headers['content-type'] ?? '').toLowerCase();
-      if (response.statusCode == 200 && tipo.contains('application/pdf') && response.bodyBytes.isNotEmpty) {
-        return response.bodyBytes;
-      }
-      // Un error del servidor (422 «se habilita cuando confirmemos tu pago», 403, 404…) sale con su mensaje.
-      _exigirExito(response);
-      throw const ServerException('El servidor no devolvió el ticket. Intenta nuevamente.');
+      return _bajarPdf(path, _persona(clienteConductorId, nroDocumento));
     });
   }
 
@@ -277,6 +326,96 @@ class EventoRemoteDataSourceImpl implements EventoRemoteDataSource {
           .timeout(ApiConstants.receiveTimeout);
 
       return _compra(_exigirExito(response));
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------------
+  // Invitado (sin cuenta)
+
+  @override
+  Future<EventoModel?> getEventoPublico(int eventoId) {
+    return _proteger(() async {
+      final path = ApiConstants.eventoPublicoEndpoint.replaceAll('{id}', eventoId.toString());
+      final response = await client.get(_uri(path), headers: ApiConstants.defaultHeaders).timeout(ApiConstants.receiveTimeout);
+
+      // 404: el evento ya no está disponible, es privado o no existe. No es un error de red: simplemente no hay evento que comprar.
+      if (response.statusCode == 404) return null;
+
+      final data = _exigirExito(response)['data'];
+      if (data is! Map) return null;
+      return EventoModel.fromJson(Map<String, dynamic>.from(data));
+    });
+  }
+
+  @override
+  Future<EventoCompraModel> registrarCompraInvitado({
+    required int eventoId,
+    required EventoInvitado invitado,
+    required int cantidad,
+    required File captura,
+  }) {
+    return _proteger(() async {
+      final path = ApiConstants.eventoComprasInvitadoEndpoint.replaceAll('{id}', eventoId.toString());
+      final request = http.MultipartRequest('POST', _uri(path))
+        ..headers['Accept'] = 'application/json'
+        ..fields['nombre'] = invitado.nombre
+        ..fields['nro_documento'] = invitado.documento
+        ..fields['telefono'] = invitado.telefono
+        ..fields['cantidad'] = cantidad.toString()
+        ..fields['acepta_terminos'] = '1'
+        ..files.add(await http.MultipartFile.fromPath('captura', captura.path));
+      final correo = invitado.correo;
+      if (correo != null && correo.isNotEmpty) request.fields['correo'] = correo;
+
+      final streamed = await client.send(request).timeout(const Duration(seconds: 120));
+      final response = await http.Response.fromStream(streamed);
+      return _compra(_exigirExito(response));
+    });
+  }
+
+  @override
+  Future<List<EventoCompraModel>> getMisComprasInvitado({required String nroDocumento, required String telefono}) {
+    return _proteger(() async {
+      final response = await client
+          .get(
+            _uri(ApiConstants.eventoMisComprasInvitadoEndpoint, _comprador(nroDocumento, telefono)),
+            headers: ApiConstants.defaultHeaders,
+          )
+          .timeout(ApiConstants.receiveTimeout);
+
+      return _compras(_exigirExito(response));
+    });
+  }
+
+  @override
+  Future<EventoCompraModel> subirCapturaInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+    required File captura,
+  }) {
+    return _proteger(() async {
+      final path = ApiConstants.eventoCompraInvitadoCapturaEndpoint.replaceAll('{id}', compraId.toString());
+      final request = http.MultipartRequest('POST', _uri(path))
+        ..headers['Accept'] = 'application/json'
+        ..fields.addAll(_comprador(nroDocumento, telefono))
+        ..files.add(await http.MultipartFile.fromPath('captura', captura.path));
+
+      final streamed = await client.send(request).timeout(const Duration(seconds: 120));
+      final response = await http.Response.fromStream(streamed);
+      return _compra(_exigirExito(response));
+    });
+  }
+
+  @override
+  Future<Uint8List> descargarTicketPdfInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+  }) {
+    return _proteger(() {
+      final path = ApiConstants.eventoCompraInvitadoTicketPdfEndpoint.replaceAll('{id}', compraId.toString());
+      return _bajarPdf(path, _comprador(nroDocumento, telefono));
     });
   }
 }

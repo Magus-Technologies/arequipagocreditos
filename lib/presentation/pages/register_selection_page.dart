@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
 import 'conductor_register_page.dart';
-import 'pre_register_page.dart';
+// TK-0444: botón PASAJERO comentado (el registro de pasajeros ahora es manual).
+// import 'pre_register_page.dart';
 
 class RegisterSelectionPage extends StatelessWidget {
   const RegisterSelectionPage({super.key});
@@ -36,37 +37,39 @@ class RegisterSelectionPage extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PreRegisterPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'PASAJERO',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // TK-0444: se oculta el registro de pasajeros del app. Los pasajeros
+              // ahora se ingresan de forma manual (y los existentes pasan a Cliente Plus).
+              // SizedBox(
+              //   width: double.infinity,
+              //   height: 55,
+              //   child: ElevatedButton(
+              //     onPressed: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //           builder: (context) => const PreRegisterPage(),
+              //         ),
+              //       );
+              //     },
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: Colors.black,
+              //       foregroundColor: Colors.white,
+              //       elevation: 2,
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(12),
+              //       ),
+              //     ),
+              //     child: const Text(
+              //       'PASAJERO',
+              //       style: TextStyle(
+              //         fontSize: 15,
+              //         fontWeight: FontWeight.bold,
+              //         letterSpacing: 1,
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 55,

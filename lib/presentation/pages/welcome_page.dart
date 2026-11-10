@@ -6,7 +6,10 @@ import '../../theme/app_theme.dart';
 import '../components/evento_invitado_aviso.dart';
 import 'auth_bottom_nav.dart';
 import 'conductor_estado_page.dart';
-import 'register_selection_page.dart';
+import 'conductor_register_page.dart';
+import 'eventos_page.dart';
+// TK-0444: sin la opción PASAJERO ya no hace falta la pantalla de selección; REGISTRARTE abre el formulario directo.
+// import 'register_selection_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -42,8 +45,8 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              // Hay un evento activo y la persona todavía no inició sesión: sale una ventana flotante con el banner y se la lleva a
-              // iniciar sesión, donde ve el detalle y compra. No ocupa lugar en la pantalla (es solo el disparador).
+              // Hay un evento PÚBLICO activo y la persona todavía no inició sesión: sale una ventana flotante con el banner; «Ver evento y
+              // comprar» abre el detalle y compra como invitado, sin cuenta. No ocupa lugar en la pantalla (es solo el disparador).
               EventoInvitadoAviso(onIniciarSesion: () => _abrirIniciarSesion(context)),
               SizedBox(
                 width: double.infinity,
@@ -59,7 +62,7 @@ class WelcomePage extends StatelessWidget {
                         ),
                         pageBuilder:
                             (context, animation, secondaryAnimation) =>
-                                const RegisterSelectionPage(),
+                                const ConductorRegisterPage(),
                         transitionsBuilder: (
                           context,
                           animation,
@@ -94,7 +97,7 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'REGISTRARTE',
+                    'REGISTRAR CONDUCTOR',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -124,6 +127,29 @@ class WelcomePage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // TK-0450: los eventos públicos se ven (y se compran) sin cuenta ni sesión: acceso fijo desde la bienvenida.
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton.icon(
+                  key: const Key('welcome_eventos'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const EventosPage()),
+                  ),
+                  icon: const Icon(Icons.celebration_rounded, size: 20),
+                  label: const Text(
+                    'EVENTOS',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black, width: 1.6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),

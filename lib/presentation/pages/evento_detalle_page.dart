@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/evento_formato.dart';
 import '../../core/utils/evento_gate.dart';
+import '../../core/utils/evento_persona.dart';
 import '../../data/models/evento_models.dart';
 import '../../theme/app_theme.dart';
 import '../components/evento_widgets.dart';
@@ -12,8 +13,9 @@ import 'evento_terminos_page.dart';
 
 /// Detalle de un evento de la lista: banner, fecha, lugar, precio y descripción.
 ///
-/// Solo el evento que está EN VENTA (el activo más próximo, el mismo que anuncia el aviso del inicio) ofrece «Comprar tickets»: la
-/// compra del app siempre es sobre ese. Un evento ya realizado se ve como recuerdo, sin compra. Si la persona ya compró tickets de
+/// Con sesión, solo el evento que está EN VENTA (el activo más próximo, el mismo que anuncia el aviso del inicio) ofrece «Comprar
+/// tickets». SIN sesión (TK-0450) cualquier evento PÚBLICO que todavía no empieza se puede comprar como invitado; uno privado no
+/// llega a esta pantalla sin sesión. Un evento ya realizado se ve como recuerdo, sin compra. Si la persona ya compró tickets de
 /// este evento, queda el acceso a «Mis tickets».
 class EventoDetallePage extends StatefulWidget {
   final EventoModel evento;
@@ -30,7 +32,19 @@ class _EventoDetallePageState extends State<EventoDetallePage> {
   void initState() {
     super.initState();
     // El evento en venta y las compras de la persona: sin esto el botón de compra no sabría si este evento es el activo.
-    if (!widget.realizado) WidgetsBinding.instance.addPostFrameCallback((_) => EventoGate.precargar(context));
+    if (!widget.realizado) WidgetsBinding.instance.addPostFrameCallback((_) => _precargar());
+  }
+
+  Future<void> _precargar() async {
+    if (!mounted) return;
+    if (EventoPersona.de(context) != null) return EventoGate.precargar(context);
+
+    // Sin sesión: se pide el evento público completo (con su QR de pago) y las compras del invitado guardado en este celular.
+    if (widget.evento.esPrivado) return;
+    final provider = context.read<EventoProvider>();
+    await provider.restaurarInvitado();
+    await provider.cargarEventoPublico(widget.evento.id);
+    await provider.cargarMisComprasInvitado();
   }
 
   @override
@@ -100,7 +114,7 @@ class _EventoDetallePageState extends State<EventoDetallePage> {
 
   Widget _etiqueta() {
     final realizado = widget.realizado;
-    return Container(
+    final etiqueta = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: realizado ? Colors.grey.shade200 : Colors.black,
@@ -116,6 +130,32 @@ class _EventoDetallePageState extends State<EventoDetallePage> {
           color: realizado ? Colors.grey.shade700 : AppTheme.primary,
         ),
       ),
+    );
+    if (!widget.evento.esPrivado) return etiqueta;
+
+    // Evento privado (solo lo ve quien tiene sesión): se aclara que no es abierto al público.
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        etiqueta,
+        Container(
+          key: const Key('evento_detalle_privado'),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 12, color: Colors.grey.shade700),
+              const SizedBox(width: 4),
+              Text(
+                'PRIVADO · SOLO CLIENTES GO',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.6, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

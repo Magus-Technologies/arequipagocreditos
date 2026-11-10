@@ -189,6 +189,8 @@ class DependencyInjection {
     ChangeNotifierProvider<EventoProvider>(
       create: (context) {
         final provider = EventoProvider(repository: _eventoRepository);
+        // Los datos de quien compró un evento público SIN cuenta se leen del celular de una vez (para «Mis tickets» sin sesión).
+        provider.restaurarInvitado();
         // Al cerrar sesión (o entrar otra persona) se descartan el evento y las compras de la anterior.
         final auth = context.read<AuthProvider>();
         provider.vincularSesion(auth, () => auth.currentUser?.idConductor);

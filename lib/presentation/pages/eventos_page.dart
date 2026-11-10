@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/evento_formato.dart';
+import '../../core/utils/evento_persona.dart';
 import '../../data/models/evento_models.dart';
 import '../../theme/app_theme.dart';
 import '../providers/evento_provider.dart';
@@ -11,7 +12,8 @@ import 'evento_mis_tickets_page.dart';
 /// «Eventos»: los próximos y los ya realizados, cada uno con su banner, fecha y lugar. Tocar uno abre su detalle (y ahí, si es el
 /// evento en venta, se compra). Arriba a la derecha queda el acceso a «Mis tickets».
 ///
-/// La lista es pública (no depende de la sesión). Jalar hacia abajo la vuelve a pedir.
+/// Sin sesión se ven los eventos PÚBLICOS (y se pueden comprar como invitado); con sesión, también los PRIVADOS (solo clientes GO), que
+/// salen marcados. Jalar hacia abajo la vuelve a pedir.
 class EventosPage extends StatefulWidget {
   const EventosPage({super.key});
 
@@ -24,11 +26,18 @@ class _EventosPageState extends State<EventosPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<EventoProvider>().cargarLista();
+      if (mounted) _recargar();
     });
   }
 
-  Future<void> _recargar() => context.read<EventoProvider>().cargarLista();
+  /// Con la persona de la sesión el servidor incluye los eventos privados; sin sesión, solo los públicos.
+  Future<void> _recargar() {
+    final persona = EventoPersona.de(context);
+    return context.read<EventoProvider>().cargarLista(
+          clienteConductorId: persona?.id,
+          nroDocumento: persona?.documento,
+        );
+  }
 
   void _abrir(EventoModel evento, {required bool realizado}) {
     Navigator.of(context).push(
@@ -230,6 +239,28 @@ class EventoListaTarjeta extends StatelessWidget {
                       child: const Text(
                         'REALIZADO',
                         style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                // Un evento privado solo lo ven los clientes con sesión: va marcado para que se note que no es abierto al público.
+                if (evento.esPrivado)
+                  Positioned(
+                    bottom: 10,
+                    left: 12,
+                    child: Container(
+                      key: Key('evento_privado_${evento.id}'),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lock_outline_rounded, size: 12, color: AppTheme.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            'PRIVADO · SOLO CLIENTES GO',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6, color: AppTheme.primary),
+                          ),
+                        ],
                       ),
                     ),
                   ),

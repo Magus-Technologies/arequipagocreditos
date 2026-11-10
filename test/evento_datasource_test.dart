@@ -53,13 +53,22 @@ void main() {
       expect(await fuente.getEventoActivo(clienteConductorId: 601, nroDocumento: '43373493'), isNull);
     });
 
-    test('sin persona no manda parámetros', () async {
+    test('sin persona manda solo_publicos=1 (solo eventos públicos) y nada de persona', () async {
       final vistas = <http.Request>[];
       final fuente = _fuente((_) => _json({'success': true, 'data': null}), vistas: vistas);
 
       await fuente.getEventoActivo();
 
-      expect(vistas.single.url.queryParameters, isEmpty);
+      expect(vistas.single.url.queryParameters, {'solo_publicos': '1'});
+    });
+
+    test('con persona manda su id y su documento (ve también los eventos privados), sin solo_publicos', () async {
+      final vistas = <http.Request>[];
+      final fuente = _fuente((_) => _json({'success': true, 'data': null}), vistas: vistas);
+
+      await fuente.getEventoActivo(clienteConductorId: 601, nroDocumento: '43373493');
+
+      expect(vistas.single.url.queryParameters, {'cliente_conductor_id': '601', 'nro_documento': '43373493'});
     });
   });
 

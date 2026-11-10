@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/evento_formato.dart';
+import '../../core/utils/evento_persona.dart';
 import '../../data/models/evento_models.dart';
 import '../components/evento_widgets.dart';
 import '../providers/evento_provider.dart';
 import 'evento_compra_page.dart';
+import 'evento_invitado_datos_page.dart';
 import 'evento_mis_tickets_page.dart';
 
 /// Paso 1 de la compra: términos y política de privacidad del evento. Sin marcar la casilla no se avanza.
@@ -20,8 +22,12 @@ class _EventoTerminosPageState extends State<EventoTerminosPage> {
   bool _acepta = false;
 
   void _continuar() {
-    // Reemplaza esta pantalla: los términos ya se aceptaron y volver a ellos desde la compra no tiene sentido.
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const EventoCompraPage()));
+    // Reemplaza esta pantalla: los términos ya se aceptaron y volver a ellos desde la compra no tiene sentido. Sin sesión (invitado)
+    // primero van sus datos.
+    final conSesion = EventoPersona.de(context) != null;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => conSesion ? const EventoCompraPage() : const EventoInvitadoDatosPage()),
+    );
   }
 
   void _verMisTickets() {

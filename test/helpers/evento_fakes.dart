@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:arequipagocreditos/core/errors/failures.dart';
 import 'package:arequipagocreditos/core/utils/either.dart';
+import 'package:arequipagocreditos/data/models/evento_invitado.dart';
 import 'package:arequipagocreditos/data/models/evento_models.dart';
 import 'package:arequipagocreditos/domain/repositories/evento_repository.dart';
 
@@ -15,7 +16,8 @@ const String codigoCompra = 'EV-K7M2QX';
 /// «Ahora» fijo de las pruebas: sábado 14-nov-2026, 2:01 p. m. en Lima (el evento recién empezó). Así nada depende de la fecha real.
 final DateTime ahoraDePrueba = DateTime.utc(2026, 11, 14, 19, 1);
 
-Map<String, dynamic> eventoJson({Object? precio = 50.0, Object? mis = const {'comprados': 1, 'disponibles': 3}}) => {
+Map<String, dynamic> eventoJson({Object? precio = 50.0, Object? mis = const {'comprados': 1, 'disponibles': 3}, String? visibilidad}) => {
+      if (visibilidad != null) 'visibilidad': visibilidad,
       'id': 7,
       'nombre': '3er Aniversario Arequipa Go',
       'descripcion': 'Música, sorteos y bingo',
@@ -65,11 +67,13 @@ EventoModel evento({
   bool conBanner = true,
   bool conQr = true,
   String? descripcion = 'Música, sorteos y bingo',
+  String? visibilidad,
 }) =>
     EventoModel.fromJson({
       ...eventoJson(
         precio: precio,
         mis: comprados == null ? null : {'comprados': comprados, 'disponibles': max - comprados},
+        visibilidad: visibilidad,
       ),
       'id': id,
       'max_tickets_por_persona': max,
@@ -113,9 +117,15 @@ class FakeEventoRepository implements EventoRepository {
   Either<Failure, EventosListaModel> lista = Either.right(const EventosListaModel());
   int llamadasLista = 0;
 
+  /// La persona con la que se pidió la última lista (null = sin sesión, solo eventos públicos).
+  int? ultimaListaPersonaId;
+  String? ultimaListaDocumento;
+
   @override
-  Future<Either<Failure, EventosListaModel>> getEventos() async {
+  Future<Either<Failure, EventosListaModel>> getEventos({int? clienteConductorId, String? nroDocumento}) async {
     llamadasLista++;
+    ultimaListaPersonaId = clienteConductorId;
+    ultimaListaDocumento = nroDocumento;
     final respuesta = lista;
     await Future<void>.delayed(Duration.zero);
     return respuesta;
@@ -209,5 +219,113 @@ class FakeEventoRepository implements EventoRepository {
   }) async {
     llamadasCancelar++;
     return cancelar!;
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------------
+  // Invitado (sin cuenta): eventos públicos (TK-0450)
+
+  /// Cada llamada a getEventoPublico devuelve la siguiente respuesta; la última se repite.
+  List<Either<Failure, EventoModel?>> publico = [];
+  int llamadasPublico = 0;
+  int? ultimoEventoPublico;
+
+  @override
+  Future<Either<Failure, EventoModel?>> getEventoPublico(int eventoId) async {
+    ultimoEventoPublico = eventoId;
+    final i = llamadasPublico < publico.length ? llamadasPublico : publico.length - 1;
+    llamadasPublico++;
+    await Future<void>.delayed(Duration.zero);
+    return publico[i];
+  }
+
+  Either<Failure, EventoCompraModel>? compraInvitado;
+  int llamadasRegistrarInvitado = 0;
+  EventoInvitado? ultimoInvitado;
+  int? ultimaCantidadInvitado;
+  File? ultimaCapturaInvitado;
+
+  @override
+  Future<Either<Failure, EventoCompraModel>> registrarCompraInvitado({
+    required int eventoId,
+    required EventoInvitado invitado,
+    required int cantidad,
+    required File captura,
+  }) async {
+    llamadasRegistrarInvitado++;
+    ultimoInvitado = invitado;
+    ultimaCantidadInvitado = cantidad;
+    ultimaCapturaInvitado = captura;
+    await Future<void>.delayed(Duration.zero);
+    return compraInvitado!;
+  }
+
+  Either<Failure, List<EventoCompraModel>> misComprasInvitado = Either.right(const []);
+  int llamadasMisComprasInvitado = 0;
+  String? ultimoDocumentoInvitado;
+  String? ultimoTelefonoInvitado;
+
+  @override
+  Future<Either<Failure, List<EventoCompraModel>>> getMisComprasInvitado({
+    required String nroDocumento,
+    required String telefono,
+  }) async {
+    llamadasMisComprasInvitado++;
+    ultimoDocumentoInvitado = nroDocumento;
+    ultimoTelefonoInvitado = telefono;
+    final respuesta = misComprasInvitado;
+    await Future<void>.delayed(Duration.zero);
+    return respuesta;
+  }
+
+  Either<Failure, EventoCompraModel>? capturaInvitado;
+  int llamadasCapturaInvitado = 0;
+
+  @override
+  Future<Either<Failure, EventoCompraModel>> subirCapturaInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+    required File captura,
+  }) async {
+    llamadasCapturaInvitado++;
+    ultimoDocumentoInvitado = nroDocumento;
+    ultimoTelefonoInvitado = telefono;
+    return capturaInvitado!;
+  }
+
+  int llamadasTicketPdfInvitado = 0;
+
+  @override
+  Future<Either<Failure, Uint8List>> descargarTicketPdfInvitado({
+    required int compraId,
+    required String nroDocumento,
+    required String telefono,
+  }) async {
+    llamadasTicketPdfInvitado++;
+    ultimaCompraDelTicket = compraId;
+    ultimoDocumentoInvitado = nroDocumento;
+    ultimoTelefonoInvitado = telefono;
+    await Future<void>.delayed(Duration.zero);
+    return ticketPdf;
+  }
+}
+
+/// El almacenamiento de los datos del invitado en memoria (en el app real, SharedPreferences).
+class AlmacenInvitadoEnMemoria implements EventoInvitadoAlmacen {
+  EventoInvitado? guardado;
+  int borrados = 0;
+
+  AlmacenInvitadoEnMemoria([this.guardado]);
+
+  @override
+  Future<EventoInvitado?> leer() async => guardado;
+
+  @override
+  Future<void> guardar(EventoInvitado invitado) async => guardado = invitado;
+
+  @override
+  Future<void> borrar() async {
+    borrados++;
+    guardado = null;
   }
 }

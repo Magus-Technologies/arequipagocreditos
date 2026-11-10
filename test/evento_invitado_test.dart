@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:arequipagocreditos/core/errors/failures.dart';
 import 'package:arequipagocreditos/core/utils/either.dart';
+import 'package:arequipagocreditos/data/models/evento_models.dart';
 import 'package:arequipagocreditos/presentation/components/evento_banner_dialog.dart';
 import 'package:arequipagocreditos/presentation/components/evento_invitado_aviso.dart';
 import 'package:arequipagocreditos/presentation/components/evento_widgets.dart';
@@ -18,6 +19,7 @@ Future<int> _montarBienvenida(
   WidgetTester tester,
   FakeEventoRepository repo, {
   required void Function() alIniciarSesion,
+  void Function(EventoModel evento)? alVerEvento,
 }) async {
   tester.view.physicalSize = const Size(412, 1600);
   tester.view.devicePixelRatio = 1.0;
@@ -32,7 +34,7 @@ Future<int> _montarBienvenida(
           body: Column(
             children: [
               const Text('Bienvenida'),
-              EventoInvitadoAviso(onIniciarSesion: alIniciarSesion),
+              EventoInvitadoAviso(onIniciarSesion: alIniciarSesion, onVerEvento: alVerEvento ?? (_) {}),
             ],
           ),
         ),
@@ -49,7 +51,7 @@ void main() {
   setUp(EventoInvitadoAviso.reiniciarSesion);
 
   group('aviso flotante del evento sin sesión', () {
-    testWidgets('con evento activo sale una ventana flotante con el banner, el nombre, la fecha y «Ver más detalle»', (tester) async {
+    testWidgets('con evento público activo sale una ventana flotante con el banner, el nombre, la fecha y «Ver evento y comprar»', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false))];
       await _montarBienvenida(tester, repo, alIniciarSesion: () {});
 
@@ -58,18 +60,18 @@ void main() {
       expect(find.text('NUEVO EVENTO'), findsOneWidget);
       expect(find.text('3er Aniversario Arequipa Go'), findsOneWidget);
       expect(find.textContaining('Sábado 14 de noviembre'), findsOneWidget);
-      expect(find.text('Ver más detalle'), findsOneWidget);
-      expect(find.text('Inicia sesión para continuar'), findsOneWidget);
+      expect(find.text('Ver evento y comprar'), findsOneWidget);
+      expect(find.text('Ya tengo cuenta · Iniciar sesión'), findsOneWidget);
       expect(find.text('Ahora no'), findsOneWidget);
     });
 
-    testWidgets('antes de iniciar sesión NO muestra el lugar ni el precio (eso queda detrás del login)', (tester) async {
+    testWidgets('como el evento es público, el aviso muestra el lugar y el precio (no hace falta iniciar sesión)', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false))];
       await _montarBienvenida(tester, repo, alIniciarSesion: () {});
 
-      expect(find.text('Local de la empresa'), findsNothing);
-      expect(find.textContaining('S/ 50.00'), findsNothing);
-      expect(find.text('Comprar tickets'), findsNothing);
+      expect(find.text('Local de la empresa'), findsOneWidget);
+      expect(find.text('S/ 50.00 por ticket'), findsOneWidget);
+      expect(find.text('Inicia sesión para continuar'), findsNothing);
     });
 
     testWidgets('muestra el banner del evento (entero, sin recortarlo)', (tester) async {
@@ -81,27 +83,50 @@ void main() {
       expect(imagen.fit, BoxFit.contain);
     });
 
-    testWidgets('el botón cierra la ventana y lleva a «Iniciar sesión»', (tester) async {
+    testWidgets('el botón cierra la ventana y abre el evento (sin pedir iniciar sesión)', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false))];
       var entradas = 0;
-      await _montarBienvenida(tester, repo, alIniciarSesion: () => entradas++);
+      final abiertos = <int>[];
+      await _montarBienvenida(tester, repo, alIniciarSesion: () => entradas++, alVerEvento: (e) => abiertos.add(e.id));
 
       await tester.tap(find.byKey(const Key('evento_invitado_boton')));
       await tester.pumpAndSettle();
 
-      expect(entradas, 1);
+      expect(abiertos, [7]);
+      expect(entradas, 0);
       expect(find.byType(EventoBannerDialog), findsNothing);
     });
 
     testWidgets('tocar el banner hace lo mismo que el botón', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false))];
-      var entradas = 0;
-      await _montarBienvenida(tester, repo, alIniciarSesion: () => entradas++);
+      final abiertos = <int>[];
+      await _montarBienvenida(tester, repo, alIniciarSesion: () {}, alVerEvento: (e) => abiertos.add(e.id));
 
       await tester.tap(find.byKey(const Key('evento_banner')));
       await tester.pumpAndSettle();
 
+      expect(abiertos, [7]);
+      expect(find.byType(EventoBannerDialog), findsNothing);
+    });
+
+    testWidgets('«Ya tengo cuenta · Iniciar sesión» lleva a iniciar sesión, sin abrir el evento', (tester) async {
+      final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false))];
+      var entradas = 0;
+      final abiertos = <int>[];
+      await _montarBienvenida(tester, repo, alIniciarSesion: () => entradas++, alVerEvento: (e) => abiertos.add(e.id));
+
+      await tester.tap(find.byKey(const Key('evento_invitado_iniciar_sesion')));
+      await tester.pumpAndSettle();
+
       expect(entradas, 1);
+      expect(abiertos, isEmpty);
+      expect(find.byType(EventoBannerDialog), findsNothing);
+    });
+
+    testWidgets('un evento privado nunca sale en el aviso sin sesión (aunque llegara)', (tester) async {
+      final repo = FakeEventoRepository()..activo = [activo(evento(conBanner: false, visibilidad: 'privado'))];
+      await _montarBienvenida(tester, repo, alIniciarSesion: () {});
+
       expect(find.byType(EventoBannerDialog), findsNothing);
     });
 

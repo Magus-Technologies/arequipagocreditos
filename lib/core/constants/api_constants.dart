@@ -30,6 +30,10 @@ class ApiConstants {
   static const String validateDniEndpoint = '/app/validate-dni';
   static const String resetPasswordEndpoint = '/app/reset-password';
   static const String uploadProfilePictureEndpoint = '/app/upload-profile-picture';
+  // «Datos por actualizar»: DNI/CE y recibo de servicios. Quedan en revisión hasta que el personal los apruebe.
+  static const String documentosPendientesEndpoint = '/app/documentos-pendientes';
+  // «Mis documentos» del perfil: los que su tipo de cliente puede subir y el estado de cada uno.
+  static const String misDocumentosEndpoint = '/app/mis-documentos';
   static const String updatePasswordConductorEndpoint = '/app/update-password-conductor';
   static const String updateDatosUsuarioEndpoint = '/app/update-datos-usuario';
   static const String perfilPasajeroEndpoint = '/app/pasajeros/{id}';
@@ -72,6 +76,13 @@ class ApiConstants {
   static const String eventoCompraCapturaEndpoint = '/app/eventos/compras/{id}/captura';
   static const String eventoCompraTicketPdfEndpoint = '/app/eventos/compras/{id}/ticket.pdf';
   static const String eventoCompraCancelarEndpoint = '/app/eventos/compras/{id}/cancelar';
+  // TK-0450: eventos PÚBLICOS para quien no tiene cuenta (o no puede entrar): detalle completo y compra como invitado (nombre + DNI +
+  // teléfono, sin sesión).
+  static const String eventoPublicoEndpoint = '/app/eventos/{id}/publico';
+  static const String eventoComprasInvitadoEndpoint = '/app/eventos/{id}/compras-invitado';
+  static const String eventoMisComprasInvitadoEndpoint = '/app/eventos/mis-compras-invitado';
+  static const String eventoCompraInvitadoCapturaEndpoint = '/app/eventos/compras-invitado/{id}/captura';
+  static const String eventoCompraInvitadoTicketPdfEndpoint = '/app/eventos/compras-invitado/{id}/ticket.pdf';
 
   static const String cuponesEndpoint = '/app/promociones/cupones/listar';
   static const String firmarEndpoint = '/app/firmar/{tipo}/{id}';

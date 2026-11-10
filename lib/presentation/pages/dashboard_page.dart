@@ -9,7 +9,7 @@ import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../core/utils/datos_pendientes_gate.dart';
 import '../../core/utils/evento_gate.dart';
 import '../components/evento_acceso_card.dart';
-import 'perfil_page.dart';
+import 'actualizar_datos_page.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
 
@@ -150,8 +150,9 @@ class _DashboardPageState extends State<DashboardPage> {
                             // TK-0357: aviso fijo mientras haya datos por actualizar (no puede financiar hasta completarlos).
                             DatosPendientesBanner(
                               pendientes: conductorEntity?.datosPendientes ?? const [],
+                              // «Actualizar ahora» abre «Actualizar mis datos»: ahí sube su DNI/recibo (queda en revisión).
                               onActualizar: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const PerfilPage()),
+                                MaterialPageRoute(builder: (_) => const ActualizarDatosPage()),
                               ),
                             ),
                             // Entrada fija a «Mis tickets»: solo se ve mientras haya un evento activo.

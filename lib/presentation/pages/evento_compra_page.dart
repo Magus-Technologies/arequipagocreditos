@@ -113,9 +113,16 @@ class _EventoCompraPageState extends State<EventoCompraPage> {
   }
 
   Future<void> _recargarEvento() async {
+    final provider = context.read<EventoProvider>();
     final persona = EventoPersona.de(context);
-    if (persona == null) return;
-    await context.read<EventoProvider>().cargarActivo(clienteConductorId: persona.id, nroDocumento: persona.documento);
+    if (persona != null) {
+      await provider.cargarActivo(clienteConductorId: persona.id, nroDocumento: persona.documento);
+      return;
+    }
+
+    // Invitado (sin sesión): se vuelve a pedir el evento público que se está comprando.
+    final evento = provider.evento;
+    if (evento != null) await provider.cargarEventoPublico(evento.id);
   }
 
   void _verMisTickets() {

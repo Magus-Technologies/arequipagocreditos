@@ -58,6 +58,12 @@ String? _toEnlace(dynamic value) {
   return texto;
 }
 
+/// «privado» (sin importar mayúsculas) es privado; cualquier otra cosa, o nada, es público.
+EventoVisibilidad _toVisibilidad(dynamic value) {
+  final texto = value?.toString().trim().toLowerCase();
+  return texto == 'privado' ? EventoVisibilidad.privado : EventoVisibilidad.publico;
+}
+
 /// Cuántos tickets lleva esta persona en el evento y cuántos más puede comprar (tope por persona).
 class MisTicketsModel {
   final int comprados;
@@ -72,6 +78,11 @@ class MisTicketsModel {
     );
   }
 }
+
+/// Quién puede ver y comprar un evento (TK-0450). Un evento PÚBLICO lo ve y lo compra cualquiera, aunque no tenga cuenta ni sesión
+/// (compra como invitado); uno PRIVADO es solo para clientes GO con sesión iniciada. El servidor ya filtra la lista: sin sesión el app solo
+/// recibe públicos. Si el servidor no manda el dato (versión anterior) se entiende público, como se veían hasta ahora.
+enum EventoVisibilidad { publico, privado }
 
 class EventoModel {
   final int id;
@@ -97,6 +108,9 @@ class EventoModel {
   /// Solo viene si el id y el DNI que mandó el app coinciden con una persona.
   final MisTicketsModel? misTickets;
 
+  /// Público (lo ve y lo compra cualquiera) o privado (solo clientes GO con sesión).
+  final EventoVisibilidad visibilidad;
+
   const EventoModel({
     required this.id,
     required this.nombre,
@@ -111,6 +125,7 @@ class EventoModel {
     this.politicaPrivacidad,
     this.qrUrl,
     this.misTickets,
+    this.visibilidad = EventoVisibilidad.publico,
   });
 
   factory EventoModel.fromJson(Map<String, dynamic> json) {
@@ -129,6 +144,7 @@ class EventoModel {
       politicaPrivacidad: _toText(json['politica_privacidad']),
       qrUrl: _toUrl(json['qr_url']),
       misTickets: mis is Map ? MisTicketsModel.fromJson(Map<String, dynamic>.from(mis)) : null,
+      visibilidad: _toVisibilidad(json['visibilidad']),
     );
   }
 
@@ -147,8 +163,12 @@ class EventoModel {
       politicaPrivacidad: politicaPrivacidad,
       qrUrl: qrUrl,
       misTickets: misTickets ?? this.misTickets,
+      visibilidad: visibilidad,
     );
   }
+
+  /// Solo para clientes GO con sesión (no se compra como invitado).
+  bool get esPrivado => visibilidad == EventoVisibilidad.privado;
 
   /// ¿El evento trae un enlace de mapa que se puede abrir?
   bool get tieneMapa => mapaUrl != null;

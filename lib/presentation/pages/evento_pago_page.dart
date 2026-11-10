@@ -46,12 +46,17 @@ class _EventoPagoPageState extends State<EventoPagoPage> {
   }
 
   Future<void> _recargar() async {
+    final provider = context.read<EventoProvider>();
     final persona = EventoPersona.de(context);
-    if (persona == null) return;
-    await context.read<EventoProvider>().cargarMisCompras(
-          clienteConductorId: persona.id,
-          nroDocumento: persona.documento,
-        );
+    if (persona == null) {
+      // Invitado (sin sesión): sus compras salen con su documento y su celular.
+      await provider.cargarMisComprasInvitado();
+      return;
+    }
+    await provider.cargarMisCompras(
+      clienteConductorId: persona.id,
+      nroDocumento: persona.documento,
+    );
   }
 
   void _aviso(String texto, {bool error = false}) {

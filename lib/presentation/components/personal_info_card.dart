@@ -1,7 +1,7 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
 import 'package:flutter/material.dart';
-import 'package:arequipagocreditos/presentation/components/components.dart';
-import 'package:arequipagocreditos/theme/app_theme.dart';
+import 'package:arequipagocreditos/presentation/components/info_item.dart';
+import 'package:arequipagocreditos/presentation/components/perfil_seccion_card.dart';
 
 class PersonalInfoCard extends StatelessWidget {
   final ConductorModel? conductor;
@@ -13,73 +13,31 @@ class PersonalInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: AppTheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Información Personal',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          InfoItem(
-            icon: Icons.phone,
-            label: 'Teléfono',
-            value: conductor?.telefono ?? 'No disponible',
-          ),
-          _buildDivider(),
-          InfoItem(
-            icon: Icons.email,
-            label: 'Correo',
-            value: conductor?.correo ?? 'No disponible',
-          ),
-          _buildDivider(),
-          InfoItem(
-            icon: Icons.location_on,
-            label: 'Dirección',
-            value: conductor?.direccion ?? 'No disponible',
-          ),
-          _buildDivider(),
-          InfoItem(
-            icon: Icons.badge,
-            label: 'Fecha de Nacimiento',
-            value: conductor?.fechaNacimiento ?? 'No disponible',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Divider(color: Colors.grey.shade300, thickness: 1),
+    return PerfilSeccionCard(
+      titulo: 'Información personal',
+      icono: Icons.person_outline,
+      children: [
+        InfoItem(
+          icon: Icons.phone_outlined,
+          label: 'Teléfono',
+          value: conductor?.telefono ?? InfoItem.sinDato,
+        ),
+        InfoItem(
+          icon: Icons.mail_outline,
+          label: 'Correo',
+          value: conductor?.correo ?? InfoItem.sinDato,
+        ),
+        InfoItem(
+          icon: Icons.location_on_outlined,
+          label: 'Dirección',
+          value: conductor?.direccion ?? InfoItem.sinDato,
+        ),
+        InfoItem(
+          icon: Icons.cake_outlined,
+          label: 'Fecha de nacimiento',
+          value: fechaLegible(conductor?.fechaNacimiento),
+        ),
+      ],
     );
   }
 }

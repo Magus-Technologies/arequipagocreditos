@@ -86,7 +86,7 @@ void main() {
   setUp(EventoGate.reiniciarSesion);
 
   group('contrato de la lista', () {
-    test('GET /app/eventos sin parámetros y lee próximos y anteriores', () async {
+    test('GET /app/eventos sin sesión manda solo_publicos=1 y lee próximos y anteriores', () async {
       final vistas = <http.Request>[];
       final fuente = EventoRemoteDataSourceImpl(
         client: MockClient((request) async {
@@ -110,7 +110,7 @@ void main() {
 
       expect(vistas.single.method, 'GET');
       expect(vistas.single.url.path, endsWith('/app/eventos'));
-      expect(vistas.single.url.queryParameters, isEmpty);
+      expect(vistas.single.url.queryParameters, {'solo_publicos': '1'});
       expect(lista.proximos.map((e) => e.nombre), ['Próximo']);
       expect(lista.proximos.single.precioTicket, 50.0);
       expect(lista.anteriores.map((e) => e.nombre), ['Pasado', 'Más viejo']);
