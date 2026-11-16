@@ -15,6 +15,7 @@ import '../components/pago_inscripcion_registro.dart';
 import '../providers/auth_provider.dart';
 import '../providers/catalogos_provider.dart';
 import 'conductor_register_success_page.dart';
+import 'conductor_yape_page.dart';
 import 'pre_register_page.dart';
 
 class ConductorRegisterPage extends StatefulWidget {
@@ -252,6 +253,10 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
           _metodoPago = null;
           _capturaPago = null;
         }
+        // Yape lo ofrece el servidor: si ya no lo ofrece (se apagó mientras la persona llenaba el registro), se descarta la elección.
+        if (_metodoPago == PagoInscripcionRegistro.metodoYape && !info.yapeDisponible) {
+          _metodoPago = null;
+        }
       });
     } catch (_) {
       if (!mounted) return;
@@ -437,16 +442,39 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       }
 
       if (mounted) {
+        // El código de Caja o la captura de IziPay que se acaban de registrar con la solicitud (con Yape: solo el aviso de que falta pagar).
+        final inscripcion = responseData is Map && responseData['inscripcion'] is Map
+            ? Map<String, dynamic>.from(responseData['inscripcion'] as Map)
+            : null;
+
+        if (pagaAlRegistrarse && _metodoPago == PagoInscripcionRegistro.metodoYape && conductorId != null) {
+          // Yape: la solicitud ya quedó enviada; ahora afilia su Yape y paga. Se guardan los datos antes de reemplazar esta pantalla.
+          final nroDocumento = _nroDocController.text.trim();
+          final telefono = _telefonoController.text.trim();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConductorYapePage(
+                conductorId: conductorId,
+                nroDocumento: nroDocumento,
+                telefonoInicial: telefono,
+                // Pague o no, la persona termina en «Se envió tu solicitud» (sin pagar, desde «Ver el resultado» retoma el pago).
+                alFinalizar: (ctx, pagada) => Navigator.pushReplacement(
+                  ctx,
+                  MaterialPageRoute(
+                    builder: (_) => ConductorRegisterSuccessPage(conductorId: conductorId, inscripcion: inscripcion, yapePagado: pagada),
+                  ),
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ConductorRegisterSuccessPage(
-              conductorId: conductorId,
-              // El código de Caja o la captura de IziPay que se acaban de registrar con la solicitud.
-              inscripcion: responseData is Map && responseData['inscripcion'] is Map
-                  ? Map<String, dynamic>.from(responseData['inscripcion'] as Map)
-                  : null,
-            ),
+            builder: (context) => ConductorRegisterSuccessPage(conductorId: conductorId, inscripcion: inscripcion),
           ),
         );
       }
@@ -454,6 +482,12 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       final msg = authProvider.errorMessage
           ?? (response != null ? (response['message'] ?? response['error']) : null)
           ?? 'Error al enviar la solicitud. Intente nuevamente.';
+      // Yape se apagó en el servidor mientras la persona llenaba el registro: se descarta su elección y se vuelve a preguntar qué
+      // métodos ofrece (si no, quedaría atascada con un método que ya no existe).
+      if (_metodoPago == PagoInscripcionRegistro.metodoYape && msg.toString().contains('Yape no está disponible')) {
+        setState(() => _metodoPago = null);
+        _cargarPagoInfo();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg.toString()),

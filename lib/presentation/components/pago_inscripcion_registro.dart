@@ -2,16 +2,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../data/models/izipay_models.dart';
 import '../widgets/image_full_screen_view.dart';
+import 'yape_widgets.dart';
 
 /// Paso de PAGO del registro de conductor: va después de los documentos y antes de enviar la solicitud.
 ///
 /// El conductor ve cuánto paga y elige cómo:
 ///  - Caja Arequipa: al enviar la solicitud recibe su código (vale 24 horas) y paga en un agente o agencia.
 ///  - QR IziPay: paga con el QR y adjunta la captura de su pago; el equipo la valida junto con la solicitud.
+///  - Yape: solo si el servidor lo ofrece. Envía la solicitud y enseguida afilia su Yape y paga desde el app (con el costo por usar
+///    Yape a la vista antes de elegir).
 /// La aprobación del registro sigue siendo del asesor aunque el pago ya esté hecho.
 class PagoInscripcionRegistro extends StatelessWidget {
   static const String metodoCaja = 'caja_arequipa';
   static const String metodoIzipay = 'izipay';
+  static const String metodoYape = 'yape';
 
   const PagoInscripcionRegistro({
     super.key,
@@ -124,7 +128,19 @@ class PagoInscripcionRegistro extends StatelessWidget {
             icono: Icons.qr_code_2_rounded,
           ),
         ],
+        if (i.yapeDisponible) ...[
+          const SizedBox(height: 12),
+          _metodoCard(
+            key: const Key('pago_metodo_yape'),
+            valor: metodoYape,
+            titulo: 'Yape',
+            subtitulo: 'Paga desde tu celular, sin ir a ninguna agencia.',
+            icono: Icons.phone_android_rounded,
+            logo: const YapeLogo(tamano: 26),
+          ),
+        ],
         const SizedBox(height: 18),
+        if (metodo == metodoYape) _notaYape(i),
         if (metodo == metodoCaja)
           _nota(
             key: const Key('pago_nota_caja'),
@@ -134,6 +150,19 @@ class PagoInscripcionRegistro extends StatelessWidget {
           ),
         if (metodo == metodoIzipay) _izipay(context, i),
       ],
+    );
+  }
+
+  /// Lo que pagaría con Yape, con el costo por usar Yape como línea aparte (si Arequipa Go no lo asume), y cómo sigue el proceso.
+  Widget _notaYape(InscripcionPagoInfoModel i) {
+    final total = i.yapeRecargo > 0
+        ? 'Pagarás ${soles(i.yapeTotal)} en total: ${soles(i.monto)} + ${soles(i.yapeRecargo)} de costo por pagar con Yape.'
+        : 'Pagarás ${soles(i.yapeTotal)} con tu Yape.';
+    return _nota(
+      key: const Key('pago_nota_yape'),
+      icono: Icons.info_outline,
+      color: Colors.purple,
+      texto: '$total Primero envías tu solicitud y enseguida afilias tu Yape y pagas desde esta app.',
     );
   }
 
@@ -239,6 +268,7 @@ class PagoInscripcionRegistro extends StatelessWidget {
     required String titulo,
     required String subtitulo,
     required IconData icono,
+    Widget? logo,
   }) {
     final bool elegido = metodo == valor;
     return InkWell(
@@ -254,7 +284,7 @@ class PagoInscripcionRegistro extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icono, color: elegido ? Colors.black : Colors.black45),
+            logo ?? Icon(icono, color: elegido ? Colors.black : Colors.black45),
             const SizedBox(width: 16),
             Expanded(
               child: Column(

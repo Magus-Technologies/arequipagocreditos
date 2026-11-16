@@ -7,6 +7,7 @@ import '../datasources/catalogos_remote_datasource.dart';
 import '../models/catalogo_models.dart';
 import '../models/conductor_estado_model.dart';
 import '../models/izipay_models.dart';
+import '../models/yape_models.dart';
 
 class CatalogosRepositoryImpl implements CatalogosRepository {
   final CatalogosRemoteDataSource remoteDataSource;
@@ -116,6 +117,37 @@ class CatalogosRepositoryImpl implements CatalogosRepository {
         numeroOperacion: numeroOperacion,
       );
       return Either.right(result);
+    } on ValidationException catch (e) {
+      return Either.left(ValidationFailure(e.message));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, YapeInscripcionEstadoModel>> getYapeInscripcionEstado({required int clienteId, required String nroDocumento}) {
+    return _yape(() => remoteDataSource.getYapeInscripcionEstado(clienteId: clienteId, nroDocumento: nroDocumento));
+  }
+
+  @override
+  Future<Either<Failure, YapeInscripcionEstadoModel>> afiliarYapeInscripcion({
+    required int clienteId,
+    required String nroDocumento,
+    required String celular,
+  }) {
+    return _yape(() => remoteDataSource.afiliarYapeInscripcion(clienteId: clienteId, nroDocumento: nroDocumento, celular: celular));
+  }
+
+  @override
+  Future<Either<Failure, YapeInscripcionEstadoModel>> cobrarYapeInscripcion({required int clienteId, required String nroDocumento}) {
+    return _yape(() => remoteDataSource.cobrarYapeInscripcion(clienteId: clienteId, nroDocumento: nroDocumento));
+  }
+
+  Future<Either<Failure, YapeInscripcionEstadoModel>> _yape(Future<YapeInscripcionEstadoModel> Function() llamada) async {
+    try {
+      return Either.right(await llamada());
     } on ValidationException catch (e) {
       return Either.left(ValidationFailure(e.message));
     } on ServerException catch (e) {

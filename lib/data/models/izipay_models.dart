@@ -55,6 +55,12 @@ class InscripcionPagoInfoModel {
   final bool izipayDisponible;
   final String? qrUrl;
 
+  /// Yape (GMoney): solo si el servidor lo habilitó (un servidor anterior no manda `yape` y no se ofrece). El recargo es el costo
+  /// por pagar con Yape que se suma a la inscripción (0 si lo asume Arequipa Go) y el total es lo que se cobra en realidad.
+  final bool yapeDisponible;
+  final double yapeRecargo;
+  final double yapeTotal;
+
   /// De quién es el monto que respondió el servidor: «conductor» o «pasajero». Un servidor anterior al cobro de pasajeros no
   /// manda el tipo y respondería el monto de un conductor aunque se pida el de un pasajero: el registro de pasajeros solo cobra
   /// cuando el servidor confirma que es el de pasajeros.
@@ -70,17 +76,27 @@ class InscripcionPagoInfoModel {
     this.izipayDisponible = false,
     this.qrUrl,
     this.tipo,
-  });
+    this.yapeDisponible = false,
+    this.yapeRecargo = 0,
+    double? yapeTotal,
+  }) : yapeTotal = yapeTotal ?? monto + yapeRecargo;
 
   factory InscripcionPagoInfoModel.fromJson(Map<String, dynamic> json) {
     final caja = json['caja_arequipa'];
     final izipay = json['izipay'];
+    final yape = json['yape'];
+    final monto = double.tryParse((json['monto'] ?? '0').toString()) ?? 0;
+    final yapeActivo = yape is Map && yape['disponible'] == true;
+    final recargo = yapeActivo ? double.tryParse((yape['recargo'] ?? '0').toString()) ?? 0 : 0.0;
     return InscripcionPagoInfoModel(
       tipo: json['tipo']?.toString(),
-      monto: double.tryParse((json['monto'] ?? '0').toString()) ?? 0,
+      monto: monto,
       cajaDisponible: caja is Map ? caja['disponible'] != false : true,
       izipayDisponible: izipay is Map && izipay['disponible'] == true,
       qrUrl: izipay is Map ? izipay['qr_url']?.toString() : null,
+      yapeDisponible: yapeActivo,
+      yapeRecargo: recargo,
+      yapeTotal: yapeActivo ? double.tryParse((yape['total'] ?? '${monto + recargo}').toString()) ?? monto + recargo : null,
     );
   }
 }

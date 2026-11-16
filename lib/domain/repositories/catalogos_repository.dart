@@ -4,6 +4,7 @@ import '../../core/utils/either.dart';
 import '../../data/models/catalogo_models.dart';
 import '../../data/models/conductor_estado_model.dart';
 import '../../data/models/izipay_models.dart';
+import '../../data/models/yape_models.dart';
 
 abstract class CatalogosRepository {
   Future<Either<Failure, List<UbigeoItemModel>>> getDepartamentos();
@@ -20,4 +21,11 @@ abstract class CatalogosRepository {
     required File captura,
     String? numeroOperacion,
   });
+  Future<Either<Failure, YapeInscripcionEstadoModel>> getYapeInscripcionEstado({required int clienteId, required String nroDocumento});
+  Future<Either<Failure, YapeInscripcionEstadoModel>> afiliarYapeInscripcion({
+    required int clienteId,
+    required String nroDocumento,
+    required String celular,
+  });
+  Future<Either<Failure, YapeInscripcionEstadoModel>> cobrarYapeInscripcion({required int clienteId, required String nroDocumento});
 }

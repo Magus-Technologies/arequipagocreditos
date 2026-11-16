@@ -45,6 +45,10 @@ class ApiConstants {
   static const String inscripcionMontoEndpoint = '/app/inscripcion/monto';
   static const String ordenCajaInscripcionEndpoint = '/app/inscripcion/orden-caja/{id}';
   static const String izipayCapturaEndpoint = '/app/inscripcion/izipay-captura';
+  // Pagar la inscripción con Yape (GMoney). POST: el id va en la URL y el nro_documento en el cuerpo, nunca en la URL.
+  static const String yapeInscripcionEstadoEndpoint = '/app/yape/inscripcion/{id}/estado';
+  static const String yapeInscripcionAfiliarEndpoint = '/app/yape/inscripcion/{id}/afiliar';
+  static const String yapeInscripcionCobrarEndpoint = '/app/yape/inscripcion/{id}/cobrar';
   static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';
   static const String ubigeoProvinciasEndpoint = '/ubicaciones/provincias/{codigo}';
   static const String ubigeoDistritosEndpoint = '/ubicaciones/distritos/{codigo}';

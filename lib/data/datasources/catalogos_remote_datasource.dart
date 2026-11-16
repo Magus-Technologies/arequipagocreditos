@@ -6,6 +6,7 @@ import '../../core/errors/exceptions.dart';
 import '../models/catalogo_models.dart';
 import '../models/conductor_estado_model.dart';
 import '../models/izipay_models.dart';
+import '../models/yape_models.dart';
 
 abstract class CatalogosRemoteDataSource {
   Future<List<UbigeoItemModel>> getDepartamentos();
@@ -22,6 +23,15 @@ abstract class CatalogosRemoteDataSource {
     required File captura,
     String? numeroOperacion,
   });
+
+  /// Pagar la inscripción con Yape: cada llamada devuelve el estado completo (el servidor decide el paso).
+  Future<YapeInscripcionEstadoModel> getYapeInscripcionEstado({required int clienteId, required String nroDocumento});
+  Future<YapeInscripcionEstadoModel> afiliarYapeInscripcion({
+    required int clienteId,
+    required String nroDocumento,
+    required String celular,
+  });
+  Future<YapeInscripcionEstadoModel> cobrarYapeInscripcion({required int clienteId, required String nroDocumento});
 }
 
 class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
@@ -234,6 +244,63 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException('Error al subir la captura: $e');
+    }
+  }
+
+  @override
+  Future<YapeInscripcionEstadoModel> getYapeInscripcionEstado({required int clienteId, required String nroDocumento}) {
+    return _postYape(ApiConstants.yapeInscripcionEstadoEndpoint, clienteId, {'nro_documento': nroDocumento});
+  }
+
+  @override
+  Future<YapeInscripcionEstadoModel> afiliarYapeInscripcion({
+    required int clienteId,
+    required String nroDocumento,
+    required String celular,
+  }) {
+    return _postYape(ApiConstants.yapeInscripcionAfiliarEndpoint, clienteId, {
+      'nro_documento': nroDocumento,
+      'celular': celular,
+      // El servidor exige la aceptación y guarda su versión, fecha, hora e IP: el app solo manda lo que la persona marcó.
+      'acepta_autorizacion': true,
+    });
+  }
+
+  @override
+  Future<YapeInscripcionEstadoModel> cobrarYapeInscripcion({required int clienteId, required String nroDocumento}) {
+    return _postYape(ApiConstants.yapeInscripcionCobrarEndpoint, clienteId, {'nro_documento': nroDocumento});
+  }
+
+  /// POST de Yape: el id va en la URL y el documento en el cuerpo (los accesos se registran y el documento no debe quedar ahí).
+  /// Los errores esperados (404 registro no encontrado, 403 eliminado, 422 no se puede pagar así, 429) llegan con su texto para
+  /// mostrárselo a la persona; cualquier otra cosa es un error del servidor.
+  Future<YapeInscripcionEstadoModel> _postYape(String endpoint, int clienteId, Map<String, dynamic> cuerpo) async {
+    try {
+      final url = '${ApiConstants.baseUrl}${endpoint.replaceAll('{id}', clienteId.toString())}';
+      final response = await client
+          .post(Uri.parse(url), headers: ApiConstants.defaultHeaders, body: json.encode(cuerpo))
+          .timeout(ApiConstants.connectionTimeout);
+
+      Map<String, dynamic>? body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 200 && body?['success'] == true && body?['data'] is Map) {
+        return YapeInscripcionEstadoModel.fromJson(Map<String, dynamic>.from(body!['data'] as Map));
+      }
+      if (response.statusCode == 429) {
+        throw const ValidationException('Demasiados intentos. Espera un momento e inténtalo de nuevo.');
+      }
+      if (const [403, 404, 422].contains(response.statusCode)) {
+        throw ValidationException(body?['message']?.toString() ?? 'No pudimos pagar con Yape. Inténtalo nuevamente.');
+      }
+      throw ServerException(body?['message']?.toString() ?? 'No pudimos completar la operación. Inténtalo nuevamente.');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.');
     }
   }
 }

@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/conductor_estado_model.dart';
+import '../../data/models/yape_models.dart';
 import '../../theme/app_theme.dart';
+import '../components/yape_widgets.dart';
 import '../providers/catalogos_provider.dart';
 import 'conductor_izipay_page.dart';
 import 'conductor_orden_pago_page.dart';
+import 'conductor_yape_page.dart';
 
 class ConductorEstadoPage extends StatefulWidget {
   final int? conductorId;
@@ -23,6 +26,9 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
   String? _error;
   ConductorEstadoModel? _estado;
   bool _generandoOrden = false;
+
+  /// Pago de la inscripción con Yape (solo si el servidor lo ofrece y la persona no empezó con otro método). Null: no se muestra.
+  YapeInscripcionEstadoModel? _yape;
 
   static const List<_MetodoPagoInscripcion> _metodosPagoInscripcion = [
     _MetodoPagoInscripcion(
@@ -74,9 +80,11 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
 
     try {
       final estado = await catalogos.fetchConductorEstado(id);
+      final yape = await _consultarYape(catalogos, estado);
       if (mounted) {
         setState(() {
           _estado = estado;
+          _yape = yape;
           _loading = false;
         });
       }
@@ -88,6 +96,34 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
         });
       }
     }
+  }
+
+  /// ¿Puede pagar su inscripción con Yape ahora? Solo se pregunta si aún no paga y no empezó con Caja Arequipa ni IziPay (no se le
+  /// ofrecen dos métodos a la vez). Si el servidor no lo ofrece, o la consulta falla, simplemente no se muestra: nunca estorba al resto.
+  Future<YapeInscripcionEstadoModel?> _consultarYape(CatalogosProvider catalogos, ConductorEstadoModel estado) async {
+    final enCurso = estado.estadoAprobacion == 'pendiente' || estado.estadoAprobacion == 'aprobado';
+    if (!enCurso || estado.inscripcionPagada || estado.ordenPago != null || estado.pagoInscripcion == null) return null;
+    if (estado.pagoInscripcion!.capturaIzipay != null) return null;
+
+    try {
+      final yape = await catalogos.fetchYapeInscripcionEstado(clienteId: estado.id, nroDocumento: estado.nroDocumento);
+      return yape.puedePagarse ? yape : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Abre el pago con Yape y, al volver, recarga el estado (lo pudo haber pagado).
+  Future<void> _abrirYape() async {
+    final estado = _estado;
+    if (estado == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ConductorYapePage(conductorId: estado.id, nroDocumento: estado.nroDocumento),
+      ),
+    );
+    if (mounted) _load();
   }
 
   @override
@@ -431,9 +467,11 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
     final IconData icono;
     final String titulo;
     final Widget detalle;
+    Widget? iconoPropio;
 
     final orden = estado.ordenPago;
     final captura = estado.pagoInscripcion?.capturaIzipay;
+    final yape = _yape;
 
     if (estado.inscripcionPagada) {
       icono = Icons.check_circle_outline;
@@ -475,12 +513,43 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
         key: const Key('estado_captura'),
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
       );
+    } else if (yape != null) {
+      // Eligió Yape al registrarse (o aún no pagó): la solicitud ya está enviada, falta afiliar su Yape y pagar.
+      icono = Icons.phone_android_rounded;
+      iconoPropio = const YapeLogo(tamano: 24);
+      titulo = 'Pago con Yape:';
+      detalle = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            yape.paso == YapeInscripcionEstadoModel.pasoProcesando ? 'Procesando · ${soles(yape.total)}' : 'Pendiente · ${soles(yape.total)}',
+            key: const Key('estado_yape_pendiente'),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 36,
+            child: ElevatedButton(
+              key: const Key('estado_btn_pagar_yape'),
+              onPressed: _abrirYape,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorYape,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(yape.paso == YapeInscripcionEstadoModel.pasoProcesando ? 'Ver mi pago' : 'Pagar con Yape', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      );
     } else {
       return null;
     }
 
     return _buildFilaInfo(
-      icono: Icon(icono, size: 21, color: Colors.grey.shade800),
+      icono: iconoPropio ?? Icon(icono, size: 21, color: Colors.grey.shade800),
       contenido: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -614,6 +683,10 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
         const SizedBox(height: 16),
         for (final metodo in _metodosPagoInscripcion) ...[
           _buildMetodoPagoCard(metodo, estado),
+          const SizedBox(height: 12),
+        ],
+        if (_yape != null) ...[
+          _buildYapeCard(_yape!),
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 4),
@@ -860,6 +933,45 @@ class _ConductorEstadoPageState extends State<ConductorEstadoPage> {
         ),
       );
     }
+  }
+
+  /// Yape entre los métodos de pago de la solicitud aprobada (solo si el servidor lo ofrece). Muestra el total con el costo por usar Yape.
+  Widget _buildYapeCard(YapeInscripcionEstadoModel yape) {
+    final detalle = yape.tieneRecargo
+        ? 'Paga ${soles(yape.total)}: ${soles(yape.monto)} + ${soles(yape.recargo)} de costo por usar Yape.'
+        : 'Paga ${soles(yape.total)} desde tu celular, sin ir a ninguna agencia.';
+
+    return InkWell(
+      key: const Key('estado_metodo_yape'),
+      onTap: _abrirYape,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 56, height: 28, child: Align(alignment: Alignment.centerLeft, child: YapeLogo(tamano: 28))),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Yape', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(detalle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: Colors.black45),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildMetodoPagoCard(_MetodoPagoInscripcion metodo, ConductorEstadoModel estado) {

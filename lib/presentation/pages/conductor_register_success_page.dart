@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
+import '../components/yape_widgets.dart';
 import 'conductor_estado_page.dart';
 
 /// Confirmación del pre-registro enviado desde el app.
@@ -18,7 +19,12 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
   /// (`orden_pago.codigo`) o la captura de IziPay (`captura_izipay`). Null si no hubo pago al registrarse.
   final Map<String, dynamic>? inscripcion;
 
-  const ConductorRegisterSuccessPage({super.key, this.conductorId, this.inscripcion});
+  /// Con Yape el pago se hace justo después de enviar la solicitud: aquí llega si ya quedó pagado (lo confirma el servidor).
+  final bool yapePagado;
+
+  const ConductorRegisterSuccessPage({super.key, this.conductorId, this.inscripcion, this.yapePagado = false});
+
+  bool get _esYape => inscripcion?['metodo'] == 'yape';
 
   String? get _codigoCaja {
     final orden = inscripcion?['orden_pago'];
@@ -33,7 +39,7 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
   static const Color _navy = Color(0xFF16233C);
 
   /// Alto que necesita el diseño a tamaño natural (con el pago de la inscripción la tarjeta es más alta).
-  double get _altoBase => _codigoCaja != null || _capturaIzipay ? 800 : 700;
+  double get _altoBase => _codigoCaja != null || _capturaIzipay || _esYape ? 800 : 700;
 
   @override
   Widget build(BuildContext context) {
@@ -294,7 +300,7 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
               ],
             ),
           ),
-          if (_codigoCaja != null || _capturaIzipay) ...[
+          if (_codigoCaja != null || _capturaIzipay || _esYape) ...[
             Divider(height: 1, color: Colors.grey.shade200),
             _buildFilaPago(f),
           ],
@@ -314,11 +320,13 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
         children: [
           _buildIconoCircular(
             f,
-            child: Icon(
-              codigo != null ? Icons.storefront_outlined : Icons.qr_code_2_rounded,
-              size: 21 * f,
-              color: Colors.grey.shade800,
-            ),
+            child: _esYape
+                ? YapeLogo(tamano: 24 * f)
+                : Icon(
+                    codigo != null ? Icons.storefront_outlined : Icons.qr_code_2_rounded,
+                    size: 21 * f,
+                    color: Colors.grey.shade800,
+                  ),
           ),
           SizedBox(width: 12 * f),
           Expanded(
@@ -326,11 +334,27 @@ class ConductorRegisterSuccessPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  codigo != null ? 'Tu código de pago (Caja Arequipa):' : 'Pago por IziPay:',
+                  _esYape ? 'Pago con Yape:' : (codigo != null ? 'Tu código de pago (Caja Arequipa):' : 'Pago por IziPay:'),
                   style: TextStyle(fontSize: 12 * f, color: Colors.grey.shade700),
                 ),
                 SizedBox(height: 2 * f),
-                if (codigo != null) ...[
+                if (_esYape) ...[
+                  Text(
+                    yapePagado ? 'Pagado' : 'Pendiente',
+                    key: Key(yapePagado ? 'exito_yape_pagado' : 'exito_yape_pendiente'),
+                    style: TextStyle(
+                      fontSize: 14 * f,
+                      fontWeight: FontWeight.bold,
+                      color: yapePagado ? _verdeTexto : const Color(0xFFB45309),
+                    ),
+                  ),
+                  Text(
+                    yapePagado
+                        ? 'Tu inscripción quedó pagada con Yape.'
+                        : 'Págala desde «Ver el resultado», cuando quieras.',
+                    style: TextStyle(fontSize: 11 * f, color: Colors.grey.shade700),
+                  ),
+                ] else if (codigo != null) ...[
                   SelectableText(
                     codigo,
                     key: const Key('exito_codigo_caja'),

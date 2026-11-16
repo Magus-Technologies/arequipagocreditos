@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/catalogo_models.dart';
 import '../../data/models/conductor_estado_model.dart';
 import '../../data/models/izipay_models.dart';
+import '../../data/models/yape_models.dart';
 import '../../domain/repositories/catalogos_repository.dart';
 
 class CatalogosProvider extends ChangeNotifier {
@@ -151,6 +152,28 @@ class CatalogosProvider extends ChangeNotifier {
       (failure) => throw Exception(failure.message),
       (response) => response,
     );
+  }
+
+  /// En qué paso va el pago de la inscripción con Yape (el servidor decide; el app solo dibuja). Lanza con el texto para la persona.
+  Future<YapeInscripcionEstadoModel> fetchYapeInscripcionEstado({required int clienteId, required String nroDocumento}) async {
+    final result = await catalogosRepository.getYapeInscripcionEstado(clienteId: clienteId, nroDocumento: nroDocumento);
+    return result.fold((failure) => throw Exception(failure.message), (estado) => estado);
+  }
+
+  /// Afilia el Yape de la persona: devuelve el estado con el enlace que abre Yape para aprobar.
+  Future<YapeInscripcionEstadoModel> afiliarYapeInscripcion({
+    required int clienteId,
+    required String nroDocumento,
+    required String celular,
+  }) async {
+    final result = await catalogosRepository.afiliarYapeInscripcion(clienteId: clienteId, nroDocumento: nroDocumento, celular: celular);
+    return result.fold((failure) => throw Exception(failure.message), (estado) => estado);
+  }
+
+  /// Pide el cobro de la inscripción al Yape ya afiliado.
+  Future<YapeInscripcionEstadoModel> cobrarYapeInscripcion({required int clienteId, required String nroDocumento}) async {
+    final result = await catalogosRepository.cobrarYapeInscripcion(clienteId: clienteId, nroDocumento: nroDocumento);
+    return result.fold((failure) => throw Exception(failure.message), (estado) => estado);
   }
 
   void clearProvincias() {
