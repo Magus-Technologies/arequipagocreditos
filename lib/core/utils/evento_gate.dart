@@ -9,7 +9,7 @@ import 'evento_persona.dart';
 /// Aviso de EVENTO al entrar al inicio (tickets del 3er Aniversario y los que vengan).
 ///
 /// Misma idea que [DatosPendientesGate]: una vez por sesión y por evento. La ventana muestra el banner; tocarlo lleva a los
-/// términos y de ahí a la compra. Si dice «Ahora no», queda la entrada fija del inicio ([EventoAccesoCard]).
+/// términos y de ahí a la compra. Si dice «Ahora no», queda el chip de eventos del encabezado del inicio ([EventoAccesoChip]).
 ///
 /// Un error de red acá se traga en silencio: este aviso NUNCA bloquea ni ensucia el inicio.
 class EventoGate {
@@ -19,7 +19,7 @@ class EventoGate {
   static String _clave(int clienteConductorId, int eventoId) => '$clienteConductorId:$eventoId';
 
   /// ¿Toca mostrar el aviso de este evento a esta persona? Solo si hay evento, no se le mostró ya y todavía puede comprar: quien
-  /// ya llegó a su tope de tickets no necesita que se le invite a comprar (le queda la entrada fija del inicio).
+  /// ya llegó a su tope de tickets no necesita que se le invite a comprar (le queda el chip de eventos del inicio).
   static bool debeMostrar(EventoModel? evento, int clienteConductorId) {
     if (evento == null) return false;
     final mis = evento.misTickets;
@@ -30,7 +30,7 @@ class EventoGate {
   /// Solo para pruebas.
   static void reiniciarSesion() => _mostrados.clear();
 
-  /// Pide el evento activo Y las compras de la persona, sin mostrar nada, para que la entrada fija del inicio aparezca sin
+  /// Pide el evento activo Y las compras de la persona, sin mostrar nada, para que el chip de eventos del inicio aparezca sin
   /// esperar a que se cierren los otros avisos. Las compras hacen falta porque con el evento ya empezado el servidor deja de
   /// mandarlo como activo y quien pagó igual tiene que poder llegar a su código.
   static Future<void> precargar(BuildContext context) async {

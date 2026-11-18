@@ -398,10 +398,29 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${variante.cantidadCuotas} cuotas de ${variante.monedaSimbolo} ${variante.montoCuota.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                    ),
+                    // TK-0454 (celulares): «Al contado» con el precio de venta y «Financiado» con el monto financiado, su inicial y sus
+                    // cuotas (la inicial es la de su nivel). El contado solo se muestra: estos beneficios se adquieren financiados.
+                    if (variante.precioContado != null) ...[
+                      Text(
+                        'Al contado: ${variante.monedaSimbolo} ${variante.precioContado!.toStringAsFixed(2)}',
+                        key: Key('variante_contado_${variante.varianteId}'),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                      ),
+                      Text(
+                        'Financiado: ${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}',
+                        key: Key('variante_financiado_${variante.varianteId}'),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.btnColor),
+                      ),
+                      Text(
+                        'Inicial ${variante.monedaInicialSimbolo} ${variante.cuotaInicial.toStringAsFixed(2)} + ${variante.cantidadCuotas} cuotas de ${variante.monedaSimbolo} ${variante.montoCuota.toStringAsFixed(2)}',
+                        key: Key('variante_plan_${variante.varianteId}'),
+                        style: TextStyle(fontSize: 12.5, color: Colors.grey[700]),
+                      ),
+                    ] else
+                      Text(
+                        '${variante.cantidadCuotas} cuotas de ${variante.monedaSimbolo} ${variante.montoCuota.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
                     // Diseño Credi Ahorro (pág. 25): monto de descuento y meta de viajes según el certificado.
                     if (variante.descuentoSemanal != null && variante.descuentoSemanal! > 0 && variante.viajesRequeridos != null)
                       Text.rich(
@@ -416,14 +435,15 @@ class _BeneficioDetailsModalState extends State<BeneficioDetailsModal> {
                           ],
                         ),
                       ),
-                    Text(
-                      'Total: ${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.btnColor,
+                    if (variante.precioContado == null)
+                      Text(
+                        'Total: ${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.btnColor,
+                        ),
                       ),
-                    ),
                     // Características del modelo (pantalla, RAM, ROM, cámara, red).
                     if (variante.caracteristicas.isNotEmpty) ...[
                       const SizedBox(height: 6),

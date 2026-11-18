@@ -6,6 +6,7 @@ import '../../core/errors/exceptions.dart';
 import '../models/catalogo_models.dart';
 import '../models/conductor_estado_model.dart';
 import '../models/izipay_models.dart';
+import '../models/verificacion_registro_model.dart';
 import '../models/yape_models.dart';
 
 abstract class CatalogosRemoteDataSource {
@@ -13,6 +14,12 @@ abstract class CatalogosRemoteDataSource {
   Future<List<UbigeoItemModel>> getProvincias(String codigoDepartamento);
   Future<List<UbigeoItemModel>> getDistritos(String codigoProvincia);
   Future<List<PlataformaItemModel>> getPlataformas();
+
+  /// Departamentos y provincias donde la plataforma está habilitada (o que no tiene restricción).
+  Future<UbicacionPlataformaModel> getUbicacionesPlataforma(String plataforma);
+
+  /// ¿Ya existe un registro con el documento, la licencia o el correo? Todos son opcionales; se mandan solo los que vienen.
+  Future<VerificacionRegistroModel> verificarRegistroConductor({String? nroDocumento, String? nroLicencia, String? correo});
   Future<ConductorEstadoModel> getConductorEstado(int conductorId);
   Future<IzipayInfoModel> getIzipayInfo(int clienteId);
   Future<InscripcionPagoInfoModel> getInscripcionPagoInfo({String? plataforma, String? departamento, String? tipo});
@@ -32,6 +39,9 @@ abstract class CatalogosRemoteDataSource {
     required String celular,
   });
   Future<YapeInscripcionEstadoModel> cobrarYapeInscripcion({required int clienteId, required String nroDocumento});
+
+  /// ¿Esta persona puede pagar con Yape? Solo cambia algo en el modo de prueba (el servidor tiene una lista de quiénes lo prueban).
+  Future<bool> getYapeAcceso({required String nroDocumento});
 }
 
 class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
@@ -82,6 +92,67 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
   @override
   Future<List<PlataformaItemModel>> getPlataformas() {
     return _getList(ApiConstants.plataformasEndpoint, PlataformaItemModel.fromJson, 'plataformas');
+  }
+
+  @override
+  Future<UbicacionPlataformaModel> getUbicacionesPlataforma(String plataforma) async {
+    try {
+      final endpoint = ApiConstants.plataformaUbicacionesEndpoint.replaceAll('{plataforma}', Uri.encodeComponent(plataforma));
+      final response = await client
+          .get(Uri.parse('${ApiConstants.baseUrl}$endpoint'), headers: ApiConstants.defaultHeaders)
+          .timeout(ApiConstants.consultaRapidaTimeout);
+
+      Map<String, dynamic>? body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 200 && body?['success'] == true && body?['data'] is Map) {
+        return UbicacionPlataformaModel.fromJson(Map<String, dynamic>.from(body!['data'] as Map));
+      }
+      // 404: el servidor aún no tiene este endpoint (el app se publicó antes que el servidor). Es el comportamiento anterior: la
+      // plataforma no restringe ciudades. Cualquier otro fallo (red, 5xx, respuesta rara) lanza y el registro NO deja avanzar.
+      if (response.statusCode == 404) return const UbicacionPlataformaModel(restringido: false);
+      throw ServerException('Error del servidor (HTTP ${response.statusCode}). Intenta nuevamente.');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Error al consultar las ciudades de la plataforma: $e');
+    }
+  }
+
+  @override
+  Future<VerificacionRegistroModel> verificarRegistroConductor({String? nroDocumento, String? nroLicencia, String? correo}) async {
+    try {
+      final cuerpo = <String, String>{
+        if (nroDocumento != null && nroDocumento.isNotEmpty) 'nro_documento': nroDocumento,
+        if (nroLicencia != null && nroLicencia.isNotEmpty) 'nro_licencia': nroLicencia,
+        if (correo != null && correo.isNotEmpty) 'correo': correo,
+      };
+      final response = await client
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conductorVerificarRegistroEndpoint}'),
+            headers: ApiConstants.defaultHeaders,
+            body: json.encode(cuerpo),
+          )
+          .timeout(ApiConstants.consultaRapidaTimeout);
+
+      Map<String, dynamic>? body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 200 && body?['success'] == true && body?['data'] is Map) {
+        return VerificacionRegistroModel.fromJson(Map<String, dynamic>.from(body!['data'] as Map));
+      }
+      throw ServerException('Error del servidor (HTTP ${response.statusCode}). Intenta nuevamente.');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Error al verificar el registro: $e');
+    }
   }
 
   @override
@@ -269,6 +340,35 @@ class CatalogosRemoteDataSourceImpl implements CatalogosRemoteDataSource {
   @override
   Future<YapeInscripcionEstadoModel> cobrarYapeInscripcion({required int clienteId, required String nroDocumento}) {
     return _postYape(ApiConstants.yapeInscripcionCobrarEndpoint, clienteId, {'nro_documento': nroDocumento});
+  }
+
+  @override
+  Future<bool> getYapeAcceso({required String nroDocumento}) async {
+    try {
+      // POST: el documento va en el cuerpo y no en la URL (los accesos se registran).
+      final response = await client
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}${ApiConstants.yapeInscripcionAccesoEndpoint}'),
+            headers: ApiConstants.defaultHeaders,
+            body: json.encode({'nro_documento': nroDocumento}),
+          )
+          .timeout(ApiConstants.connectionTimeout);
+
+      Map<String, dynamic>? body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        body = null;
+      }
+
+      if (response.statusCode == 200 && body?['success'] == true && body?['data'] is Map) {
+        return (body!['data'] as Map)['disponible'] == true;
+      }
+      throw ServerException('No pudimos confirmar si puedes pagar con Yape (HTTP ${response.statusCode}).');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('No pudimos confirmar si puedes pagar con Yape: $e');
+    }
   }
 
   /// POST de Yape: el id va en la URL y el documento en el cuerpo (los accesos se registran y el documento no debe quedar ahí).

@@ -1,4 +1,5 @@
 import 'package:arequipagocreditos/data/models/conductor_model.dart';
+import 'package:arequipagocreditos/presentation/components/evento_acceso_chip.dart';
 import 'package:arequipagocreditos/presentation/components/header_icon.dart';
 import 'package:arequipagocreditos/presentation/pages/mi_nivel_page.dart';
 import 'package:arequipagocreditos/presentation/pages/mis_financiamientos_page.dart';
@@ -120,6 +121,8 @@ class _HeaderState extends State<Header> with WidgetsBindingObserver {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    // Eventos: algo chico, solo si hay un evento disponible (o tickets que ver).
+                    const EventoAccesoChip(),
                   ],
                 ),
               ),

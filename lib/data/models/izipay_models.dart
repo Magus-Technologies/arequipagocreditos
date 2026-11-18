@@ -61,6 +61,10 @@ class InscripcionPagoInfoModel {
   final double yapeRecargo;
   final double yapeTotal;
 
+  /// Yape todavía no se puede usar: el app lo muestra bloqueado con la etiqueta «Próximamente». En el modo de prueba del servidor lo
+  /// puede usar solo quien esté en su lista: para esa persona se pregunta aparte con su documento (`conYapeHabilitado`).
+  final bool yapeProximamente;
+
   /// De quién es el monto que respondió el servidor: «conductor» o «pasajero». Un servidor anterior al cobro de pasajeros no
   /// manda el tipo y respondería el monto de un conductor aunque se pida el de un pasajero: el registro de pasajeros solo cobra
   /// cuando el servidor confirma que es el de pasajeros.
@@ -77,6 +81,7 @@ class InscripcionPagoInfoModel {
     this.qrUrl,
     this.tipo,
     this.yapeDisponible = false,
+    this.yapeProximamente = false,
     this.yapeRecargo = 0,
     double? yapeTotal,
   }) : yapeTotal = yapeTotal ?? monto + yapeRecargo;
@@ -87,7 +92,11 @@ class InscripcionPagoInfoModel {
     final yape = json['yape'];
     final monto = double.tryParse((json['monto'] ?? '0').toString()) ?? 0;
     final yapeActivo = yape is Map && yape['disponible'] == true;
-    final recargo = yapeActivo ? double.tryParse((yape['recargo'] ?? '0').toString()) ?? 0 : 0.0;
+    // Habilitado nunca es a la vez «Próximamente». Un servidor anterior no manda `proximamente` y Yape simplemente no se muestra.
+    final yapeProximamente = !yapeActivo && yape is Map && yape['proximamente'] == true;
+    // Con Yape bloqueado el servidor igual manda lo que pagaría: sirve si en el modo de prueba resulta que esta persona sí puede usarlo.
+    final conMontos = yape is Map && (yapeActivo || yapeProximamente);
+    final recargo = conMontos ? double.tryParse((yape['recargo'] ?? '0').toString()) ?? 0 : 0.0;
     return InscripcionPagoInfoModel(
       tipo: json['tipo']?.toString(),
       monto: monto,
@@ -95,10 +104,24 @@ class InscripcionPagoInfoModel {
       izipayDisponible: izipay is Map && izipay['disponible'] == true,
       qrUrl: izipay is Map ? izipay['qr_url']?.toString() : null,
       yapeDisponible: yapeActivo,
+      yapeProximamente: yapeProximamente,
       yapeRecargo: recargo,
-      yapeTotal: yapeActivo ? double.tryParse((yape['total'] ?? '${monto + recargo}').toString()) ?? monto + recargo : null,
+      yapeTotal: conMontos ? double.tryParse((yape['total'] ?? '${monto + recargo}').toString()) ?? monto + recargo : null,
     );
   }
+
+  /// Lo mismo, con Yape habilitado: el servidor confirmó que ESTA persona (por su documento) sí puede usarlo en el modo de prueba.
+  InscripcionPagoInfoModel conYapeHabilitado() => InscripcionPagoInfoModel(
+        monto: monto,
+        tipo: tipo,
+        cajaDisponible: cajaDisponible,
+        izipayDisponible: izipayDisponible,
+        qrUrl: qrUrl,
+        yapeDisponible: true,
+        yapeProximamente: false,
+        yapeRecargo: yapeRecargo,
+        yapeTotal: yapeTotal,
+      );
 }
 
 class IzipayInfoModel {

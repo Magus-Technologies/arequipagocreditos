@@ -7,6 +7,7 @@ import '../datasources/catalogos_remote_datasource.dart';
 import '../models/catalogo_models.dart';
 import '../models/conductor_estado_model.dart';
 import '../models/izipay_models.dart';
+import '../models/verificacion_registro_model.dart';
 import '../models/yape_models.dart';
 
 class CatalogosRepositoryImpl implements CatalogosRepository {
@@ -49,6 +50,30 @@ class CatalogosRepositoryImpl implements CatalogosRepository {
     try {
       final result = await remoteDataSource.getPlataformas();
       return Either.right(result);
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UbicacionPlataformaModel>> getUbicacionesPlataforma(String plataforma) async {
+    try {
+      final result = await remoteDataSource.getUbicacionesPlataforma(plataforma);
+      return Either.right(result);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, VerificacionRegistroModel>> verificarRegistroConductor({String? nroDocumento, String? nroLicencia, String? correo}) async {
+    try {
+      final result = await remoteDataSource.verificarRegistroConductor(nroDocumento: nroDocumento, nroLicencia: nroLicencia, correo: correo);
+      return Either.right(result);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
     } on Exception catch (e) {
       return Either.left(ServerFailure(e.toString()));
     }
@@ -143,6 +168,17 @@ class CatalogosRepositoryImpl implements CatalogosRepository {
   @override
   Future<Either<Failure, YapeInscripcionEstadoModel>> cobrarYapeInscripcion({required int clienteId, required String nroDocumento}) {
     return _yape(() => remoteDataSource.cobrarYapeInscripcion(clienteId: clienteId, nroDocumento: nroDocumento));
+  }
+
+  @override
+  Future<Either<Failure, bool>> getYapeAcceso({required String nroDocumento}) async {
+    try {
+      return Either.right(await remoteDataSource.getYapeAcceso(nroDocumento: nroDocumento));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on Exception catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
   }
 
   Future<Either<Failure, YapeInscripcionEstadoModel>> _yape(Future<YapeInscripcionEstadoModel> Function() llamada) async {

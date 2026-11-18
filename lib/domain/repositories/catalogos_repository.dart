@@ -4,6 +4,7 @@ import '../../core/utils/either.dart';
 import '../../data/models/catalogo_models.dart';
 import '../../data/models/conductor_estado_model.dart';
 import '../../data/models/izipay_models.dart';
+import '../../data/models/verificacion_registro_model.dart';
 import '../../data/models/yape_models.dart';
 
 abstract class CatalogosRepository {
@@ -11,6 +12,8 @@ abstract class CatalogosRepository {
   Future<Either<Failure, List<UbigeoItemModel>>> getProvincias(String codigoDepartamento);
   Future<Either<Failure, List<UbigeoItemModel>>> getDistritos(String codigoProvincia);
   Future<Either<Failure, List<PlataformaItemModel>>> getPlataformas();
+  Future<Either<Failure, UbicacionPlataformaModel>> getUbicacionesPlataforma(String plataforma);
+  Future<Either<Failure, VerificacionRegistroModel>> verificarRegistroConductor({String? nroDocumento, String? nroLicencia, String? correo});
   Future<Either<Failure, ConductorEstadoModel>> getConductorEstado(int conductorId);
   Future<Either<Failure, IzipayInfoModel>> getIzipayInfo(int clienteId);
   Future<Either<Failure, InscripcionPagoInfoModel>> getInscripcionPagoInfo({String? plataforma, String? departamento, String? tipo});
@@ -28,4 +31,5 @@ abstract class CatalogosRepository {
     required String celular,
   });
   Future<Either<Failure, YapeInscripcionEstadoModel>> cobrarYapeInscripcion({required int clienteId, required String nroDocumento});
+  Future<Either<Failure, bool>> getYapeAcceso({required String nroDocumento});
 }

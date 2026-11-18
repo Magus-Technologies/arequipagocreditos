@@ -2,28 +2,100 @@ import 'package:flutter/material.dart';
 
 /// Piezas compartidas del pago con Yape (selector del registro, pantalla de pago y estado de la solicitud).
 
-/// Violeta de Yape. Provisional: se reemplaza por los colores y el logo oficiales cuando Yape los entregue (el flujo UX que se le
-/// mandó a validar dice lo mismo), por eso el logo es una insignia sencilla y no una copia de su marca.
+/// Violeta de Yape.
 const Color colorYape = Color(0xFF742284);
 
+/// Ícono oficial de Yape (`images/yape_logo.png`, 256 px, con las esquinas redondeadas ya transparentes). Si el archivo no se pudiera
+/// cargar se dibuja la insignia violeta con la «Y» de antes, para que el pago nunca quede sin su marca.
 class YapeLogo extends StatelessWidget {
   const YapeLogo({super.key, this.tamano = 28});
+
+  static const String asset = 'images/yape_logo.png';
 
   final double tamano;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.asset(
+      asset,
       width: tamano,
       height: tamano,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: colorYape, borderRadius: BorderRadius.circular(tamano * 0.3)),
-      child: Text(
-        'Y',
-        style: TextStyle(color: Colors.white, fontSize: tamano * 0.58, fontWeight: FontWeight.w800, height: 1),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      semanticLabel: 'Yape',
+      errorBuilder: (context, error, stackTrace) => Container(
+        width: tamano,
+        height: tamano,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: colorYape, borderRadius: BorderRadius.circular(tamano * 0.3)),
+        child: Text(
+          'Y',
+          style: TextStyle(color: Colors.white, fontSize: tamano * 0.58, fontWeight: FontWeight.w800, height: 1),
+        ),
       ),
     );
   }
+}
+
+/// Tarjeta de Yape apagada con la etiqueta «Próximamente»: se ve para que sepan que viene, pero no se puede tocar ni elegir.
+/// La usan el registro de conductor y el «Cálculo de Pago» de los servicios.
+class YapeProximamenteCard extends StatelessWidget {
+  const YapeProximamenteCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'Yape, próximamente. Todavía no disponible.',
+      child: ExcludeSemantics(
+        child: Opacity(
+          opacity: 0.6,
+          child: Container(
+            key: const Key('pago_metodo_yape_proximamente'),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Row(
+              children: [
+                // Misma caja que los logos de Caja Arequipa e IziPay del paso de pago: así los títulos quedan alineados.
+                const SizedBox(width: 56, height: 28, child: Align(alignment: Alignment.centerLeft, child: YapeLogo(tamano: 28))),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Yape', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      SizedBox(height: 2),
+                      Text('Pronto podrás pagar desde tu celular, sin ir a ninguna agencia.', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  key: const Key('pago_yape_etiqueta_proximamente'),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: colorYape.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+                  child: const Text('Próximamente', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: colorYape)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ¿Se avisa que Yape viene pronto en el «Cálculo de Pago» de un servicio? Solo en soles (Yape no cobra dólares) y si el servicio no
+/// trae ya un «Yape» propio entre sus métodos (el manual, con número de operación), para no mostrar dos. La compra de servicios todavía
+/// NO se cobra con Yape de GMoney, así que esto no depende del interruptor del Director: es solo un aviso, nunca habilita nada.
+bool mostrarYapeProximamenteEnServicio({required String simbolo, required List<String> metodos}) {
+  final enSoles = simbolo.replaceAll('.', '').trim().toUpperCase() == 'S/';
+  final tieneYape = metodos.any((m) => m.toUpperCase().contains('YAPE'));
+  return enSoles && !tieneYape;
 }
 
 /// Versión del texto de autorización que se muestra. El servidor guarda la suya (`GMONEY_CONSENTIMIENTO_VERSION`) junto con la fecha,

@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/izipay_models.dart';
+import '../../data/models/verificacion_registro_model.dart';
 import '../../theme/app_theme.dart';
+import '../components/app_select.dart';
 import '../components/pago_inscripcion_registro.dart';
 import '../providers/auth_provider.dart';
 import '../providers/catalogos_provider.dart';
@@ -28,8 +30,15 @@ class ConductorRegisterPage extends StatefulWidget {
 class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 1;
-  // 1 datos · 2 plataforma · 3 contacto · 4 vehículo · 5 documentos · 6 pago de la inscripción (y se envía la solicitud).
-  final int _totalSteps = 6;
+  // 1 plataforma · 2 datos personales · 3 contacto y ubicación · 4 vehículo · 5 documentos · 6 pago de la inscripción (y se envía la solicitud).
+  // La plataforma va primero porque define en qué ciudades se puede registrar la persona (paso 3).
+  static const int _pasoPlataforma = 1;
+  static const int _pasoDatosPersonales = 2;
+  static const int _pasoContacto = 3;
+  static const int _pasoVehiculo = 4;
+  static const int _pasoDocumentos = 5;
+  static const int _pasoPago = 6;
+  final int _totalSteps = _pasoPago;
   bool _isPickingFile = false;
 
   static const List<String> _categoriasLicencia = [
@@ -38,7 +47,10 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   ];
   static const List<String> _tiposVehiculo = ['Auto', 'Moto', 'Tuk-tuk', 'Otro'];
 
-  // Controllers Step 1
+  // Paso 1: plataforma
+  String? _plataforma;
+
+  // Paso 2: datos personales
   final _tipoDocController = TextEditingController(text: 'DNI');
   final _nroDocController = TextEditingController();
   final _nombresController = TextEditingController();
@@ -47,9 +59,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   final _fechaNacimientoController = TextEditingController();
   final _nroLicenciaController = TextEditingController();
   String? _categoriaLicencia;
-  String? _plataforma;
 
-  // Controllers Step 2
+  // Paso 3: contacto y ubicación
   final _telefonoController = TextEditingController();
   final _correoController = TextEditingController();
   final _direccionController = TextEditingController();
@@ -60,8 +71,20 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   String? _provinciaNombre;
   String? _distritoCodigo;
   String? _distritoNombre;
+  // Si la ubicación elegida salió de la lista restringida de la plataforma (true) o del catálogo completo (false). Sirve para
+  // descartar la elección cuando la persona cambia de plataforma y se pasa de un tipo de lista al otro.
+  bool? _ubicacionDeListaRestringida;
+  // Sube cada vez que se descarta una elección de ubicación: fuerza a los selectores a olvidar el valor que tenían.
+  int _ubicacionGeneracion = 0;
 
-  // Controllers Step 3
+  // ¿Ya existe un registro con estos datos? Se consulta al avanzar de los pasos 2 y 3. Guarda lo último que el servidor dijo que
+  // está libre, para no repetir la consulta si la persona no lo cambió.
+  bool _verificando = false;
+  String? _documentoVerificado;
+  String? _licenciaVerificada;
+  String? _correoVerificado;
+
+  // Paso 4: vehículo
   String? _tipoVehiculo;
   final _placaController = TextEditingController();
   final _marcaController = TextEditingController();
@@ -69,7 +92,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   final _anioController = TextEditingController();
   final _colorController = TextEditingController();
 
-  // Step 4
+  // Paso 5: documentos
   File? _docIdentidadAnverso;
   File? _docIdentidadReverso;
   File? _licenciaAnverso;
@@ -80,7 +103,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   final String _modalidadPago = 'contado';
   bool _aceptaTerminos = false;
 
-  // Step 6: pago de la inscripción, ANTES de enviar la solicitud. El monto depende de la plataforma y el departamento
+  // Paso 6: pago de la inscripción, ANTES de enviar la solicitud. El monto depende de la plataforma y el departamento
   // elegidos, así que se consulta al entrar al paso. IziPay: QR + captura; Caja Arequipa: el código llega al enviar.
   InscripcionPagoInfoModel? _pagoInfo;
   bool _pagoInfoCargando = false;
@@ -96,6 +119,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final catalogos = context.read<CatalogosProvider>();
+      // Un registro nuevo no hereda la restricción de ciudades de uno anterior.
+      catalogos.limpiarUbicacionesPlataforma();
       catalogos.loadDepartamentos();
       catalogos.loadPlataformas();
     });
@@ -127,7 +152,10 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     bool empty(TextEditingController c) => c.text.trim().isEmpty;
 
     switch (_currentStep) {
-      case 1:
+      case _pasoPlataforma:
+        if (_plataforma == null) return 'Selecciona la plataforma con la que trabajas';
+        return null;
+      case _pasoDatosPersonales:
         if (empty(_nroDocController))          return 'Ingresa tu DNI o número de documento';
         if (empty(_nombresController))         return 'Ingresa tus nombres completos';
         if (empty(_apellidoPaternoController)) return 'Ingresa tu apellido paterno';
@@ -139,16 +167,24 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         if (empty(_nroLicenciaController))     return 'Ingresa tu número de licencia';
         if (_categoriaLicencia == null)        return 'Selecciona la categoría de tu licencia';
         return null;
-      case 2:
-        if (_plataforma == null) return 'Selecciona la plataforma con la que trabajas';
-        return null;
-      case 3:
+      case _pasoContacto:
         if (!RegExp(r'^\d{9}$').hasMatch(_telefonoController.text.trim())) {
           return 'Ingresa un teléfono válido de 9 dígitos';
         }
         final correo = _correoController.text.trim();
         if (correo.isNotEmpty && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(correo)) {
           return 'Ingresa un correo electrónico válido';
+        }
+        final catalogos = context.read<CatalogosProvider>();
+        if (catalogos.ubicacionesPlataformaLoading) {
+          return 'Espera un momento: estamos consultando las ciudades de tu plataforma';
+        }
+        // Sin saber dónde está habilitada la plataforma (la consulta falló o no se hizo) no se avanza: se falla cerrado.
+        if (!catalogos.ubicacionesPlataformaListas(_plataforma)) {
+          return CatalogosProvider.ubicacionesPlataformaErrorMensaje;
+        }
+        if (catalogos.ubicacionRestringida && catalogos.departamentosRegistro.isEmpty) {
+          return 'Tu plataforma aún no está habilitada en ninguna ciudad. Vuelve al paso 1 y elige otra plataforma';
         }
         if (_departamentoCodigo == null) return 'Selecciona tu departamento';
         if (_provinciaCodigo == null)    return 'Selecciona tu provincia';
@@ -157,7 +193,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         final mapsError = _validateGoogleMapsUrl();
         if (mapsError != null) return mapsError;
         return null;
-      case 4:
+      case _pasoVehiculo:
         if (!empty(_placaController)) {
           if (_tipoVehiculo == null || empty(_marcaController) || empty(_modeloController)) {
             return 'Completa los datos del vehículo (tipo, marca y modelo)';
@@ -171,14 +207,14 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
           }
         }
         return null;
-      case 5:
+      case _pasoDocumentos:
         if (_docIdentidadAnverso == null) return 'Adjunta el anverso de tu DNI';
         if (_docIdentidadReverso == null) return 'Adjunta el reverso de tu DNI';
         if (_licenciaAnverso == null)     return 'Adjunta el anverso de tu licencia de conducir';
         if (_licenciaReverso == null)     return 'Adjunta el reverso de tu licencia de conducir';
         if (!_aceptaTerminos) return 'Debes autorizar el tratamiento de datos personales';
         return null;
-      case 6:
+      case _pasoPago:
         if (_pagoInfoCargando) return 'Espera un momento: estamos calculando tu monto de inscripción';
         if (_pagoInfo == null) return _pagoInfoError ?? 'No pudimos calcular tu monto de inscripción. Inténtalo de nuevo';
         if (_pagoInfo!.monto <= 0) return null; // inscripción sin costo: no hay nada que pagar
@@ -211,7 +247,9 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     return null;
   }
 
-  void _nextStep() {
+  Future<void> _nextStep() async {
+    if (_verificando) return;
+
     final error = _validateCurrentStep();
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -222,15 +260,194 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
+      // Si lo que falta es saber dónde está habilitada la plataforma, además se vuelve a consultar.
+      if (_currentStep == _pasoContacto && !context.read<CatalogosProvider>().ubicacionesPlataformaListas(_plataforma)) {
+        _cargarUbicacionesPlataforma();
+      }
       return;
+    }
+
+    // Antes de avanzar de los datos personales y del contacto se pregunta si esos datos ya tienen un registro.
+    if (_currentStep == _pasoDatosPersonales || _currentStep == _pasoContacto) {
+      final puedeAvanzar = await _verificarYaRegistrado();
+      if (!puedeAvanzar || !mounted) return;
     }
 
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
-      if (_currentStep == 6) _cargarPagoInfo();
+      if (_currentStep == _pasoContacto) _prepararUbicaciones();
+      if (_currentStep == _pasoPago) _cargarPagoInfo();
     } else {
       _submit();
     }
+  }
+
+  /// Pregunta al servidor si el documento y la licencia (paso 2) o el correo (paso 3) ya tienen un registro. Devuelve false si
+  /// hay que quedarse en el paso: ya existe (se avisa con un diálogo) o la persona salió de la pantalla.
+  /// Si la consulta falla (sin red, error del servidor) devuelve true: no se bloquea a nadie por eso, el servidor igual rechaza
+  /// duplicados al enviar la solicitud.
+  Future<bool> _verificarYaRegistrado() async {
+    String? documento;
+    String? licencia;
+    String? correo;
+    if (_currentStep == _pasoDatosPersonales) {
+      final doc = _nroDocController.text.trim();
+      final lic = _nroLicenciaController.text.trim();
+      if (doc != _documentoVerificado) documento = doc;
+      if (lic != _licenciaVerificada) licencia = lic;
+    } else {
+      final mail = _correoController.text.trim();
+      if (mail.isNotEmpty && mail != _correoVerificado) correo = mail;
+    }
+    // Nada nuevo que preguntar (ya se verificó o el correo, que es opcional, está vacío).
+    if (documento == null && licencia == null && correo == null) return true;
+
+    setState(() => _verificando = true);
+    final resultado = await context.read<CatalogosProvider>().verificarRegistroConductor(
+          nroDocumento: documento,
+          nroLicencia: licencia,
+          correo: correo,
+        );
+    if (!mounted) return false;
+    setState(() => _verificando = false);
+
+    if (resultado == null) return true;
+    if (resultado.registrado) {
+      await _mostrarYaRegistrado(resultado);
+      return false;
+    }
+
+    if (documento != null) _documentoVerificado = documento;
+    if (licencia != null) _licenciaVerificada = licencia;
+    if (correo != null) _correoVerificado = correo;
+    return true;
+  }
+
+  Future<void> _mostrarYaRegistrado(VerificacionRegistroModel verificacion) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('registro_ya_registrado_dialogo'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+              child: Icon(
+                verificacion.eliminado ? Icons.person_off_outlined : Icons.how_to_reg_outlined,
+                color: Colors.black,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              verificacion.titulo,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              verificacion.mensajeParaMostrar,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade800, height: 1.4),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              key: const Key('registro_ya_registrado_entendido'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              ),
+              child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Al elegir (o volver a elegir) la plataforma se consulta en qué ciudades está habilitada; la elección de ubicación que ya no
+  /// valga se descarta cuando llega la respuesta.
+  void _seleccionarPlataforma(String codigo) {
+    final catalogos = context.read<CatalogosProvider>();
+    final cambio = _plataforma != codigo;
+    setState(() => _plataforma = codigo);
+    // Si es la misma y su consulta ya salió bien (o está en curso) no se repite; si falló, tocarla de nuevo la reintenta.
+    if (cambio || !catalogos.ubicacionesPlataformaListas(codigo)) _cargarUbicacionesPlataforma();
+  }
+
+  /// Al entrar al paso de ubicación la lista de ciudades debe estar lista: si la consulta no se hizo o falló, se vuelve a hacer.
+  void _prepararUbicaciones() {
+    if (!context.read<CatalogosProvider>().ubicacionesPlataformaListas(_plataforma)) _cargarUbicacionesPlataforma();
+  }
+
+  Future<void> _cargarUbicacionesPlataforma() async {
+    final plataforma = _plataforma;
+    if (plataforma == null) return;
+    final catalogos = context.read<CatalogosProvider>();
+    await catalogos.loadUbicacionesPlataforma(plataforma);
+    // Si la persona eligió otra plataforma o salió mientras tanto, esta respuesta ya no aplica.
+    if (!mounted || _plataforma != plataforma) return;
+    _reconciliarUbicacion(catalogos);
+  }
+
+  /// Después de conocer las ciudades de la plataforma, deja la ubicación elegida solo si sigue siendo válida para ella; si no,
+  /// la descarta para no enviar un departamento, provincia o distrito que la plataforma no admite.
+  void _reconciliarUbicacion(CatalogosProvider catalogos) {
+    // Si la consulta falló no se sabe qué vale: se deja todo como está y se valida cuando un reintento salga bien.
+    if (!catalogos.ubicacionesPlataformaCargada) return;
+    if (_departamentoCodigo == null) {
+      _ubicacionDeListaRestringida = null;
+      return;
+    }
+
+    final restringida = catalogos.ubicacionRestringida;
+    final ubicaciones = catalogos.ubicacionesPlataforma;
+    var descartarTodo = _ubicacionDeListaRestringida != restringida;
+    var descartarDesdeProvincia = false;
+    if (!descartarTodo && restringida && ubicaciones != null) {
+      if (!ubicaciones.permiteDepartamento(_departamentoCodigo)) {
+        descartarTodo = true;
+      } else if (_provinciaCodigo != null && !ubicaciones.permiteProvincia(_departamentoCodigo, _provinciaCodigo)) {
+        descartarDesdeProvincia = true;
+      }
+    }
+
+    final departamentoVigente = descartarTodo ? null : _departamentoCodigo;
+    setState(() {
+      if (descartarTodo) {
+        _departamentoCodigo = null;
+        _departamentoNombre = null;
+        _ubicacionDeListaRestringida = null;
+      }
+      if (descartarTodo || descartarDesdeProvincia) {
+        _provinciaCodigo = null;
+        _provinciaNombre = null;
+        _distritoCodigo = null;
+        _distritoNombre = null;
+        _ubicacionGeneracion++;
+      }
+    });
+
+    if (descartarTodo) catalogos.clearProvincias();
+    if (descartarTodo || descartarDesdeProvincia) catalogos.clearDistritos();
+    // Se mantiene el departamento: con una lista restringida sus provincias pueden ser otras que con la plataforma anterior.
+    if (departamentoVigente != null && restringida) catalogos.loadProvinciasDelRegistro(departamentoVigente);
   }
 
   /// Monto de la inscripción y disponibilidad de IziPay. Se consulta cada vez que se entra al paso de pago, porque el monto
@@ -244,6 +461,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
       final info = await context.read<CatalogosProvider>().fetchInscripcionPagoInfo(
             plataforma: _plataforma,
             departamento: _departamentoNombre,
+            // Con el documento, el servidor dice si esta persona puede usar Yape cuando solo lo prueba una lista (modo de prueba).
+            documento: _nroDocController.text.trim(),
           );
       if (!mounted) return;
       setState(() {
@@ -268,7 +487,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   }
 
   void _prevStep() {
-    if (_currentStep > 1) {
+    if (_verificando) return;
+    if (_currentStep > _pasoPlataforma) {
       setState(() => _currentStep--);
     } else {
       Navigator.pop(context);
@@ -276,6 +496,9 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   }
 
   Future<void> _selectDate() async {
+    // El campo de fecha es un InkWell sobre un campo ignorado: no toma el foco. Si el apellido (u otro campo) lo tenía, Flutter se lo
+    // devolvería al cerrar el calendario y reabriría el teclado. Se suelta antes de abrir.
+    FocusManager.instance.primaryFocus?.unfocus();
     final maxDate = DateTime.now().subtract(const Duration(days: 365 * 18));
     DateTime? picked = await showDatePicker(
       context: context,
@@ -639,12 +862,12 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
 
   String _getStepSubtitle() {
     switch (_currentStep) {
-      case 1: return 'Información Personal';
-      case 2: return 'Plataforma en la que trabajas';
-      case 3: return 'Contacto y Ubicación';
-      case 4: return 'Vehículo (Opcional)';
-      case 5: return 'Adjuntar Documentación';
-      case 6: return 'Pago de Inscripción';
+      case _pasoPlataforma: return 'Plataforma en la que trabajas';
+      case _pasoDatosPersonales: return 'Información Personal';
+      case _pasoContacto: return 'Contacto y Ubicación';
+      case _pasoVehiculo: return 'Vehículo (Opcional)';
+      case _pasoDocumentos: return 'Adjuntar Documentación';
+      case _pasoPago: return 'Pago de Inscripción';
       default: return '';
     }
   }
@@ -672,7 +895,19 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
   Widget _buildStepContent() {
     final catalogos = context.watch<CatalogosProvider>();
     switch (_currentStep) {
-      case 1:
+      case _pasoPlataforma:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Selecciona la plataforma en la que trabajas:',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            _buildPlataformaCards(catalogos),
+          ],
+        );
+      case _pasoDatosPersonales:
         return Column(
           children: [
             _buildModernTextField(
@@ -697,47 +932,44 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             const SizedBox(height: 20),
             _buildModernTextField(_nroLicenciaController, 'Número de Licencia', Icons.card_membership_outlined),
             const SizedBox(height: 20),
-            _buildModernDropdown(
-              value: _categoriaLicencia,
+            AppSelect(
               label: 'Categoría de Licencia',
               icon: Icons.workspace_premium_outlined,
-              items: _categoriasLicencia,
+              value: _categoriaLicencia,
+              options: _categoriasLicencia.map((c) => SelectOption(c, c)).toList(),
               onChanged: (val) => setState(() => _categoriaLicencia = val),
             ),
           ],
         );
-      case 2:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Selecciona la plataforma en la que trabajas:',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
-            const SizedBox(height: 16),
-            _buildPlataformaCards(catalogos),
-          ],
-        );
-      case 3:
+      case _pasoContacto:
+        // Con una plataforma restringida solo se ofrecen las ciudades que el servidor habilitó para ella.
+        final restringida = catalogos.ubicacionRestringida;
+        final sinCiudades = restringida && catalogos.departamentosRegistro.isEmpty;
+        // No se pudo consultar dónde está habilitada la plataforma: no se ofrece ninguna ciudad hasta que un reintento salga bien.
+        final consultaFallida = catalogos.ubicacionesPlataformaError != null;
         return Column(
           children: [
             _buildModernTextField(_telefonoController, 'Tu Teléfono', Icons.phone_android_outlined, keyboardType: TextInputType.phone),
             const SizedBox(height: 20),
             _buildModernTextField(_correoController, 'Correo Electrónico (Opcional)', Icons.mail_outline, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 20),
-            _buildCatalogoDropdown(
+            if (consultaFallida)
+              _buildErrorUbicaciones()
+            else
+            AppSelect(
+              fieldKey: ValueKey('departamento-$_ubicacionGeneracion'),
               label: 'Departamento',
               icon: Icons.public_outlined,
               value: _departamentoCodigo,
-              items: catalogos.departamentos
-                  .map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre)))
-                  .toList(),
-              loading: catalogos.departamentosLoading,
-              error: catalogos.departamentosError,
+              options: catalogos.departamentosRegistro.map((d) => SelectOption(d.codigo, d.nombre)).toList(),
+              loading: catalogos.departamentosRegistroLoading,
+              error: catalogos.departamentosRegistroError,
               onRetry: () => catalogos.loadDepartamentos(),
+              placeholder: sinCiudades ? 'Tu plataforma aún no está habilitada en ninguna ciudad. Vuelve al paso 1 y elige otra plataforma.' : null,
+              placeholderEsAviso: sinCiudades,
+              avisoKey: const Key('ubicacion_sin_ciudades'),
               onChanged: (val) {
-                if (val == null) return;
-                final item = catalogos.departamentos.firstWhere((d) => d.codigo == val);
+                final item = catalogos.departamentosRegistro.firstWhere((d) => d.codigo == val);
                 setState(() {
                   _departamentoCodigo = val;
                   _departamentoNombre = item.nombre;
@@ -745,27 +977,39 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
                   _provinciaNombre = null;
                   _distritoCodigo = null;
                   _distritoNombre = null;
+                  _ubicacionDeListaRestringida = restringida;
                 });
                 catalogos.clearDistritos();
-                catalogos.loadProvincias(val);
+                catalogos.loadProvinciasDelRegistro(val);
               },
             ),
+            if (restringida && !sinCiudades)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Solo se muestran las ciudades habilitadas para tu plataforma.',
+                    style: TextStyle(fontSize: 11, color: Colors.black45),
+                  ),
+                ),
+              ),
             const SizedBox(height: 20),
-            _buildCatalogoDropdown(
+            AppSelect(
+              fieldKey: ValueKey('provincia-$_departamentoCodigo-$_ubicacionGeneracion'),
               label: 'Provincia',
               icon: Icons.location_city_outlined,
               value: _provinciaCodigo,
-              items: catalogos.provincias
-                  .map((p) => DropdownMenuItem(value: p.codigo, child: Text(p.nombre)))
-                  .toList(),
+              options: catalogos.provincias.map((p) => SelectOption(p.codigo, p.nombre)).toList(),
               loading: catalogos.provinciasLoading,
               error: catalogos.provinciasError,
               onRetry: () {
-                if (_departamentoCodigo != null) catalogos.loadProvincias(_departamentoCodigo!);
+                if (_departamentoCodigo != null) catalogos.loadProvinciasDelRegistro(_departamentoCodigo!);
               },
-              placeholder: _departamentoCodigo == null ? 'Selecciona primero el departamento' : null,
+              placeholder: _departamentoCodigo == null || consultaFallida
+                  ? 'Selecciona primero el departamento'
+                  : (restringida && catalogos.provincias.isEmpty ? 'Tu plataforma no tiene provincias habilitadas en este departamento' : null),
               onChanged: (val) {
-                if (val == null) return;
                 final item = catalogos.provincias.firstWhere((p) => p.codigo == val);
                 setState(() {
                   _provinciaCodigo = val;
@@ -777,21 +1021,19 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
               },
             ),
             const SizedBox(height: 20),
-            _buildCatalogoDropdown(
+            AppSelect(
+              fieldKey: ValueKey('distrito-$_provinciaCodigo-$_ubicacionGeneracion'),
               label: 'Distrito',
               icon: Icons.map_outlined,
               value: _distritoCodigo,
-              items: catalogos.distritos
-                  .map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre)))
-                  .toList(),
+              options: catalogos.distritos.map((d) => SelectOption(d.codigo, d.nombre)).toList(),
               loading: catalogos.distritosLoading,
               error: catalogos.distritosError,
               onRetry: () {
                 if (_provinciaCodigo != null) catalogos.loadDistritos(_provinciaCodigo!);
               },
-              placeholder: _provinciaCodigo == null ? 'Selecciona primero la provincia' : null,
+              placeholder: _provinciaCodigo == null || consultaFallida ? 'Selecciona primero la provincia' : null,
               onChanged: (val) {
-                if (val == null) return;
                 final item = catalogos.distritos.firstWhere((d) => d.codigo == val);
                 setState(() {
                   _distritoCodigo = val;
@@ -811,17 +1053,17 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             ),
           ],
         );
-      case 4:
+      case _pasoVehiculo:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoNote('Si tienes vehículo, regístralo aquí. Esto define tu tarifa de inscripción.'),
             const SizedBox(height: 20),
-            _buildModernDropdown(
-              value: _tipoVehiculo,
+            AppSelect(
               label: 'Tipo de Vehículo',
               icon: Icons.directions_car_outlined,
-              items: _tiposVehiculo,
+              value: _tipoVehiculo,
+              options: _tiposVehiculo.map((t) => SelectOption(t, t)).toList(),
               onChanged: (val) => setState(() => _tipoVehiculo = val),
             ),
             const SizedBox(height: 20),
@@ -836,7 +1078,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             _buildModernTextField(_colorController, 'Color', Icons.palette_outlined),
           ],
         );
-      case 5:
+      case _pasoDocumentos:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -858,7 +1100,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
             ),
           ],
         );
-      case 6:
+      case _pasoPago:
         return PagoInscripcionRegistro(
           info: _pagoInfo,
           cargando: _pagoInfoCargando,
@@ -958,7 +1200,7 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(
-            onTap: () => setState(() => _plataforma = p.plataforma),
+            onTap: () => _seleccionarPlataforma(p.plataforma),
             borderRadius: BorderRadius.circular(15),
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -1084,148 +1326,32 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
     );
   }
 
-  Widget _buildCatalogoDropdown({
-    required String label,
-    required IconData icon,
-    required String? value,
-    required List<DropdownMenuItem<String>> items,
-    required bool loading,
-    required String? error,
-    required VoidCallback onRetry,
-    required ValueChanged<String?> onChanged,
-    String? placeholder,
-  }) {
-    if (loading) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.black87, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Cargando...',
-                style: const TextStyle(fontSize: 15, color: Colors.black45),
-              ),
-            ),
-            const SizedBox(
-              height: 18,
-              width: 18,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black45),
-            ),
-          ],
-        ),
-      );
-    }
-    if (error != null) {
-      return InkWell(
-        onTap: onRetry,
+  /// Aviso (con «Reintentar») cuando no se pudo consultar en qué ciudades está habilitada la plataforma.
+  Widget _buildErrorUbicaciones() {
+    return Container(
+      key: const Key('ubicacion_error_consulta'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.red.shade200),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.refresh, color: Colors.red.shade400, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Error al cargar $label. Toca para reintentar',
-                  style: TextStyle(fontSize: 13, color: Colors.red.shade700),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    if (placeholder != null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.black26, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                placeholder,
-                style: const TextStyle(fontSize: 14, color: Colors.black38),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      onChanged: onChanged,
-      items: items,
-      isExpanded: true,
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black45),
-        prefixIcon: Icon(icon, color: Colors.black87, size: 22),
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
+        border: Border.all(color: Colors.red.shade200),
       ),
-    );
-  }
-
-  Widget _buildModernDropdown({
-    required String? value,
-    required String label,
-    required IconData icon,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      onChanged: onChanged,
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black45),
-        prefixIcon: Icon(icon, color: Colors.black87, size: 22),
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off_outlined, color: Colors.red.shade400, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              CatalogosProvider.ubicacionesPlataformaErrorMensaje,
+              style: TextStyle(fontSize: 13, color: Colors.red.shade700),
+            ),
+          ),
+          TextButton(
+            key: const Key('ubicacion_reintentar'),
+            onPressed: _cargarUbicacionesPlataforma,
+            child: const Text('Reintentar', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -1277,6 +1403,8 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
 
   Widget _buildBottomButtonsFooter() {
     final authProvider = context.watch<AuthProvider>();
+    // Ocupado: enviando la solicitud o consultando si ya existe un registro. Con el botón apagado no hay doble toque.
+    final ocupado = authProvider.isLoading || _verificando;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -1289,9 +1417,9 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
               child: SizedBox(
                 height: 55,
                 child: TextButton(
-                  onPressed: _prevStep,
+                  onPressed: _verificando ? null : _prevStep,
                   child: Text(
-                    _currentStep == 1 ? 'CANCELAR' : 'ATRÁS',
+                    _currentStep == _pasoPlataforma ? 'CANCELAR' : 'ATRÁS',
                     style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -1303,14 +1431,14 @@ class _ConductorRegisterPageState extends State<ConductorRegisterPage> {
               child: SizedBox(
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: authProvider.isLoading ? null : _nextStep,
+                  onPressed: ocupado ? null : _nextStep,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     elevation: 0,
                   ),
-                  child: authProvider.isLoading
+                  child: ocupado
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : Text(
                         _currentStep == _totalSteps ? 'ENVIAR SOLICITUD' : 'SIGUIENTE',

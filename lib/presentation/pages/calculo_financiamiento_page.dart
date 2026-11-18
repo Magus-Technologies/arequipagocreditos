@@ -10,6 +10,7 @@ import 'financiamiento_detalle_page.dart';
 import '../widgets/image_full_screen_view.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/simbolo_moneda.dart';
+import '../components/yape_widgets.dart';
 
 class CalculoFinanciamientoPage extends StatefulWidget {
   const CalculoFinanciamientoPage({super.key});
@@ -486,6 +487,12 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
             ],
           ),
           const Divider(height: 16),
+          // TK-0454 (celulares): primero el precio AL CONTADO y el monto FINANCIADO; abajo, la inicial y las cuotas que salen de él.
+          if (variante.precioContado != null) ...[
+            fila('Al contado:', '${variante.monedaSimbolo} ${variante.precioContado!.toStringAsFixed(2)}'),
+            fila('Financiado:', '${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}'),
+            const Divider(height: 16),
+          ],
           fila('Inicial:', '${variante.monedaInicialSimbolo} ${variante.cuotaInicial.toStringAsFixed(2)}'),
           fila(
             '${variante.cantidadCuotas} cuotas:',
@@ -494,7 +501,8 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
           ),
           if (variante.montoInscripcion > 0)
             fila('Inscripción:', '${variante.monedaInicialSimbolo} ${variante.montoInscripcion.toStringAsFixed(2)}'),
-          fila('Total:', '${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}'),
+          if (variante.precioContado == null)
+            fila('Total:', '${variante.monedaSimbolo} ${variante.montoTotal.toStringAsFixed(2)}'),
         ],
       ),
     );
@@ -923,6 +931,11 @@ class _CalculoFinanciamientoPageState extends State<CalculoFinanciamientoPage> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
           ),
+        ],
+        // Aviso: la compra de servicios todavía no se cobra con Yape. Solo informa; no se puede elegir.
+        if (mostrarYapeProximamenteEnServicio(simbolo: simbolo, metodos: metodos)) ...[
+          const SizedBox(height: 12),
+          const YapeProximamenteCard(),
         ],
       ],
     );

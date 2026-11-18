@@ -10,7 +10,7 @@ import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/izipay_models.dart';
 import '../../theme/app_theme.dart';
-import '../components/catalogo_dropdown.dart';
+import '../components/app_select.dart';
 import '../components/pago_inscripcion_registro.dart';
 import '../providers/auth_provider.dart';
 import '../providers/catalogos_provider.dart';
@@ -295,6 +295,9 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
   }
 
   Future<void> _selectDate() async {
+    // El campo de fecha es un InkWell sobre un campo ignorado: no toma el foco. Si otro campo lo tenía, Flutter se lo devolvería al
+    // cerrar el calendario y reabriría el teclado. Se suelta antes de abrir.
+    FocusManager.instance.primaryFocus?.unfocus();
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
@@ -708,16 +711,15 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
     final catalogos = context.watch<CatalogosProvider>();
 
     return [
-      CatalogoDropdown(
+      AppSelect(
         label: 'Departamento',
         icon: Icons.public_outlined,
         value: _departamentoCodigo,
-        items: catalogos.departamentos.map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre))).toList(),
+        options: catalogos.departamentos.map((d) => SelectOption(d.codigo, d.nombre)).toList(),
         loading: catalogos.departamentosLoading,
         error: catalogos.departamentosError,
         onRetry: () => catalogos.loadDepartamentos(),
         onChanged: (val) {
-          if (val == null) return;
           final item = catalogos.departamentos.firstWhere((d) => d.codigo == val);
           setState(() {
             _departamentoCodigo = val;
@@ -738,11 +740,11 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         },
       ),
       const SizedBox(height: 20),
-      CatalogoDropdown(
+      AppSelect(
         label: 'Provincia',
         icon: Icons.location_city_outlined,
         value: _provinciaCodigo,
-        items: catalogos.provincias.map((p) => DropdownMenuItem(value: p.codigo, child: Text(p.nombre))).toList(),
+        options: catalogos.provincias.map((p) => SelectOption(p.codigo, p.nombre)).toList(),
         loading: catalogos.provinciasLoading,
         error: catalogos.provinciasError,
         onRetry: () {
@@ -750,7 +752,6 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         },
         placeholder: _departamentoCodigo == null ? 'Selecciona primero el departamento' : null,
         onChanged: (val) {
-          if (val == null) return;
           final item = catalogos.provincias.firstWhere((p) => p.codigo == val);
           setState(() {
             _provinciaCodigo = val;
@@ -762,11 +763,11 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         },
       ),
       const SizedBox(height: 20),
-      CatalogoDropdown(
+      AppSelect(
         label: 'Distrito',
         icon: Icons.map_outlined,
         value: _distritoCodigo,
-        items: catalogos.distritos.map((d) => DropdownMenuItem(value: d.codigo, child: Text(d.nombre))).toList(),
+        options: catalogos.distritos.map((d) => SelectOption(d.codigo, d.nombre)).toList(),
         loading: catalogos.distritosLoading,
         error: catalogos.distritosError,
         onRetry: () {
@@ -774,7 +775,6 @@ class _PreRegisterPageState extends State<PreRegisterPage> {
         },
         placeholder: _provinciaCodigo == null ? 'Selecciona primero la provincia' : null,
         onChanged: (val) {
-          if (val == null) return;
           final item = catalogos.distritos.firstWhere((d) => d.codigo == val);
           setState(() {
             _distritoCodigo = val;

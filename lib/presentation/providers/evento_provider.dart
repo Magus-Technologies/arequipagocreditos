@@ -29,7 +29,7 @@ class EventoResultado<T> {
 
 typedef _Persona = ({int id, String documento});
 
-/// Estado del módulo «Eventos»: el evento activo (para el aviso al entrar y la entrada fija del inicio) y las compras de tickets
+/// Estado del módulo «Eventos»: el evento activo (para el aviso al entrar y el chip de eventos del inicio) y las compras de tickets
 /// de la persona. El servidor es quien decide el tope por persona; acá solo se evita mandar lo que ya se sabe que va a fallar.
 ///
 /// Todo lo que guarda es de UNA persona (la última identificada). Si la sesión cambia o se cierra ([limpiar],
@@ -112,13 +112,13 @@ class EventoProvider extends ChangeNotifier {
         .toList();
   }
 
-  /// ¿Se muestra la tarjeta del inicio? Con evento activo, o sin él si la persona tiene una compra vigente.
+  /// ¿Se muestra el chip de eventos del inicio? Con evento activo, o sin él si la persona tiene una compra vigente.
   bool get hayAccesoFijo => _evento != null || comprasVigentes.isNotEmpty;
 
-  /// Sin evento activo, la tarjeta sale solo por una compra: dice «Mis tickets · nombre del evento» y no ofrece comprar.
+  /// Sin evento activo, el chip sale solo por una compra: dice «Mis tickets» y no ofrece comprar.
   bool get accesoSoloPorCompra => _evento == null && comprasVigentes.isNotEmpty;
 
-  /// Nombre del evento de la tarjeta (el activo, o el de la compra vigente más reciente).
+  /// Nombre del evento del acceso (el activo, o el de la compra vigente más reciente).
   String? get nombreAccesoFijo => _evento?.nombre ?? (comprasVigentes.isEmpty ? null : comprasVigentes.first.eventoNombre);
 
   // ---------------------------------------------------------------------------------------------------------------------

@@ -62,6 +62,9 @@ class VarianteEntity {
   final int? viajesRequeridos;
   /// Ficha técnica (PDF) del modelo de esta variante; null si no tiene (diseño «Beneficios en caso de vehículos con inicial»).
   final String? fichaTecnicaUrl;
+  /// TK-0454: precio de venta AL CONTADO en soles (solo celulares; el precio sin la ganancia). Null = no se muestra «Al contado».
+  /// El contado solo se MUESTRA: los beneficios comerciales se adquieren financiados.
+  final double? precioContado;
 
   const VarianteEntity({
     required this.varianteId,
@@ -87,6 +90,7 @@ class VarianteEntity {
     this.descuentoSemanal,
     this.viajesRequeridos,
     this.fichaTecnicaUrl,
+    this.precioContado,
   });
 }
 

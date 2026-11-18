@@ -64,6 +64,7 @@ class VarianteModel extends VarianteEntity {
     super.descuentoSemanal,
     super.viajesRequeridos,
     super.fichaTecnicaUrl,
+    super.precioContado,
   });
 
   factory VarianteModel.fromJson(Map<String, dynamic> json) {
@@ -124,6 +125,9 @@ class VarianteModel extends VarianteEntity {
       fichaTecnicaUrl: (json['ficha_tecnica_url']?.toString() ?? '').isEmpty
           ? null
           : json['ficha_tecnica_url'].toString(),
+      precioContado: json['precio_contado'] != null && toDouble(json['precio_contado']) > 0
+          ? toDouble(json['precio_contado'])
+          : null,
     );
   }
 }

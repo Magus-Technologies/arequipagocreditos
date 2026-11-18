@@ -8,7 +8,7 @@ import 'package:arequipagocreditos/core/errors/failures.dart';
 import 'package:arequipagocreditos/core/utils/either.dart';
 import 'package:arequipagocreditos/core/utils/evento_gate.dart';
 import 'package:arequipagocreditos/domain/entities/conductor_entity.dart';
-import 'package:arequipagocreditos/presentation/components/evento_acceso_card.dart';
+import 'package:arequipagocreditos/presentation/components/evento_acceso_chip.dart';
 import 'package:arequipagocreditos/presentation/components/evento_widgets.dart';
 import 'package:arequipagocreditos/presentation/pages/evento_compra_page.dart';
 import 'package:arequipagocreditos/presentation/pages/evento_mis_tickets_page.dart';
@@ -35,7 +35,7 @@ class _Auth extends Fake implements AuthProvider {
 }
 
 /// El inicio del app, reducido a lo que toca a «Eventos»: al abrirse precarga el evento y las compras (como `DashboardPage`) y muestra
-/// la entrada fija.
+/// el chip de eventos.
 class _InicioSimulado extends StatefulWidget {
   const _InicioSimulado();
 
@@ -51,7 +51,7 @@ class _InicioSimuladoState extends State<_InicioSimulado> {
   }
 
   @override
-  Widget build(BuildContext context) => const Scaffold(body: EventoAccesoCard());
+  Widget build(BuildContext context) => const Scaffold(body: EventoAccesoChip());
 }
 
 /// Monta `pagina` con el provider ya cargado con el evento activo (si el repositorio tiene uno).
@@ -713,37 +713,49 @@ void main() {
     });
   });
 
-  group('entrada fija del inicio', () {
-    testWidgets('con evento activo muestra su nombre y abre «Mis tickets»', (tester) async {
+  group('chip de eventos del inicio', () {
+    testWidgets('con un evento disponible dice «Eventos» y abre la lista de eventos', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(evento(comprados: 0))];
-      await _abrir(tester, const Scaffold(body: EventoAccesoCard()), repo);
+      await _abrir(tester, const Scaffold(body: EventoAccesoChip()), repo);
 
-      expect(find.text('3er Aniversario Arequipa Go'), findsOneWidget);
+      expect(find.text('Eventos'), findsOneWidget);
+      expect(find.text('Mis tickets'), findsNothing);
 
-      await tester.tap(find.byKey(const Key('evento_acceso_card')));
+      await tester.tap(find.byKey(const Key('evento_acceso_chip')));
       await tester.pumpAndSettle();
-      expect(find.text('Mis tickets'), findsOneWidget);
+
+      expect(find.byKey(const Key('eventos_tab_proximos')), findsOneWidget);
+      expect(find.byKey(const Key('eventos_tab_realizados')), findsOneWidget);
     });
 
-    testWidgets('sin evento activo ni compras no se ve nada', (tester) async {
+    testWidgets('es chico: una pastilla de una sola línea, no una tarjeta del ancho de la pantalla', (tester) async {
+      final repo = FakeEventoRepository()..activo = [activo(evento(comprados: 0))];
+      await _abrir(tester, const Scaffold(body: Align(alignment: Alignment.topLeft, child: EventoAccesoChip())), repo);
+
+      final tamano = tester.getSize(find.byKey(const Key('evento_acceso_chip')));
+      expect(tamano.height, lessThan(32));
+      expect(tamano.width, lessThan(165)); // con la fuente de prueba (cuadros anchos); con Roboto mide ~80
+    });
+
+    testWidgets('sin evento disponible ni compras no se ve nada', (tester) async {
       final repo = FakeEventoRepository()..activo = [activo(null)];
       await _abrir(tester, const _InicioSimulado(), repo, cargarEvento: false);
 
-      expect(find.byKey(const Key('evento_acceso_card')), findsNothing);
+      expect(find.byKey(const Key('evento_acceso_chip')), findsNothing);
       expect(find.byType(Text), findsNothing);
     });
 
-    testWidgets('el evento ya empezó (sin activo) pero hay una compra confirmada: aparece y abre «Mis tickets»', (tester) async {
+    testWidgets('el evento ya empezó (sin activo) pero hay una compra confirmada: dice «Mis tickets» y abre sus tickets', (tester) async {
       final repo = FakeEventoRepository()
         ..activo = [activo(null)] // pasadas las 2:00 p. m. el servidor ya no lo manda como activo
         ..misCompras = Either.right([compra(estado: 'confirmado', puedeCancelar: false)]);
       await _abrir(tester, const _InicioSimulado(), repo, cargarEvento: false);
 
-      expect(find.byKey(const Key('evento_acceso_card')), findsOneWidget);
-      expect(find.text('Mis tickets · 3er Aniversario Arequipa Go'), findsOneWidget);
-      expect(find.text('Revisa tu compra y tu código'), findsOneWidget);
+      expect(find.byKey(const Key('evento_acceso_chip')), findsOneWidget);
+      expect(find.text('Mis tickets'), findsOneWidget);
+      expect(find.text('Eventos'), findsNothing);
 
-      await tester.tap(find.byKey(const Key('evento_acceso_card')));
+      await tester.tap(find.byKey(const Key('evento_acceso_chip')));
       await tester.pumpAndSettle();
 
       expect(find.text('Confirmado'), findsOneWidget);
@@ -757,7 +769,7 @@ void main() {
         ..misCompras = Either.right([compra()]);
       await _abrir(tester, const _InicioSimulado(), repo, cargarEvento: false);
 
-      expect(find.byKey(const Key('evento_acceso_card')), findsOneWidget);
+      expect(find.byKey(const Key('evento_acceso_chip')), findsOneWidget);
     });
 
     testWidgets('sin evento activo y con compras solo rechazadas o anuladas no se ve nada', (tester) async {
@@ -769,17 +781,17 @@ void main() {
         ]);
       await _abrir(tester, const _InicioSimulado(), repo, cargarEvento: false);
 
-      expect(find.byKey(const Key('evento_acceso_card')), findsNothing);
+      expect(find.byKey(const Key('evento_acceso_chip')), findsNothing);
     });
 
-    testWidgets('con evento activo la tarjeta ofrece comprar aunque ya haya compras', (tester) async {
+    testWidgets('con un evento disponible sigue diciendo «Eventos» aunque ya haya compras', (tester) async {
       final repo = FakeEventoRepository()
         ..activo = [activo(evento(max: 4, comprados: 2))]
         ..misCompras = Either.right([compra(cantidad: 2)]);
       await _abrir(tester, const _InicioSimulado(), repo, cargarEvento: false);
 
-      expect(find.text('3er Aniversario Arequipa Go'), findsOneWidget); // sin el prefijo «Mis tickets ·»
-      expect(find.text('Compra tus tickets o revisa tu compra'), findsOneWidget);
+      expect(find.text('Eventos'), findsOneWidget);
+      expect(find.text('Mis tickets'), findsNothing);
     });
   });
 

@@ -8,7 +8,6 @@ import '../../core/utils/adenda_pendiente_gate.dart';
 import '../../core/utils/contrato_pendiente_gate.dart';
 import '../../core/utils/datos_pendientes_gate.dart';
 import '../../core/utils/evento_gate.dart';
-import '../components/evento_acceso_card.dart';
 import 'actualizar_datos_page.dart';
 import '../../core/utils/model_adapters.dart';
 import '../providers/auth_provider.dart';
@@ -26,7 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      // Eventos: se pide el evento activo ya, sin esperar a los avisos de abajo, para que la entrada fija del inicio aparezca
+      // Eventos: se pide el evento activo ya, sin esperar a los avisos de abajo, para que el chip de eventos del encabezado aparezca
       // enseguida. No se espera (unawaited): nunca retrasa ni bloquea el resto.
       EventoGate.precargar(context);
       // El aviso de actualizacion va primero: si es obligatorio, bloquea el uso.
@@ -155,8 +154,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                 MaterialPageRoute(builder: (_) => const ActualizarDatosPage()),
                               ),
                             ),
-                            // Entrada fija a «Mis tickets»: solo se ve mientras haya un evento activo.
-                            const EventoAccesoCard(),
                             // Sección de módulos principales (incluye la
                             // tarjeta "Mis Financiamientos", ahora su propia
                             // pantalla en vez de vivir inline acá).

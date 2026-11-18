@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/models/izipay_models.dart';
 import '../widgets/image_full_screen_view.dart';
 import 'yape_widgets.dart';
@@ -16,6 +17,21 @@ class PagoInscripcionRegistro extends StatelessWidget {
   static const String metodoCaja = 'caja_arequipa';
   static const String metodoIzipay = 'izipay';
   static const String metodoYape = 'yape';
+
+  /// Logos de los métodos (los mismos de la pantalla de estado de la solicitud) y la caja donde se dibujan.
+  static const String logoCajaArequipa = 'images/logo_caja_arequipa.svg';
+  static const String logoIzipay = 'images/logo_izipay.svg';
+  static const double logoAncho = 56;
+  static const double logoAlto = 28;
+
+  static Widget _logoSvg(String asset, String nombre) => SvgPicture.asset(
+        asset,
+        width: logoAncho,
+        height: logoAlto,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        semanticsLabel: nombre,
+      );
 
   const PagoInscripcionRegistro({
     super.key,
@@ -117,6 +133,7 @@ class PagoInscripcionRegistro extends StatelessWidget {
             titulo: 'Caja Arequipa',
             subtitulo: 'Al enviar tu solicitud recibes tu código de pago y pagas en un agente o agencia.',
             icono: Icons.storefront_outlined,
+            logo: _logoSvg(logoCajaArequipa, 'Caja Arequipa'),
           ),
         if (i.izipayDisponible) ...[
           const SizedBox(height: 12),
@@ -126,6 +143,7 @@ class PagoInscripcionRegistro extends StatelessWidget {
             titulo: 'QR IziPay',
             subtitulo: 'Paga con el QR y adjunta la captura de tu pago.',
             icono: Icons.qr_code_2_rounded,
+            logo: _logoSvg(logoIzipay, 'IziPay'),
           ),
         ],
         if (i.yapeDisponible) ...[
@@ -136,8 +154,12 @@ class PagoInscripcionRegistro extends StatelessWidget {
             titulo: 'Yape',
             subtitulo: 'Paga desde tu celular, sin ir a ninguna agencia.',
             icono: Icons.phone_android_rounded,
-            logo: const YapeLogo(tamano: 26),
+            logo: const YapeLogo(tamano: 28),
           ),
+        ] else if (i.yapeProximamente) ...[
+          // Todavía no se puede usar: se muestra para que sepan que viene, pero no se puede elegir.
+          const SizedBox(height: 12),
+          const YapeProximamenteCard(),
         ],
         const SizedBox(height: 18),
         if (metodo == metodoYape) _notaYape(i),
@@ -284,7 +306,10 @@ class PagoInscripcionRegistro extends StatelessWidget {
         ),
         child: Row(
           children: [
-            logo ?? Icon(icono, color: elegido ? Colors.black : Colors.black45),
+            // Los logos van en una caja del mismo ancho (como en la pantalla de estado de la solicitud) para que los títulos queden alineados.
+            logo != null
+                ? SizedBox(width: logoAncho, height: logoAlto, child: Align(alignment: Alignment.centerLeft, child: logo))
+                : Icon(icono, color: elegido ? Colors.black : Colors.black45),
             const SizedBox(width: 16),
             Expanded(
               child: Column(

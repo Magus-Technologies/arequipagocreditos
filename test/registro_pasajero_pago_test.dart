@@ -7,6 +7,7 @@ import 'package:arequipagocreditos/core/utils/either.dart';
 import 'package:arequipagocreditos/data/models/catalogo_models.dart';
 import 'package:arequipagocreditos/data/models/izipay_models.dart';
 import 'package:arequipagocreditos/domain/repositories/catalogos_repository.dart';
+import 'package:arequipagocreditos/presentation/components/app_select.dart';
 import 'package:arequipagocreditos/presentation/pages/pre_register_page.dart';
 import 'package:arequipagocreditos/presentation/providers/auth_provider.dart';
 import 'package:arequipagocreditos/presentation/providers/catalogos_provider.dart';
@@ -134,11 +135,11 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    /// Abre el selector de [etiqueta] (departamento, provincia o distrito) y elige [opcion].
+    /// Abre el selector de [etiqueta] (departamento, provincia o distrito) y elige [opcion] en la hoja.
     Future<void> elegir(WidgetTester tester, String etiqueta, String opcion) async {
-      await tester.tap(find.widgetWithText(DropdownButtonFormField<String>, etiqueta));
+      await tester.tap(find.widgetWithText(AppSelect, etiqueta));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(opcion).last);
+      await tester.tap(find.descendant(of: find.byKey(const Key('select_hoja')), matching: find.text(opcion)));
       await tester.pumpAndSettle();
     }
 
@@ -185,6 +186,24 @@ void main() {
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
     }
+
+    testWidgets('elegir la fecha de nacimiento no devuelve el foco (ni el teclado) al campo de texto que lo tenía antes', (tester) async {
+      await abrir(tester, _RepoMonto(_info({'tipo': 'pasajero', 'monto': 0})));
+
+      bool hayCampoConFoco() => find.byType(EditableText).evaluate().any((e) => (e.widget as EditableText).focusNode.hasFocus);
+
+      await tester.tap(find.widgetWithText(TextFormField, 'Apellido Materno'));
+      await tester.pump();
+      expect(hayCampoConFoco(), isTrue, reason: 'el apellido materno empieza con el foco (teclado abierto)');
+
+      await tester.tap(find.text('Fecha de Nacimiento'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(hayCampoConFoco(), isFalse, reason: 'al abrir el calendario se suelta el foco');
+
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(hayCampoConFoco(), isFalse, reason: 'al elegir la fecha el foco no vuelve al apellido materno');
+    });
 
     testWidgets('con la inscripción gratis, el registro sigue siendo de 3 pasos y se envía sin pago', (tester) async {
       final repo = _RepoMonto(_info({'tipo': 'pasajero', 'monto': 0}));
@@ -358,9 +377,9 @@ void main() {
     }
 
     Future<void> elegir(WidgetTester tester, String etiqueta, String opcion) async {
-      await tester.tap(find.widgetWithText(DropdownButtonFormField<String>, etiqueta));
+      await tester.tap(find.widgetWithText(AppSelect, etiqueta));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(opcion).last);
+      await tester.tap(find.descendant(of: find.byKey(const Key('select_hoja')), matching: find.text(opcion)));
       await tester.pumpAndSettle();
     }
 
@@ -384,7 +403,7 @@ void main() {
       await abrir(tester, _RepoMonto(_info({'tipo': 'pasajero', 'monto': 0})));
       await alPaso2(tester);
 
-      expect(find.widgetWithText(DropdownButtonFormField<String>, 'Departamento'), findsOneWidget);
+      expect(find.widgetWithText(AppSelect, 'Departamento'), findsOneWidget);
       expect(find.text('Selecciona primero el departamento'), findsOneWidget);   // la provincia espera al departamento
       expect(find.text('Selecciona primero la provincia'), findsOneWidget);       // el distrito, a la provincia
 

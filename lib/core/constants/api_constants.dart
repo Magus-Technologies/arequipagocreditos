@@ -49,10 +49,16 @@ class ApiConstants {
   static const String yapeInscripcionEstadoEndpoint = '/app/yape/inscripcion/{id}/estado';
   static const String yapeInscripcionAfiliarEndpoint = '/app/yape/inscripcion/{id}/afiliar';
   static const String yapeInscripcionCobrarEndpoint = '/app/yape/inscripcion/{id}/cobrar';
+  // ¿Esta persona puede pagar con Yape? (modo de prueba) Se pregunta en el registro, antes de que exista el id: documento en el cuerpo.
+  static const String yapeInscripcionAccesoEndpoint = '/app/yape/inscripcion/acceso';
   static const String ubigeoDepartamentosEndpoint = '/ubicaciones/departamentos';
   static const String ubigeoProvinciasEndpoint = '/ubicaciones/provincias/{codigo}';
   static const String ubigeoDistritosEndpoint = '/ubicaciones/distritos/{codigo}';
   static const String plataformasEndpoint = '/app/plataformas';
+  // Ciudades (departamentos y provincias) donde una plataforma está habilitada. Público, sin token.
+  static const String plataformaUbicacionesEndpoint = '/app/plataformas/{plataforma}/ubicaciones';
+  // ¿Ya existe un registro con este documento, licencia o correo? Público; siempre responde 200.
+  static const String conductorVerificarRegistroEndpoint = '/app/conductores/verificar-registro';
   static const String deleteAccountEndpoint = '/app/conductor/eliminar-cuenta';
   static const String pagarCuotaEndpoint = '/app/pagar-cuota';
   static const String reporteCuotaEndpoint = '/app/reporte-cuota/{id}';
@@ -109,6 +115,8 @@ class ApiConstants {
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
+  // Consultas que no deben retener a la persona si la red anda lenta (si fallan, el registro sigue): verificación y ubicaciones.
+  static const Duration consultaRapidaTimeout = Duration(seconds: 10);
 
   static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',

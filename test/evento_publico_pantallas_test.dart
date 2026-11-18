@@ -85,15 +85,42 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('bienvenida: acceso «EVENTOS»', () {
-    testWidgets('el botón «EVENTOS» abre la lista de eventos y la pide SIN sesión (solo públicos)', (tester) async {
-      final repo = FakeEventoRepository()
-        ..activo = [activo(null)]
-        ..lista = Either.right(EventosListaModel(proximos: [_publico()], anteriores: const []));
+  group('bienvenida: chip «Eventos»', () {
+    // Con un evento público disponible sale la ventana flotante del aviso: se cierra con «Ahora no» y queda la pantalla.
+    Future<void> abrirBienvenida(WidgetTester tester, FakeEventoRepository repo) async {
       await _abrir(tester, const WelcomePage(), repo, pantalla: const Size(412, 1200));
+      if (find.text('Ahora no').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Ahora no'));
+        await tester.pumpAndSettle();
+      }
+    }
 
-      expect(find.byKey(const Key('welcome_eventos')), findsOneWidget);
-      expect(find.text('EVENTOS'), findsOneWidget);
+    testWidgets('con un evento público disponible hay un chip «Eventos» ARRIBA (chico), no un botón debajo de «INICIAR SESIÓN»', (tester) async {
+      final repo = FakeEventoRepository()
+        ..activo = [activo(_publico())]
+        ..lista = Either.right(EventosListaModel(proximos: [_publico()], anteriores: const []));
+      await abrirBienvenida(tester, repo);
+
+      final chip = find.byKey(const Key('welcome_eventos'));
+      expect(chip, findsOneWidget);
+      expect(find.text('Eventos'), findsOneWidget);
+      expect(find.text('EVENTOS'), findsNothing); // ya no existe el botón grande
+
+      // Arriba de todo: por encima de «INICIAR SESIÓN» y de «REGISTRAR CONDUCTOR», y chico.
+      final iniciarSesion = tester.getTopLeft(find.text('INICIAR SESIÓN'));
+      final registrar = tester.getTopLeft(find.text('REGISTRAR CONDUCTOR'));
+      expect(tester.getBottomLeft(chip).dy, lessThan(registrar.dy));
+      expect(tester.getBottomLeft(chip).dy, lessThan(iniciarSesion.dy));
+      final tamano = tester.getSize(chip);
+      expect(tamano.height, lessThan(32));
+      expect(tamano.width, lessThan(165)); // con la fuente de prueba (cuadros anchos); con Roboto mide ~80
+    });
+
+    testWidgets('el chip abre la lista de eventos y la pide SIN sesión (solo públicos)', (tester) async {
+      final repo = FakeEventoRepository()
+        ..activo = [activo(_publico())]
+        ..lista = Either.right(EventosListaModel(proximos: [_publico()], anteriores: const []));
+      await abrirBienvenida(tester, repo);
 
       await tester.tap(find.byKey(const Key('welcome_eventos')));
       await tester.pumpAndSettle();
@@ -103,6 +130,27 @@ void main() {
       expect(repo.llamadasLista, 1);
       expect(repo.ultimaListaPersonaId, isNull);
       expect(repo.ultimaListaDocumento, isNull);
+    });
+
+    testWidgets('sin un evento público disponible no hay chip ni botón de eventos', (tester) async {
+      final repo = FakeEventoRepository()
+        ..activo = [activo(null)]
+        ..lista = Either.right(EventosListaModel(proximos: const [], anteriores: [_publico()]));
+      await abrirBienvenida(tester, repo);
+
+      expect(find.byKey(const Key('welcome_eventos')), findsNothing);
+      expect(find.text('EVENTOS'), findsNothing);
+      expect(find.text('Eventos'), findsNothing);
+      // El resto de la bienvenida sigue como siempre.
+      expect(find.text('REGISTRAR CONDUCTOR'), findsOneWidget);
+      expect(find.text('INICIAR SESIÓN'), findsOneWidget);
+    });
+
+    testWidgets('un evento privado no se anuncia a quien no inició sesión', (tester) async {
+      final repo = FakeEventoRepository()..activo = [activo(_publico(visibilidad: 'privado'))];
+      await abrirBienvenida(tester, repo);
+
+      expect(find.byKey(const Key('welcome_eventos')), findsNothing);
     });
   });
 
