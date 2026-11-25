@@ -135,12 +135,34 @@ class _IngresarPinPageState extends State<IngresarPinPage> {
         if (mounted) _goToLogin();
         break;
       case PinLoginResult.noCredentials:
+        // TK-0473: el PIN estaba bien; faltan las credenciales guardadas (el cierre de sesión las borra). Entrando UNA vez con la
+        // contraseña se vuelven a guardar y el PIN funciona normal: ya no es un error de la persona.
         setState(() {
-          _message = 'No se pudo verificar tu sesión. Inicia sesión nuevamente.';
+          _message = 'Tu PIN es correcto, pero en este celular falta guardar tu acceso. '
+              'Inicia sesión una vez con tu contraseña y desde ahí tu PIN funcionará.';
+          _input = '';
           _checking = false;
         });
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: 3));
         if (mounted) _goToLogin();
+        break;
+      case PinLoginResult.rejected:
+        // El servidor contestó que no (contraseña guardada vencida, registro sin aprobar...): se dice el motivo real.
+        setState(() {
+          _message = authProvider.pinLoginMessage ?? 'No se pudo verificar tu sesión. Inicia sesión con tu contraseña.';
+          _input = '';
+          _checking = false;
+        });
+        await Future.delayed(const Duration(seconds: 3));
+        if (mounted) _goToLogin();
+        break;
+      case PinLoginResult.unreachable:
+        // No se pudo hablar con el servidor (ni en el segundo intento): se queda en el teclado para reintentar, sin sacar a la persona.
+        setState(() {
+          _message = authProvider.pinLoginMessage ?? 'No pudimos conectar con el servidor. Inténtalo de nuevo.';
+          _input = '';
+          _checking = false;
+        });
         break;
     }
   }

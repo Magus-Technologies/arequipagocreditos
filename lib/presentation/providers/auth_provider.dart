@@ -23,9 +23,19 @@ enum PinLoginResult {
   // que volver al login normal (DNI + contraseña).
   lockedOut,
   // El PIN era correcto pero no hay credenciales guardadas para completar
-  // el login real (caso raro: se corrompio el storage). Tambien exige
-  // volver al login normal.
+  // el login real (el cierre de sesión las borra y el PIN quedaba; o se
+  // corrompio el storage). Hay que entrar UNA vez con la contraseña: ese login
+  // las vuelve a guardar (ver _guardarCredencialesDelAccesoRapido).
   noCredentials,
+  // TK-0473: el PIN era correcto y el servidor RESPONDIÓ que no (p. ej.
+  // «Credenciales incorrectas.» porque la contraseña guardada ya no sirve, o
+  // un registro sin aprobar). El motivo queda en [AuthProvider.pinLoginMessage]
+  // y hay que entrar con la contraseña.
+  rejected,
+  // TK-0473: el PIN era correcto pero no se pudo hablar con el servidor (sin
+  // internet, caída, demora) ni a la segunda. Se queda en el teclado para
+  // reintentar; el motivo queda en [AuthProvider.pinLoginMessage].
+  unreachable,
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -177,34 +187,73 @@ class AuthProvider extends ChangeNotifier {
   // Métodos públicos
   Future<void> login(String nroDocumento, String password) async {
     _setStatus(AuthStatus.loading);
-    
-    final result = await _loginUseCase(nroDocumento, password);
-    
-    result.fold(
-      (failure) {
-        _errorMessage = _mapFailureToMessage(failure);
-        _setStatus(AuthStatus.error);
-      },
-      (conductor) async {
-        _currentUser = conductor;
-        _errorMessage = null;
-        // Login manual: la sesión recién empieza, no hay nada que desbloquear.
-        _locked = false;
-        if (!_hasBiometricCredentials) {
-          _pendingBiometricDni = nroDocumento;
-          _pendingBiometricPassword = password;
-        }
-        _setStatus(AuthStatus.authenticated);
 
-        // Sincronizar token FCM inmediatamente después del login exitoso
-        try {
-          final notificationService = NotificationService();
-          await notificationService.initializeFCM();
-        } catch (e) {
-          debugPrint('Error al sincronizar FCM después del login: $e');
-        }
-      },
-    );
+    final result = await _loginUseCase(nroDocumento, password);
+
+    if (result.isLeft) {
+      _errorMessage = _mapFailureToMessage(result.left);
+      _setStatus(AuthStatus.error);
+      return;
+    }
+
+    await _completarLogin(result.right, nroDocumento, password);
+  }
+
+  /// Lo que pasa cuando el servidor acepta las credenciales: login con contraseña o con el PIN (que reutiliza las guardadas).
+  Future<void> _completarLogin(ConductorEntity conductor, String nroDocumento, String password) async {
+    _currentUser = conductor;
+    _errorMessage = null;
+    // La sesión recién empieza, no hay nada que desbloquear.
+    _locked = false;
+
+    // TK-0473: ANTES de dar la sesión por iniciada, para que el ofrecimiento de huella/Face ID de abajo ya vea las credenciales.
+    await _guardarCredencialesDelAccesoRapido(nroDocumento, password);
+
+    if (!_hasBiometricCredentials) {
+      _pendingBiometricDni = nroDocumento;
+      _pendingBiometricPassword = password;
+    }
+    _setStatus(AuthStatus.authenticated);
+
+    // Sincronizar token FCM inmediatamente después del login exitoso. Sin esperarlo (como siempre): entrar al app no depende de
+    // que el token de notificaciones termine de registrarse.
+    () async {
+      try {
+        final notificationService = NotificationService();
+        await notificationService.initializeFCM();
+      } catch (e) {
+        debugPrint('Error al sincronizar FCM después del login: $e');
+      }
+    }();
+  }
+
+  /// TK-0473 (Gian, 24-nov: «con el PIN sale un error y al segundo intento recién ingresa»): el PIN solo es un candado; para entrar
+  /// reutiliza el DNI y la contraseña guardados en el celular. Pero «Cerrar sesión» BORRA esas credenciales y deja el PIN, y al volver a
+  /// entrar con la contraseña solo se ofrecía guardarlas por la huella/Face ID (y sin huella registrada ni siquiera se preguntaba): el PIN
+  /// seguía activo SIN credenciales y cada vez que lo digitaban (correcto) salía «No se pudo verificar tu sesión». Ahora, quien tiene el
+  /// acceso rápido activo (PIN, o credenciales ya guardadas) las deja guardadas —y al día, si cambió su contraseña— en cada login con
+  /// contraseña. Nunca rompe el login: si el almacenamiento seguro falla, simplemente no se guardan.
+  Future<void> _guardarCredencialesDelAccesoRapido(String nroDocumento, String password) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pinActivo = (prefs.getBool(_accessPinKey) ?? false) &&
+          await _secureStorage.read(key: _pinHashKey).timeout(const Duration(seconds: 5)) != null;
+      final guardadoDni = await _secureStorage.read(key: _biometricDniKey).timeout(const Duration(seconds: 5));
+      final guardadaPassword = await _secureStorage.read(key: _biometricPasswordKey).timeout(const Duration(seconds: 5));
+
+      if (!pinActivo && guardadoDni == null) return; // no usa acceso rápido: lo ofrece el diálogo de huella/Face ID de siempre
+      if (guardadoDni == nroDocumento && guardadaPassword == password) {
+        _hasBiometricCredentials = true;
+        return;
+      }
+
+      await saveBiometricCredentials(nroDocumento, password);
+      // Ya quedaron guardadas: no hay nada pendiente que ofrecer.
+      _pendingBiometricDni = null;
+      _pendingBiometricPassword = null;
+    } catch (e) {
+      debugPrint('No se pudieron guardar las credenciales del acceso rápido: $e');
+    }
   }
 
   Future<void> logout({bool clearBiometric = true}) async {
@@ -416,7 +465,17 @@ class AuthProvider extends ChangeNotifier {
   ///
   /// Tras [maxPinAttempts] intentos fallidos, el PIN se borra por seguridad
   /// y hay que volver al login normal con DNI + contraseña.
+  ///
+  /// TK-0473: este login NO pasa por [login]: [login] pone el estado global en
+  /// `loading` y, si falla, en `error` (el router raíz reemplaza entonces la
+  /// pantalla del PIN por la de bienvenida y el mensaje nunca se ve). Aquí el
+  /// estado solo cambia si el servidor acepta, y cuando no, el resultado dice
+  /// POR QUÉ ([PinLoginResult.rejected] / [PinLoginResult.unreachable] con
+  /// [pinLoginMessage]) en vez del «No se pudo verificar tu sesión» de siempre.
+  /// Un fallo pasajero (red móvil que acaba de volver, servidor ocupado) se
+  /// repite una vez antes de rendirse.
   Future<PinLoginResult> loginWithPin(String pin) async {
+    _pinLoginMessage = null;
     final prefs = await SharedPreferences.getInstance();
     final valid = await _verifyPinOnly(pin);
 
@@ -433,12 +492,63 @@ class AuthProvider extends ChangeNotifier {
 
     await prefs.setInt(_pinFailedAttemptsKey, 0);
 
-    final dni = await _secureStorage.read(key: _biometricDniKey);
-    final password = await _secureStorage.read(key: _biometricPasswordKey);
+    String? dni;
+    String? password;
+    try {
+      dni = await _secureStorage.read(key: _biometricDniKey);
+      password = await _secureStorage.read(key: _biometricPasswordKey);
+    } catch (e) {
+      debugPrint('No se pudieron leer las credenciales guardadas: $e');
+    }
     if (dni == null || password == null) return PinLoginResult.noCredentials;
 
-    await login(dni, password);
-    return _status == AuthStatus.authenticated ? PinLoginResult.success : PinLoginResult.noCredentials;
+    var result = await _loginUseCase(dni, password);
+    if (result.isLeft && _esFalloPasajero(result.left)) {
+      await Future.delayed(const Duration(milliseconds: 900));
+      result = await _loginUseCase(dni, password);
+    }
+
+    if (result.isLeft) {
+      final failure = result.left;
+      _pinLoginMessage = _mensajeDelPin(failure);
+      if (failure is AuthenticationFailure) {
+        // Si la contraseña guardada ya no sirve se borra: el próximo login con contraseña guarda la nueva (ver
+        // _guardarCredencialesDelAccesoRapido) y el PIN vuelve a funcionar.
+        if (_contraseniaGuardadaYaNoSirve(failure)) await clearBiometricCredentials();
+        return PinLoginResult.rejected;
+      }
+      return PinLoginResult.unreachable;
+    }
+
+    await _completarLogin(result.right, dni, password);
+    return PinLoginResult.success;
+  }
+
+  /// Por qué no pudo entrar con el PIN (null si no hace falta decir nada). La pantalla del PIN lo muestra.
+  String? _pinLoginMessage;
+  String? get pinLoginMessage => _pinLoginMessage;
+
+  /// Fallos que suelen no repetirse al segundo intento: sin red, caída o respuesta rota del servidor. Los que el servidor contestó con un
+  /// motivo («Credenciales incorrectas.», «Tu registro aún no ha sido aprobado.») se repetirían igual.
+  static bool _esFalloPasajero(Failure failure) =>
+      failure is NetworkFailure || failure is ServerFailure || failure is UnknownFailure;
+
+  static bool _contraseniaGuardadaYaNoSirve(AuthenticationFailure failure) =>
+      failure.message.toLowerCase().contains('credenciales incorrectas');
+
+  static String _mensajeDelPin(Failure failure) {
+    if (failure is NetworkFailure) {
+      return 'Sin conexión a internet. Revisa tu conexión e inténtalo de nuevo.';
+    }
+    if (failure is AuthenticationFailure) {
+      return _contraseniaGuardadaYaNoSirve(failure)
+          ? 'Tu contraseña guardada ya no es válida (¿la cambiaste?). Inicia sesión con tu contraseña y tu PIN volverá a funcionar.'
+          : failure.message;
+    }
+    if (failure.message.toLowerCase().contains('timeout')) {
+      return 'El servidor tardó demasiado en responder. Inténtalo de nuevo.';
+    }
+    return 'No pudimos conectar con el servidor. Inténtalo de nuevo en unos segundos.';
   }
 
   Future<bool> deleteAccount() async {
